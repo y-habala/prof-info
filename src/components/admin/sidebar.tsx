@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/levels", label: "Niveaux" },
+  { href: "/admin/units", label: "Unités" },
   { href: "/admin/access-codes", label: "Codes d'accès" },
 ];
 

@@ -13,65 +13,66 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { LevelDialog } from "./level-dialog";
-import { toggleLevelActive, deleteLevel } from "@/actions/levels";
+import { UnitDialog } from "./unit-dialog";
+import { toggleUnitPublished, deleteUnit } from "@/actions/units";
 
-export type LevelRow = {
+export type UnitRow = {
   id: string;
-  name: string;
+  title: string;
   description: string | null;
+  image_url: string | null;
   order_index: number;
-  is_active: boolean;
+  is_published: boolean;
 };
 
-export function LevelsTable({ levels }: { levels: LevelRow[] }) {
+export function UnitsTable({ units, levelId }: { units: UnitRow[]; levelId: string }) {
   const [isPending, startTransition] = useTransition();
 
-  if (levels.length === 0) {
-    return <p className="text-muted-foreground">Aucun niveau pour le moment.</p>;
+  if (units.length === 0) {
+    return <p className="text-muted-foreground">Aucune unité pour ce niveau.</p>;
   }
 
   return (
     <Table>
       <TableHeader>
         <TableRow>
-          <TableHead>Nom</TableHead>
-          <TableHead>Description</TableHead>
+          <TableHead>Titre</TableHead>
           <TableHead>Ordre</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead className="text-right">Actions</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {levels.map((row) => (
+        {units.map((row) => (
           <TableRow key={row.id}>
-            <TableCell className="font-medium">{row.name}</TableCell>
-            <TableCell>{row.description ?? "—"}</TableCell>
+            <TableCell className="font-medium">{row.title}</TableCell>
             <TableCell>{row.order_index}</TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
                 <Switch
-                  checked={row.is_active}
+                  checked={row.is_published}
                   disabled={isPending}
                   onCheckedChange={(checked) =>
-                    startTransition(() => toggleLevelActive(row.id, checked))
+                    startTransition(() => toggleUnitPublished(row.id, levelId, checked))
                   }
                 />
-                <Badge variant={row.is_active ? "default" : "secondary"}>
-                  {row.is_active ? "Actif" : "Inactif"}
+                <Badge variant={row.is_published ? "default" : "secondary"}>
+                  {row.is_published ? "Publié" : "Brouillon"}
                 </Badge>
               </div>
             </TableCell>
             <TableCell className="text-right space-x-2">
-              <Button variant="outline" size="sm" render={<Link href={`/admin/units?level=${row.id}`} />}>
-                Unités →
+              <Button variant="outline" size="sm" render={<Link href={`/admin/sequences?unit=${row.id}`} />}>
+                Séquences →
               </Button>
-              <LevelDialog
+              <UnitDialog
                 mode="edit"
+                levelId={levelId}
                 initialValues={{
                   id: row.id,
-                  name: row.name,
+                  title: row.title,
                   description: row.description,
+                  imageUrl: row.image_url,
                   orderIndex: row.order_index,
                 }}
                 trigger={
@@ -85,8 +86,8 @@ export function LevelsTable({ levels }: { levels: LevelRow[] }) {
                 size="sm"
                 disabled={isPending}
                 onClick={() => {
-                  if (confirm(`Supprimer le niveau "${row.name}" ?`)) {
-                    startTransition(() => deleteLevel(row.id));
+                  if (confirm(`Supprimer l'unité "${row.title}" ?`)) {
+                    startTransition(() => deleteUnit(row.id, levelId));
                   }
                 }}
               >
