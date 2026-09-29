@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseBreadcrumb } from "@/components/courses/course-breadcrumb";
+import { ContentBlockRenderer, type PublishedBlock } from "@/components/courses/content-block-renderer";
 
 export default async function SessionPage({
   params,
@@ -57,6 +58,13 @@ export default async function SessionPage({
     notFound();
   }
 
+  const { data: blocks } = await supabase
+    .from("lesson_contents")
+    .select("id, type, title, content")
+    .eq("session_id", session.id)
+    .eq("is_published", true)
+    .order("order_index");
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <CourseBreadcrumb
@@ -76,7 +84,15 @@ export default async function SessionPage({
           <p className="mt-1 text-muted-foreground">{session.description}</p>
         ) : null}
       </div>
-      <p className="text-muted-foreground">Aucun contenu disponible pour le moment.</p>
+      {blocks && blocks.length > 0 ? (
+        <div className="space-y-4">
+          {(blocks as PublishedBlock[]).map((block) => (
+            <ContentBlockRenderer key={block.id} block={block} />
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Aucun contenu disponible pour le moment.</p>
+      )}
     </div>
   );
 }

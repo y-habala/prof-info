@@ -1,6 +1,7 @@
 "use client";
 
 import { useTransition } from "react";
+import Link from "next/link";
 import {
   Table,
   TableBody,
@@ -75,6 +76,14 @@ export function SessionsTable({
               </div>
             </TableCell>
             <TableCell className="text-right space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/admin/sessions/${row.id}`} />}
+              >
+                Contenu →
+              </Button>
               <SessionDialog
                 mode="edit"
                 sequenceId={sequenceId}

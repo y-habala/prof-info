@@ -74,6 +74,7 @@ export function SequencesTable({
               <Button
                 variant="outline"
                 size="sm"
+                nativeButton={false}
                 render={<Link href={`/admin/sessions?sequence=${row.id}`} />}
               >
                 Séances →

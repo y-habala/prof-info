@@ -62,7 +62,12 @@ export function UnitsTable({ units, levelId }: { units: UnitRow[]; levelId: stri
               </div>
             </TableCell>
             <TableCell className="text-right space-x-2">
-              <Button variant="outline" size="sm" render={<Link href={`/admin/sequences?unit=${row.id}`} />}>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/admin/sequences?unit=${row.id}`} />}
+              >
                 Séquences →
               </Button>
               <UnitDialog

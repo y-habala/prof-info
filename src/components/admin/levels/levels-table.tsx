@@ -63,7 +63,12 @@ export function LevelsTable({ levels }: { levels: LevelRow[] }) {
               </div>
             </TableCell>
             <TableCell className="text-right space-x-2">
-              <Button variant="outline" size="sm" render={<Link href={`/admin/units?level=${row.id}`} />}>
+              <Button
+                variant="outline"
+                size="sm"
+                nativeButton={false}
+                render={<Link href={`/admin/units?level=${row.id}`} />}
+              >
                 Unités →
               </Button>
               <LevelDialog
