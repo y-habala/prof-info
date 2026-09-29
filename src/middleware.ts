@@ -2,7 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { ACCESS_SESSION_COOKIE, verifyAccessSession } from "@/lib/auth/access-session";
 
-const STUDENT_PROTECTED_PREFIXES = ["/courses", "/exercises", "/activities", "/exam", "/actualites"];
+const STUDENT_PROTECTED_PREFIXES = [
+  "/courses",
+  "/exercises",
+  "/activities",
+  "/exam",
+  "/actualites",
+  "/api/exercise",
+  "/api/exam",
+];
 
 function isStudentProtectedPath(pathname: string) {
   return pathname === "/" || STUDENT_PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
@@ -91,5 +99,7 @@ export const config = {
     "/activities/:path*",
     "/exam/:path*",
     "/actualites/:path*",
+    "/api/exercise/:path*",
+    "/api/exam/:path*",
   ],
 };
