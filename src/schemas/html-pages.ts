@@ -25,13 +25,3 @@ export const htmlPageFormSchema = z.object({
   cssContent: z.string().max(MAX_CODE_LENGTH).default(""),
   javascriptContent: z.string().max(MAX_CODE_LENGTH).default(""),
 });
-
-export function slugify(title: string): string {
-  return title
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "") // strip accents
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 100);
-}

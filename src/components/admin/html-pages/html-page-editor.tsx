@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { CurriculumSelector, type CurriculumTree } from "@/components/admin/exercises/curriculum-selector";
 import { SandboxedActivity } from "@/components/activities/sandboxed-activity";
-import { slugify } from "@/schemas/html-pages";
+import { slugify } from "@/lib/slugify";
 import { createHtmlPage, updateHtmlPage } from "@/actions/html-pages";
 
 type Tab = "html" | "css" | "js" | "preview";
