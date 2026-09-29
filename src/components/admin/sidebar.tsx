@@ -11,6 +11,7 @@ const NAV_ITEMS = [
   { href: "/admin/levels", label: "Niveaux" },
   { href: "/admin/units", label: "Unités" },
   { href: "/admin/sequences", label: "Séquences" },
+  { href: "/admin/sessions", label: "Séances" },
   { href: "/admin/access-codes", label: "Codes d'accès" },
 ];
 

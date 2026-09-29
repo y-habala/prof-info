@@ -1,14 +1,13 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseBreadcrumb } from "@/components/courses/course-breadcrumb";
-import { SessionCard } from "@/components/courses/session-card";
 
-export default async function SequencePage({
+export default async function SessionPage({
   params,
 }: {
-  params: Promise<{ level: string; unit: string; sequence: string }>;
+  params: Promise<{ level: string; unit: string; sequence: string; session: string }>;
 }) {
-  const { level: levelId, unit: unitId, sequence: sequenceId } = await params;
+  const { level: levelId, unit: unitId, sequence: sequenceId, session: sessionId } = await params;
   const supabase = await createClient();
 
   const { data: level } = await supabase
@@ -36,7 +35,7 @@ export default async function SequencePage({
 
   const { data: sequence } = await supabase
     .from("sequences")
-    .select("id, title, description")
+    .select("id, title")
     .eq("id", sequenceId)
     .eq("unit_id", unit.id)
     .eq("is_published", true)
@@ -46,12 +45,17 @@ export default async function SequencePage({
     notFound();
   }
 
-  const { data: sessions } = await supabase
+  const { data: session } = await supabase
     .from("sessions")
     .select("id, title, description, duration_minutes")
+    .eq("id", sessionId)
     .eq("sequence_id", sequence.id)
     .eq("is_published", true)
-    .order("order_index");
+    .maybeSingle();
+
+  if (!session) {
+    notFound();
+  }
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
@@ -59,30 +63,20 @@ export default async function SequencePage({
         segments={[
           { label: level.name, href: `/courses/${level.id}` },
           { label: unit.title, href: `/courses/${level.id}/${unit.id}` },
-          { label: sequence.title },
+          { label: sequence.title, href: `/courses/${level.id}/${unit.id}/${sequence.id}` },
+          { label: session.title },
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold">{sequence.title}</h1>
-        {sequence.description ? (
-          <p className="mt-1 text-muted-foreground">{sequence.description}</p>
+        <h1 className="text-2xl font-semibold">{session.title}</h1>
+        {session.duration_minutes ? (
+          <p className="text-sm text-muted-foreground">{session.duration_minutes} min</p>
+        ) : null}
+        {session.description ? (
+          <p className="mt-1 text-muted-foreground">{session.description}</p>
         ) : null}
       </div>
-      {sessions && sessions.length > 0 ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {sessions.map((session) => (
-            <SessionCard
-              key={session.id}
-              levelId={level.id}
-              unitId={unit.id}
-              sequenceId={sequence.id}
-              session={session}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-muted-foreground">Aucune séance disponible pour le moment.</p>
-      )}
+      <p className="text-muted-foreground">Aucun contenu disponible pour le moment.</p>
     </div>
   );
 }
