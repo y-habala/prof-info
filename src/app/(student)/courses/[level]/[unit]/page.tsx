@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseBreadcrumb } from "@/components/courses/course-breadcrumb";
+import { SequenceCard } from "@/components/courses/sequence-card";
 
 export default async function UnitPage({
   params,
@@ -33,6 +34,13 @@ export default async function UnitPage({
     notFound();
   }
 
+  const { data: sequences } = await supabase
+    .from("sequences")
+    .select("id, title, description")
+    .eq("unit_id", unit.id)
+    .eq("is_published", true)
+    .order("order_index");
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <CourseBreadcrumb
@@ -44,7 +52,20 @@ export default async function UnitPage({
           <p className="mt-1 text-muted-foreground">{unit.description}</p>
         ) : null}
       </div>
-      <p className="text-muted-foreground">Aucune séquence disponible pour le moment.</p>
+      {sequences && sequences.length > 0 ? (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+          {sequences.map((sequence) => (
+            <SequenceCard
+              key={sequence.id}
+              levelId={level.id}
+              unitId={unit.id}
+              sequence={sequence}
+            />
+          ))}
+        </div>
+      ) : (
+        <p className="text-muted-foreground">Aucune séquence disponible pour le moment.</p>
+      )}
     </div>
   );
 }
