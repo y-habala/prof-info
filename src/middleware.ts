@@ -1,9 +1,14 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { ACCESS_SESSION_COOKIE, verifyAccessSession } from "@/lib/auth/access-session";
 
-// Admin gate (Supabase Auth session). The student access-code gate is added
-// here in Phase 5, extending the same middleware rather than a second file.
-export async function middleware(request: NextRequest) {
+const STUDENT_PROTECTED_PREFIXES = ["/courses", "/exercises", "/activities", "/exam", "/actualites"];
+
+function isStudentProtectedPath(pathname: string) {
+  return pathname === "/" || STUDENT_PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
+}
+
+async function handleAdminRoute(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
@@ -32,10 +37,9 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { pathname } = request.nextUrl;
-  const isAdminLogin = pathname === "/admin/login";
+  const isAdminLogin = request.nextUrl.pathname === "/admin/login";
 
-  if (pathname.startsWith("/admin") && !isAdminLogin && !user) {
+  if (!isAdminLogin && !user) {
     const url = request.nextUrl.clone();
     url.pathname = "/admin/login";
     return NextResponse.redirect(url);
@@ -50,6 +54,42 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
+async function handleStudentRoute(request: NextRequest) {
+  const token = request.cookies.get(ACCESS_SESSION_COOKIE)?.value;
+  const session = await verifyAccessSession(token);
+
+  if (!session) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/access";
+    url.searchParams.set("redirect", request.nextUrl.pathname);
+    return NextResponse.redirect(url);
+  }
+
+  return NextResponse.next();
+}
+
+export async function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/admin")) {
+    return handleAdminRoute(request);
+  }
+
+  if (isStudentProtectedPath(pathname)) {
+    return handleStudentRoute(request);
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/",
+    "/courses/:path*",
+    "/exercises/:path*",
+    "/activities/:path*",
+    "/exam/:path*",
+    "/actualites/:path*",
+  ],
 };
