@@ -1,10 +1,8 @@
 import { z } from "zod";
 
-// Types usable now (no upstream feature dependency). 'exercise' and
-// 'interactive'/'html' need Phase 12 (Exercices) / Phase 13 (Activités HTML)
-// data to pick from and are added to this union then — the DB check
-// constraint already allows all 8 types, this is a frontend scope choice.
-export const AVAILABLE_BLOCK_TYPES = ["text", "image", "video", "pdf", "file"] as const;
+// 'interactive'/'html' still need Phase 13 (Activités HTML) data to pick
+// from — the DB check constraint already allows them, add here once built.
+export const AVAILABLE_BLOCK_TYPES = ["text", "image", "video", "pdf", "file", "exercise"] as const;
 export type BlockType = (typeof AVAILABLE_BLOCK_TYPES)[number];
 
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
@@ -13,6 +11,7 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   video: "Vidéo",
   pdf: "PDF",
   file: "Fichier",
+  exercise: "Exercice",
 };
 
 const textContentSchema = z.object({
@@ -34,6 +33,9 @@ const fileContentSchema = z.object({
   file_url: z.string().trim().url("URL invalide."),
   file_name: z.string().trim().min(1, "Le nom du fichier est requis.").max(200),
 });
+const exerciseContentSchema = z.object({
+  exercise_id: z.string().uuid("Choisissez un exercice."),
+});
 
 export const blockContentSchemas: Record<BlockType, z.ZodType> = {
   text: textContentSchema,
@@ -41,6 +43,7 @@ export const blockContentSchemas: Record<BlockType, z.ZodType> = {
   video: videoContentSchema,
   pdf: fileContentSchema,
   file: fileContentSchema,
+  exercise: exerciseContentSchema,
 };
 
 export const blockTitleSchema = z.string().trim().max(200).optional().or(z.literal(""));

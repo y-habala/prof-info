@@ -30,6 +30,8 @@ function buildContentFromFormData(type: BlockType, formData: FormData): unknown 
         file_url: formData.get("content_file_url") ?? "",
         file_name: formData.get("content_file_name") ?? "",
       };
+    case "exercise":
+      return { exercise_id: formData.get("content_exercise_id") ?? "" };
   }
 }
 

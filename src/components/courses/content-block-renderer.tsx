@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { toYoutubeEmbedUrl } from "@/lib/utils/youtube";
 import type { BlockContentValues } from "@/components/admin/lesson-contents/block-form-fields";
 import type { BlockType } from "@/schemas/lesson-contents";
@@ -71,6 +73,12 @@ function BlockBody({ block }: { block: PublishedBlock }) {
         >
           Télécharger {block.content.file_name}
         </a>
+      );
+    case "exercise":
+      return (
+        <Button nativeButton={false} render={<Link href={`/exercises/${block.content.exercise_id}`} />}>
+          Commencer l&apos;exercice →
+        </Button>
       );
   }
 }

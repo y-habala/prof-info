@@ -30,6 +30,7 @@ type BlockDialogProps = {
   mode: "create" | "edit";
   sessionId: string;
   nextOrderIndex?: number;
+  exercises?: { id: string; title: string }[];
   initialValues?: {
     id: string;
     type: BlockType;
@@ -43,6 +44,7 @@ export function BlockDialog({
   mode,
   sessionId,
   nextOrderIndex,
+  exercises,
   initialValues,
 }: BlockDialogProps) {
   const [open, setOpen] = useState(false);
@@ -110,7 +112,11 @@ export function BlockDialog({
               <Label htmlFor="title">Titre du bloc (optionnel)</Label>
               <Input id="title" name="title" defaultValue={initialValues?.title ?? ""} />
             </div>
-            <BlockFormFields type={selectedType} initialValues={initialValues?.content} />
+            <BlockFormFields
+              type={selectedType}
+              initialValues={initialValues?.content}
+              exercises={exercises}
+            />
             {error ? (
               <p className="text-sm text-destructive" role="alert">
                 {error}

@@ -51,18 +51,22 @@ function blockPreview(block: BlockRow): string {
     case "pdf":
     case "file":
       return block.content.file_name ?? "";
+    case "exercise":
+      return "";
   }
 }
 
 function SortableBlockRow({
   block,
   sessionId,
+  exercises,
   isPending,
   onToggle,
   onDelete,
 }: {
   block: BlockRow;
   sessionId: string;
+  exercises: { id: string; title: string }[];
   isPending: boolean;
   onToggle: (checked: boolean) => void;
   onDelete: () => void;
@@ -101,6 +105,7 @@ function SortableBlockRow({
       <BlockDialog
         mode="edit"
         sessionId={sessionId}
+        exercises={exercises}
         initialValues={{
           id: block.id,
           type: block.type,
@@ -123,9 +128,11 @@ function SortableBlockRow({
 export function BlocksList({
   sessionId,
   initialBlocks,
+  exercises = [],
 }: {
   sessionId: string;
   initialBlocks: BlockRow[];
+  exercises?: { id: string; title: string }[];
 }) {
   // initialBlocks (from the Server Component, refreshed by revalidatePath
   // after every mutation) is the source of truth — no permanent local copy.
@@ -176,6 +183,7 @@ export function BlocksList({
               key={block.id}
               block={block}
               sessionId={sessionId}
+              exercises={exercises}
               isPending={isPending}
               onToggle={(checked) =>
                 startTransition(() => toggleLessonContentPublished(block.id, sessionId, checked))

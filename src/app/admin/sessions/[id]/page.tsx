@@ -28,11 +28,14 @@ export default async function AdminSessionContentPage({
     notFound();
   }
 
-  const { data: blocks } = await supabase
-    .from("lesson_contents")
-    .select("id, type, title, content, order_index, is_published")
-    .eq("session_id", sessionId)
-    .order("order_index");
+  const [{ data: blocks }, { data: exercises }] = await Promise.all([
+    supabase
+      .from("lesson_contents")
+      .select("id, type, title, content, order_index, is_published")
+      .eq("session_id", sessionId)
+      .order("order_index"),
+    supabase.from("exercises").select("id, title").order("created_at", { ascending: false }),
+  ]);
 
   return (
     <div className="space-y-6">
@@ -49,11 +52,16 @@ export default async function AdminSessionContentPage({
             mode="create"
             sessionId={session.id}
             nextOrderIndex={blocks?.length ?? 0}
+            exercises={exercises ?? []}
             trigger={<Button>+ Ajouter un bloc</Button>}
           />
         </div>
       </div>
-      <BlocksList sessionId={session.id} initialBlocks={(blocks ?? []) as BlockRow[]} />
+      <BlocksList
+        sessionId={session.id}
+        initialBlocks={(blocks ?? []) as BlockRow[]}
+        exercises={exercises ?? []}
+      />
     </div>
   );
 }
