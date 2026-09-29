@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
+import { getCurriculumTree } from "@/lib/curriculum";
 import { Button } from "@/components/ui/button";
 import { ExerciseDialog } from "@/components/admin/exercises/exercise-dialog";
 import { ExercisesTable, type ExerciseRow } from "@/components/admin/exercises/exercises-table";
@@ -11,26 +12,15 @@ export const metadata: Metadata = {
 export default async function AdminExercisesPage() {
   const supabase = await createClient();
 
-  const [{ data: exercises }, { data: levels }, { data: units }, { data: sequences }, { data: sessions }] =
-    await Promise.all([
-      supabase
-        .from("exercises")
-        .select(
-          "id, title, description, level_id, unit_id, sequence_id, session_id, duration_minutes, is_published, exercise_questions(count)"
-        )
-        .order("created_at", { ascending: false }),
-      supabase.from("levels").select("id, name").order("order_index"),
-      supabase.from("units").select("id, title, level_id").order("order_index"),
-      supabase.from("sequences").select("id, title, unit_id").order("order_index"),
-      supabase.from("sessions").select("id, title, sequence_id").order("order_index"),
-    ]);
-
-  const tree = {
-    levels: levels ?? [],
-    units: units ?? [],
-    sequences: sequences ?? [],
-    sessions: sessions ?? [],
-  };
+  const [{ data: exercises }, tree] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select(
+        "id, title, description, level_id, unit_id, sequence_id, session_id, duration_minutes, is_published, exercise_questions(count)"
+      )
+      .order("created_at", { ascending: false }),
+    getCurriculumTree(),
+  ]);
 
   const rows: ExerciseRow[] = (exercises ?? []).map((e) => ({
     id: e.id,

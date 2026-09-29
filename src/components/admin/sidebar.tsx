@@ -13,6 +13,7 @@ const NAV_ITEMS = [
   { href: "/admin/sequences", label: "Séquences" },
   { href: "/admin/sessions", label: "Séances" },
   { href: "/admin/exercises", label: "Exercices" },
+  { href: "/admin/html-pages", label: "Activités HTML" },
   { href: "/admin/access-codes", label: "Codes d'accès" },
   { href: "/admin/files", label: "Fichiers" },
 ];
