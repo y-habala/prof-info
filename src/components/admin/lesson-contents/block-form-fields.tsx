@@ -1,6 +1,10 @@
+"use client";
+
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { FileUploadField } from "@/components/admin/files/file-upload-field";
 import type { BlockType } from "@/schemas/lesson-contents";
 
 export type BlockContentValues = {
@@ -20,6 +24,10 @@ export function BlockFormFields({
   type: BlockType;
   initialValues?: BlockContentValues;
 }) {
+  const [imageUrl, setImageUrl] = useState(initialValues?.url ?? "");
+  const [fileUrl, setFileUrl] = useState(initialValues?.file_url ?? "");
+  const [fileName, setFileName] = useState(initialValues?.file_name ?? "");
+
   switch (type) {
     case "text":
       return (
@@ -43,8 +51,14 @@ export function BlockFormFields({
               id="content_url"
               name="content_url"
               placeholder="https://..."
-              defaultValue={initialValues?.url}
+              value={imageUrl}
+              onChange={(e) => setImageUrl(e.target.value)}
               required
+            />
+            <FileUploadField
+              bucket="lesson-images"
+              accept="image/*"
+              onUploaded={(url) => setImageUrl(url)}
             />
           </div>
           <div className="space-y-2">
@@ -86,8 +100,17 @@ export function BlockFormFields({
               id="content_file_url"
               name="content_file_url"
               placeholder="https://..."
-              defaultValue={initialValues?.file_url}
+              value={fileUrl}
+              onChange={(e) => setFileUrl(e.target.value)}
               required
+            />
+            <FileUploadField
+              bucket="lesson-files"
+              accept={type === "pdf" ? "application/pdf" : undefined}
+              onUploaded={(url, uploadedName) => {
+                setFileUrl(url);
+                if (!fileName) setFileName(uploadedName);
+              }}
             />
           </div>
           <div className="space-y-2">
@@ -96,7 +119,8 @@ export function BlockFormFields({
               id="content_file_name"
               name="content_file_name"
               placeholder="ex. cours-reseaux.pdf"
-              defaultValue={initialValues?.file_name}
+              value={fileName}
+              onChange={(e) => setFileName(e.target.value)}
               required
             />
           </div>
