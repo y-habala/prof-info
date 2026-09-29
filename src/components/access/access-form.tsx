@@ -1,12 +1,20 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
+// Only a same-origin relative path is honored — never redirect off-site
+// based on a query param an attacker could craft into a shared link.
+function safeRedirectTarget(raw: string | null): string {
+  if (raw && raw.startsWith("/") && !raw.startsWith("//")) return raw;
+  return "/";
+}
+
 export function AccessForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -29,7 +37,7 @@ export function AccessForm() {
         setError(body?.error ?? "Une erreur est survenue.");
         return;
       }
-      router.push("/");
+      router.push(safeRedirectTarget(searchParams.get("redirect")));
       router.refresh();
     });
   }

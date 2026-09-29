@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { AccessForm } from "@/components/access/access-form";
 
@@ -17,7 +18,9 @@ export default function AccessPage() {
           </p>
         </CardHeader>
         <CardContent>
-          <AccessForm />
+          <Suspense fallback={null}>
+            <AccessForm />
+          </Suspense>
         </CardContent>
       </Card>
     </div>
