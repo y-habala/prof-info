@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
 import { ExamAttemptsTable } from "@/components/admin/results/exam-attempts-table";
 
 export const metadata: Metadata = {
@@ -35,7 +36,16 @@ export default async function AdminExamResultsPage({
         <Link href="/admin/results" className="text-sm text-muted-foreground hover:text-foreground">
           ← Retour aux résultats
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Résultats — {exam.title}</h1>
+        <div className="mt-2 flex items-center justify-between">
+          <h1 className="text-2xl font-semibold">Résultats — {exam.title}</h1>
+          <Button
+            variant="outline"
+            nativeButton={false}
+            render={<a href={`/api/admin/results/export?type=exam&id=${exam.id}`} />}
+          >
+            Exporter (Excel)
+          </Button>
+        </div>
       </div>
       <ExamAttemptsTable examId={exam.id} attempts={attempts ?? []} />
     </div>

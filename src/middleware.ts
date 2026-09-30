@@ -85,7 +85,7 @@ async function handleStudentRoute(request: NextRequest) {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  if (pathname.startsWith("/admin")) {
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
     return handleAdminRoute(request);
   }
 
@@ -107,5 +107,6 @@ export const config = {
     "/actualites/:path*",
     "/api/exercise/:path*",
     "/api/exam/:path*",
+    "/api/admin/:path*",
   ],
 };
