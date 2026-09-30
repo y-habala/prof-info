@@ -40,12 +40,15 @@ export const examQuestionFormSchema = z.object({
 
 export type ExamQuestionFormValues = z.infer<typeof examQuestionFormSchema>;
 
-// /exam entry form — secret code + free-text student identity (no accounts,
-// so max_attempts is matched on name+firstname only — a documented, accepted
-// limitation, see architecture doc).
+// /exam entry form — secret code + student identity (no accounts, so
+// max_attempts is matched on name+firstname only — a documented, accepted
+// limitation, see architecture doc). The student never picks a level (the
+// exam's own level_id fixes it) — only their class NUMBER within that level,
+// so the server can build a canonical "Niveau-N" label reliable enough to
+// group by class in the devoir report (free text would defeat that).
 export const examVerifySchema = z.object({
   secretCode: z.string().regex(/^\d{4}$/),
   studentName: z.string().trim().min(1).max(100),
   studentFirstName: z.string().trim().min(1).max(100),
-  studentClass: z.string().trim().max(100).optional().or(z.literal("")),
+  classNumber: z.coerce.number().int().positive().max(999),
 });

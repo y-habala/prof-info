@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
   }
-  const { secretCode, studentName, studentFirstName, studentClass } = parsed.data;
+  const { secretCode, studentName, studentFirstName, classNumber } = parsed.data;
   const ip = getClientIp(request);
 
   if (await isRateLimited("exam", ip, secretCode)) {
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   // we already have a genuine match, so they're free to be specific.
   const { data: exam } = await admin
     .from("exams")
-    .select("id, duration_minutes, start_at, end_at, max_attempts")
+    .select("id, duration_minutes, start_at, end_at, max_attempts, levels(name)")
     .eq("secret_code", secretCode)
     .eq("is_published", true)
     .eq("is_active", true)
@@ -86,13 +86,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Nombre maximum de tentatives atteint." }, { status: 403 });
   }
 
+  const levelName = (exam.levels as unknown as { name: string } | null)?.name;
+  const studentClass = levelName ? `${levelName}-${classNumber}` : String(classNumber);
+
   const { data: attempt, error: attemptError } = await admin
     .from("exam_attempts")
     .insert({
       exam_id: exam.id,
       student_name: studentName,
       student_first_name: studentFirstName,
-      student_class: studentClass || null,
+      student_class: studentClass,
       student_code: accessCode.code,
       ip_address: ip,
     })

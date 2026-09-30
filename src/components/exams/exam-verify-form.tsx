@@ -11,7 +11,7 @@ export function ExamVerifyForm() {
   const [secretCode, setSecretCode] = useState("");
   const [studentFirstName, setStudentFirstName] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [studentClass, setStudentClass] = useState("");
+  const [classNumber, setClassNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -25,12 +25,21 @@ export function ExamVerifyForm() {
       setError("Nom et prénom sont requis.");
       return;
     }
+    if (!classNumber || Number(classNumber) < 1) {
+      setError("Le numéro de classe est requis.");
+      return;
+    }
     setError(null);
     startTransition(async () => {
       const res = await fetch("/api/exam/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secretCode, studentName, studentFirstName, studentClass }),
+        body: JSON.stringify({
+          secretCode,
+          studentName,
+          studentFirstName,
+          classNumber: Number(classNumber),
+        }),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
@@ -70,8 +79,16 @@ export function ExamVerifyForm() {
         <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="studentClass">Classe (optionnel)</Label>
-        <Input id="studentClass" value={studentClass} onChange={(e) => setStudentClass(e.target.value)} />
+        <Label htmlFor="classNumber">Numéro de classe</Label>
+        <Input
+          id="classNumber"
+          value={classNumber}
+          onChange={(e) => setClassNumber(e.target.value.replace(/\D/g, "").slice(0, 3))}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="ex. 3"
+          required
+        />
       </div>
       {error ? (
         <p className="text-sm text-destructive" role="alert">
