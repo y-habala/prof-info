@@ -21,24 +21,15 @@ function summarize(percentages: (number | null)[]): AttemptSummary {
 export default async function AdminResultsPage() {
   const supabase = await createClient();
 
-  const [{ data: exams }, { data: examAttempts }, { data: exercises }, { data: exerciseAttempts }] =
-    await Promise.all([
-      supabase.from("exams").select("id, title").order("created_at", { ascending: false }),
-      supabase.from("exam_attempts").select("exam_id, percentage"),
-      supabase.from("exercises").select("id, title").order("created_at", { ascending: false }),
-      supabase.from("exercise_attempts").select("exercise_id, percentage"),
-    ]);
+  const [{ data: exams }, { data: examAttempts }] = await Promise.all([
+    supabase.from("exams").select("id, title").order("created_at", { ascending: false }),
+    supabase.from("exam_attempts").select("exam_id, percentage"),
+  ]);
 
   const examRows = (exams ?? []).map((exam) => ({
     id: exam.id,
     title: exam.title,
     ...summarize((examAttempts ?? []).filter((a) => a.exam_id === exam.id).map((a) => a.percentage)),
-  }));
-
-  const exerciseRows = (exercises ?? []).map((ex) => ({
-    id: ex.id,
-    title: ex.title,
-    ...summarize((exerciseAttempts ?? []).filter((a) => a.exercise_id === ex.id).map((a) => a.percentage)),
   }));
 
   return (
@@ -79,45 +70,6 @@ export default async function AdminResultsPage() {
                     <TableCell className="text-right">
                       <Link
                         href={`/admin/results/exams/${row.id}`}
-                        className="text-sm text-muted-foreground hover:text-foreground hover:underline"
-                      >
-                        Voir les résultats →
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Exercices</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {exerciseRows.length === 0 ? (
-            <p className="text-muted-foreground">Aucun exercice pour le moment.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Titre</TableHead>
-                  <TableHead>Tentatives</TableHead>
-                  <TableHead>Moyenne</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {exerciseRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.title}</TableCell>
-                    <TableCell>{row.count}</TableCell>
-                    <TableCell>{row.avgPercentage !== null ? `${row.avgPercentage} %` : "—"}</TableCell>
-                    <TableCell className="text-right">
-                      <Link
-                        href={`/admin/results/exercises/${row.id}`}
                         className="text-sm text-muted-foreground hover:text-foreground hover:underline"
                       >
                         Voir les résultats →

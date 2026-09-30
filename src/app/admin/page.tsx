@@ -25,16 +25,6 @@ function StatCard({ label, value, sublabel }: { label: string; value: number | s
   );
 }
 
-type RecentAttempt = {
-  id: string;
-  type: "exercice" | "examen";
-  title: string;
-  studentName: string;
-  studentFirstName: string;
-  percentage: number | null;
-  date: string;
-};
-
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
@@ -51,7 +41,6 @@ export default async function AdminDashboardPage() {
     announcementsCount,
     announcementsPublished,
     activeAccessCodesCount,
-    exerciseAttemptsCount,
     examAttemptsCount,
   ] = await Promise.all([
     countRows(supabase, "levels"),
@@ -66,58 +55,32 @@ export default async function AdminDashboardPage() {
     countRows(supabase, "announcements"),
     countRows(supabase, "announcements", true),
     supabase.from("access_codes").select("id", { count: "exact", head: true }).eq("is_active", true).then((r) => r.count ?? 0),
-    countRows(supabase, "exercise_attempts"),
     countRows(supabase, "exam_attempts"),
   ]);
 
-  const [{ data: recentExercise }, { data: recentExam }, { data: avgExercise }, { data: avgExam }] =
-    await Promise.all([
-      supabase
-        .from("exercise_attempts")
-        .select("id, student_name, student_first_name, percentage, completed_at, exercises(title)")
-        .not("completed_at", "is", null)
-        .order("completed_at", { ascending: false })
-        .limit(8),
-      supabase
-        .from("exam_attempts")
-        .select("id, student_name, student_first_name, percentage, submitted_at, exams(title)")
-        .not("submitted_at", "is", null)
-        .order("submitted_at", { ascending: false })
-        .limit(8),
-      supabase.from("exercise_attempts").select("percentage").not("percentage", "is", null),
-      supabase.from("exam_attempts").select("percentage").not("percentage", "is", null),
-    ]);
+  const [{ data: recentExam }, { data: avgExam }] = await Promise.all([
+    supabase
+      .from("exam_attempts")
+      .select("id, student_name, student_first_name, percentage, submitted_at, exams(title)")
+      .not("submitted_at", "is", null)
+      .order("submitted_at", { ascending: false })
+      .limit(8),
+    supabase.from("exam_attempts").select("percentage").not("percentage", "is", null),
+  ]);
 
-  const recent: RecentAttempt[] = [
-    ...(recentExercise ?? []).map((a) => ({
-      id: a.id,
-      type: "exercice" as const,
-      title: (a.exercises as unknown as { title: string } | null)?.title ?? "",
-      studentName: a.student_name,
-      studentFirstName: a.student_first_name,
-      percentage: a.percentage,
-      date: a.completed_at as string,
-    })),
-    ...(recentExam ?? []).map((a) => ({
-      id: a.id,
-      type: "examen" as const,
-      title: (a.exams as unknown as { title: string } | null)?.title ?? "",
-      studentName: a.student_name,
-      studentFirstName: a.student_first_name,
-      percentage: a.percentage,
-      date: a.submitted_at as string,
-    })),
-  ]
-    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 8);
+  const recent = (recentExam ?? []).map((a) => ({
+    id: a.id,
+    title: (a.exams as unknown as { title: string } | null)?.title ?? "",
+    studentName: a.student_name,
+    studentFirstName: a.student_first_name,
+    percentage: a.percentage,
+    date: a.submitted_at as string,
+  }));
 
-  const allPercentages = [
-    ...(avgExercise ?? []).map((a) => a.percentage as number),
-    ...(avgExam ?? []).map((a) => a.percentage as number),
-  ];
+  const examPercentages = (avgExam ?? []).map((a) => a.percentage as number);
   const overallAverage =
-    allPercentages.length > 0
-      ? Math.round((allPercentages.reduce((sum, p) => sum + p, 0) / allPercentages.length) * 10) / 10
+    examPercentages.length > 0
+      ? Math.round((examPercentages.reduce((sum, p) => sum + p, 0) / examPercentages.length) * 10) / 10
       : null;
 
   return (
@@ -135,12 +98,11 @@ export default async function AdminDashboardPage() {
         <StatCard
           label="Moyenne générale"
           value={overallAverage !== null ? `${overallAverage} %` : "—"}
-          sublabel="Exercices + examens"
+          sublabel="Examens"
         />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <StatCard label="Tentatives d'exercices" value={exerciseAttemptsCount} />
         <StatCard label="Tentatives d'examens" value={examAttemptsCount} />
       </div>
 
@@ -154,9 +116,9 @@ export default async function AdminDashboardPage() {
           ) : (
             <div className="space-y-2">
               {recent.map((a) => (
-                <div key={`${a.type}-${a.id}`} className="flex items-center justify-between border-b pb-2 text-sm last:border-0">
+                <div key={a.id} className="flex items-center justify-between border-b pb-2 text-sm last:border-0">
                   <div className="flex items-center gap-2">
-                    <Badge variant="secondary">{a.type === "exercice" ? "Exercice" : "Examen"}</Badge>
+                    <Badge variant="secondary">Examen</Badge>
                     <span>
                       {a.studentFirstName} {a.studentName}
                     </span>

@@ -9,10 +9,3 @@ export async function deleteExamAttempt(attemptId: string, examId: string) {
   revalidatePath(`/admin/results/exams/${examId}`);
   revalidatePath("/admin/results");
 }
-
-export async function deleteExerciseAttempt(attemptId: string, exerciseId: string) {
-  const supabase = await createClient();
-  await supabase.from("exercise_attempts").delete().eq("id", attemptId);
-  revalidatePath(`/admin/results/exercises/${exerciseId}`);
-  revalidatePath("/admin/results");
-}

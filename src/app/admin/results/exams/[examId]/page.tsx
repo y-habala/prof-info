@@ -41,7 +41,7 @@ export default async function AdminExamResultsPage({
           <Button
             variant="outline"
             nativeButton={false}
-            render={<a href={`/api/admin/results/export?type=exam&id=${exam.id}`} />}
+            render={<a href={`/api/admin/results/export?id=${exam.id}`} />}
           >
             Exporter (Excel)
           </Button>
