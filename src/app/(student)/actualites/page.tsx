@@ -3,7 +3,8 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ANNOUNCEMENT_TYPE_LABELS, type ANNOUNCEMENT_TYPES } from "@/schemas/announcements";
+import { SearchFilterBar } from "@/components/layout/search-filter-bar";
+import { ANNOUNCEMENT_TYPES, ANNOUNCEMENT_TYPE_LABELS } from "@/schemas/announcements";
 
 export const metadata: Metadata = {
   title: "Actualités — Plateforme Informatique",
@@ -14,17 +15,33 @@ function formatDate(iso: string | null) {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
 }
 
-export default async function AnnouncementsPage() {
+export default async function AnnouncementsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string; type?: string }>;
+}) {
+  const { q, type } = await searchParams;
   const supabase = await createClient();
-  const { data: announcements } = await supabase
+
+  let query = supabase
     .from("announcements")
     .select("id, title, slug, description, image_url, type, published_at")
-    .eq("is_published", true)
-    .order("published_at", { ascending: false });
+    .eq("is_published", true);
+  if (type) query = query.eq("type", type);
+  if (q) query = query.ilike("title", `%${q}%`);
+  const { data: announcements } = await query.order("published_at", { ascending: false });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <h1 className="text-2xl font-semibold">Actualités</h1>
+      <SearchFilterBar
+        searchPlaceholder="Rechercher une actualité…"
+        searchDefault={q}
+        filterName="type"
+        filterLabel="Type"
+        filterOptions={ANNOUNCEMENT_TYPES.map((t) => ({ value: t, label: ANNOUNCEMENT_TYPE_LABELS[t] }))}
+        filterDefault={type}
+      />
       {announcements && announcements.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {announcements.map((item) => (
@@ -53,7 +70,7 @@ export default async function AnnouncementsPage() {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">Aucune actualité pour le moment.</p>
+        <p className="text-muted-foreground">Aucune actualité ne correspond à votre recherche.</p>
       )}
     </div>
   );
