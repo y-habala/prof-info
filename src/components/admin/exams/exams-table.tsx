@@ -15,12 +15,14 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { ExamDialog } from "./exam-dialog";
 import { toggleExamPublished, toggleExamActive, deleteExam } from "@/actions/exams";
+import type { DevoirSession } from "@/schemas/devoirs";
 
 export type ExamRow = {
   id: string;
   title: string;
   description: string | null;
   level_id: string | null;
+  devoir_id: string | null;
   duration_minutes: number;
   secret_code: string;
   start_at: string | null;
@@ -32,8 +34,17 @@ export type ExamRow = {
 };
 
 type Level = { id: string; name: string };
+type Devoir = { id: string; title: string; session: DevoirSession; level_name: string };
 
-export function ExamsTable({ exams, levels }: { exams: ExamRow[]; levels: Level[] }) {
+export function ExamsTable({
+  exams,
+  levels,
+  devoirs,
+}: {
+  exams: ExamRow[];
+  levels: Level[];
+  devoirs: Devoir[];
+}) {
   const [isPending, startTransition] = useTransition();
 
   if (exams.length === 0) {
@@ -91,11 +102,13 @@ export function ExamsTable({ exams, levels }: { exams: ExamRow[]; levels: Level[
               <ExamDialog
                 mode="edit"
                 levels={levels}
+                devoirs={devoirs}
                 initialValues={{
                   id: row.id,
                   title: row.title,
                   description: row.description,
                   levelId: row.level_id,
+                  devoirId: row.devoir_id,
                   durationMinutes: row.duration_minutes,
                   secretCode: row.secret_code,
                   startAt: row.start_at,

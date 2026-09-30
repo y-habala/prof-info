@@ -4,6 +4,7 @@ export const examFormSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis.").max(200),
   description: z.string().trim().max(1000).optional().or(z.literal("")),
   levelId: z.string().uuid().optional().or(z.literal("")),
+  devoirId: z.string().uuid().optional().or(z.literal("")),
   durationMinutes: z.coerce.number().int().positive(),
   secretCode: z.string().regex(/^\d{4}$/, "Le code doit contenir exactement 4 chiffres."),
   startAt: z.string().optional().or(z.literal("")),
