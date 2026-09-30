@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-geist-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -39,6 +39,14 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
+  --color-level-1: var(--level-1);
+  --color-level-1-foreground: var(--level-1-foreground);
+  --color-level-2: var(--level-2);
+  --color-level-2-foreground: var(--level-2-foreground);
+  --color-level-3: var(--level-3);
+  --color-level-3-foreground: var(--level-3-foreground);
+  --color-level-4: var(--level-4);
+  --color-level-4-foreground: var(--level-4-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -49,30 +57,34 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* A deliberate blue identity (tech/code association) — this was a plain
+     grayscale shadcn default (primary oklch(...0 0), zero chroma) until
+     now, which combined with the font-sans bug below made the whole app
+     render as unstyled black-on-white Times New Roman since Phase 1. */
+  --background: oklch(0.995 0.002 260);
+  --foreground: oklch(0.18 0.02 260);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.18 0.02 260);
+  --primary: oklch(0.52 0.19 258);
+  --primary-foreground: oklch(0.99 0 0);
+  --secondary: oklch(0.96 0.008 260);
+  --secondary-foreground: oklch(0.25 0.03 260);
+  --muted: oklch(0.96 0.008 260);
+  --muted-foreground: oklch(0.5 0.02 260);
+  --accent: oklch(0.94 0.03 258);
+  --accent-foreground: oklch(0.3 0.1 258);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --border: oklch(0.9 0.01 260);
+  --input: oklch(0.9 0.01 260);
+  --ring: oklch(0.6 0.15 258);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.75rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -81,6 +93,17 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Per-level accent pair, cycled by order_index in LevelCard — mirrors
+     the "each level gets its own soft accent color" pattern (a genuinely
+     useful organizing idea, not a copied visual asset). */
+  --level-1: oklch(0.95 0.045 175);
+  --level-1-foreground: oklch(0.42 0.1 175);
+  --level-2: oklch(0.96 0.05 75);
+  --level-2-foreground: oklch(0.48 0.13 65);
+  --level-3: oklch(0.95 0.04 300);
+  --level-3-foreground: oklch(0.48 0.15 300);
+  --level-4: oklch(0.95 0.035 230);
+  --level-4-foreground: oklch(0.45 0.14 240);
 }
 
 .dark {
@@ -90,23 +113,31 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
+  --primary: oklch(0.7 0.16 258);
+  --primary-foreground: oklch(0.145 0.02 260);
   --secondary: oklch(0.269 0 0);
   --secondary-foreground: oklch(0.985 0 0);
   --muted: oklch(0.269 0 0);
   --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.3 0.06 258);
+  --accent-foreground: oklch(0.9 0.03 258);
   --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  --ring: oklch(0.65 0.15 258);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
+  --level-1: oklch(0.3 0.045 175);
+  --level-1-foreground: oklch(0.82 0.08 175);
+  --level-2: oklch(0.32 0.05 75);
+  --level-2-foreground: oklch(0.85 0.1 75);
+  --level-3: oklch(0.3 0.04 300);
+  --level-3-foreground: oklch(0.82 0.1 300);
+  --level-4: oklch(0.3 0.035 230);
+  --level-4-foreground: oklch(0.8 0.1 230);
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { MousePointerClick } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SearchFilterBar } from "@/components/layout/search-filter-bar";
@@ -32,7 +33,7 @@ export default async function ActivitiesPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold">Activités</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Activités</h1>
       <SearchFilterBar
         searchPlaceholder="Rechercher une activité…"
         searchDefault={q}
@@ -45,9 +46,12 @@ export default async function ActivitiesPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {pages.map((page) => (
             <Link key={page.id} href={`/activities/${page.slug}`}>
-              <Card className="h-full transition-colors hover:border-foreground/30">
+              <Card className="h-full transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
-                  <CardTitle>{page.title}</CardTitle>
+                  <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <MousePointerClick className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">{page.title}</CardTitle>
                 </CardHeader>
                 {page.description ? (
                   <CardContent>

@@ -76,7 +76,7 @@ export default async function SessionPage({
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold">{session.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{session.title}</h1>
         {session.duration_minutes ? (
           <p className="text-sm text-muted-foreground">{session.duration_minutes} min</p>
         ) : null}

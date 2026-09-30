@@ -47,7 +47,7 @@ export default async function UnitPage({
         segments={[{ label: level.name, href: `/courses/${level.id}` }, { label: unit.title }]}
       />
       <div>
-        <h1 className="text-2xl font-semibold">{unit.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{unit.title}</h1>
         {unit.description ? (
           <p className="mt-1 text-muted-foreground">{unit.description}</p>
         ) : null}

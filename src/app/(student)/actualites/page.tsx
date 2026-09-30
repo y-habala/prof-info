@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +34,7 @@ export default async function AnnouncementsPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold">Actualités</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Actualités</h1>
       <SearchFilterBar
         searchPlaceholder="Rechercher une actualité…"
         searchDefault={q}
@@ -46,11 +47,15 @@ export default async function AnnouncementsPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {announcements.map((item) => (
             <Link key={item.id} href={`/actualites/${item.slug}`}>
-              <Card className="h-full overflow-hidden transition-colors hover:border-foreground/30">
+              <Card className="h-full overflow-hidden transition-all hover:-translate-y-0.5 hover:shadow-md">
                 {item.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={item.image_url} alt="" className="h-40 w-full object-cover" />
-                ) : null}
+                ) : (
+                  <div className="flex h-40 w-full items-center justify-center bg-accent">
+                    <Megaphone className="size-10 text-accent-foreground" />
+                  </div>
+                )}
                 <CardHeader>
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary">
@@ -58,7 +63,7 @@ export default async function AnnouncementsPage({
                     </Badge>
                     <span className="text-xs text-muted-foreground">{formatDate(item.published_at)}</span>
                   </div>
-                  <CardTitle>{item.title}</CardTitle>
+                  <CardTitle className="text-base">{item.title}</CardTitle>
                 </CardHeader>
                 {item.description ? (
                   <CardContent>

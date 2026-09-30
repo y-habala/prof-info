@@ -63,7 +63,7 @@ export default async function SequencePage({
         ]}
       />
       <div>
-        <h1 className="text-2xl font-semibold">{sequence.title}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{sequence.title}</h1>
         {sequence.description ? (
           <p className="mt-1 text-muted-foreground">{sequence.description}</p>
         ) : null}

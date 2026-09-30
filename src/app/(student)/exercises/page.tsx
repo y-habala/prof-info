@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { ListChecks, Clock } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { SearchFilterBar } from "@/components/layout/search-filter-bar";
@@ -32,7 +33,7 @@ export default async function ExercisesPage({
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold">Exercices</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Exercices</h1>
       <SearchFilterBar
         searchPlaceholder="Rechercher un exercice…"
         searchDefault={q}
@@ -45,11 +46,17 @@ export default async function ExercisesPage({
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {exercises.map((ex) => (
             <Link key={ex.id} href={`/exercises/${ex.id}`}>
-              <Card className="h-full transition-colors hover:border-foreground/30">
+              <Card className="h-full transition-all hover:-translate-y-0.5 hover:shadow-md">
                 <CardHeader>
-                  <CardTitle>{ex.title}</CardTitle>
+                  <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+                    <ListChecks className="size-5" />
+                  </div>
+                  <CardTitle className="text-base">{ex.title}</CardTitle>
                   {ex.duration_minutes ? (
-                    <p className="text-sm text-muted-foreground">{ex.duration_minutes} min</p>
+                    <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <Clock className="size-3.5" />
+                      {ex.duration_minutes} min
+                    </p>
                   ) : null}
                 </CardHeader>
                 {ex.description ? (

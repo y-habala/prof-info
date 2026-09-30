@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Code2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,7 +23,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-40 border-b bg-background">
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-        <Link href="/" className="font-semibold">
+        <Link href="/" className="flex items-center gap-2 font-semibold">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Code2 className="size-4" />
+          </span>
           Plateforme Informatique
         </Link>
 
@@ -34,7 +37,7 @@ export function Header() {
               href={link.href}
               className={cn(
                 "text-sm text-muted-foreground hover:text-foreground",
-                pathname === link.href && "font-medium text-foreground"
+                pathname === link.href && "font-medium text-primary"
               )}
             >
               {link.label}
@@ -71,7 +74,7 @@ export function Header() {
                 onClick={() => setMobileOpen(false)}
                 className={cn(
                   "py-2 text-sm text-muted-foreground hover:text-foreground",
-                  pathname === link.href && "font-medium text-foreground"
+                  pathname === link.href && "font-medium text-primary"
                 )}
               >
                 {link.label}

@@ -16,11 +16,11 @@ export default async function CoursesPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
-      <h1 className="text-2xl font-semibold">Cours</h1>
+      <h1 className="text-3xl font-bold tracking-tight">Cours</h1>
       {levels && levels.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          {levels.map((level) => (
-            <LevelCard key={level.id} level={level} />
+          {levels.map((level, i) => (
+            <LevelCard key={level.id} level={level} index={i} />
           ))}
         </div>
       ) : (

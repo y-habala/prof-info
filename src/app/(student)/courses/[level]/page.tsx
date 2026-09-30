@@ -32,7 +32,7 @@ export default async function LevelPage({
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <CourseBreadcrumb segments={[{ label: level.name }]} />
       <div>
-        <h1 className="text-2xl font-semibold">{level.name}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{level.name}</h1>
         {level.description ? (
           <p className="mt-1 text-muted-foreground">{level.description}</p>
         ) : null}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { PlayCircle, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export type Session = {
@@ -21,11 +22,17 @@ export function SessionCard({
 }) {
   return (
     <Link href={`/courses/${levelId}/${unitId}/${sequenceId}/${session.id}`}>
-      <Card className="h-full transition-colors hover:border-foreground/30">
+      <Card className="h-full transition-all hover:-translate-y-0.5 hover:shadow-md">
         <CardHeader>
-          <CardTitle>{session.title}</CardTitle>
+          <div className="mb-1 flex size-11 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+            <PlayCircle className="size-5" />
+          </div>
+          <CardTitle className="text-base">{session.title}</CardTitle>
           {session.duration_minutes ? (
-            <p className="text-sm text-muted-foreground">{session.duration_minutes} min</p>
+            <p className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Clock className="size-3.5" />
+              {session.duration_minutes} min
+            </p>
           ) : null}
         </CardHeader>
         {session.description ? (
