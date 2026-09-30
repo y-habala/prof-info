@@ -31,6 +31,7 @@ type BlockDialogProps = {
   sessionId: string;
   nextOrderIndex?: number;
   exercises?: { id: string; title: string }[];
+  htmlPages?: { id: string; title: string }[];
   initialValues?: {
     id: string;
     type: BlockType;
@@ -45,6 +46,7 @@ export function BlockDialog({
   sessionId,
   nextOrderIndex,
   exercises,
+  htmlPages,
   initialValues,
 }: BlockDialogProps) {
   const [open, setOpen] = useState(false);
@@ -116,6 +118,7 @@ export function BlockDialog({
               type={selectedType}
               initialValues={initialValues?.content}
               exercises={exercises}
+              htmlPages={htmlPages}
             />
             {error ? (
               <p className="text-sm text-destructive" role="alert">

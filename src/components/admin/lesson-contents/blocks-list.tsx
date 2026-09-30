@@ -40,7 +40,7 @@ export type BlockRow = {
   is_published: boolean;
 };
 
-function blockPreview(block: BlockRow): string {
+function blockPreview(block: BlockRow, htmlPages: { id: string; title: string }[]): string {
   switch (block.type) {
     case "text":
       return block.content.text?.slice(0, 80) ?? "";
@@ -53,6 +53,8 @@ function blockPreview(block: BlockRow): string {
       return block.content.file_name ?? "";
     case "exercise":
       return "";
+    case "html":
+      return htmlPages.find((p) => p.id === block.content.html_page_id)?.title ?? "";
   }
 }
 
@@ -60,6 +62,7 @@ function SortableBlockRow({
   block,
   sessionId,
   exercises,
+  htmlPages,
   isPending,
   onToggle,
   onDelete,
@@ -67,6 +70,7 @@ function SortableBlockRow({
   block: BlockRow;
   sessionId: string;
   exercises: { id: string; title: string }[];
+  htmlPages: { id: string; title: string }[];
   isPending: boolean;
   onToggle: (checked: boolean) => void;
   onDelete: () => void;
@@ -94,7 +98,7 @@ function SortableBlockRow({
       <Badge variant="secondary">{BLOCK_TYPE_LABELS[block.type]}</Badge>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium">{block.title || "(sans titre)"}</p>
-        <p className="truncate text-xs text-muted-foreground">{blockPreview(block)}</p>
+        <p className="truncate text-xs text-muted-foreground">{blockPreview(block, htmlPages)}</p>
       </div>
       <div className="flex items-center gap-2">
         <Switch checked={block.is_published} disabled={isPending} onCheckedChange={onToggle} />
@@ -106,6 +110,7 @@ function SortableBlockRow({
         mode="edit"
         sessionId={sessionId}
         exercises={exercises}
+        htmlPages={htmlPages}
         initialValues={{
           id: block.id,
           type: block.type,
@@ -129,10 +134,12 @@ export function BlocksList({
   sessionId,
   initialBlocks,
   exercises = [],
+  htmlPages = [],
 }: {
   sessionId: string;
   initialBlocks: BlockRow[];
   exercises?: { id: string; title: string }[];
+  htmlPages?: { id: string; title: string }[];
 }) {
   // initialBlocks (from the Server Component, refreshed by revalidatePath
   // after every mutation) is the source of truth — no permanent local copy.
@@ -184,6 +191,7 @@ export function BlocksList({
               block={block}
               sessionId={sessionId}
               exercises={exercises}
+              htmlPages={htmlPages}
               isPending={isPending}
               onToggle={(checked) =>
                 startTransition(() => toggleLessonContentPublished(block.id, sessionId, checked))

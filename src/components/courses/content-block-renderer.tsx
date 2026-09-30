@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toYoutubeEmbedUrl } from "@/lib/utils/youtube";
+import { SandboxedActivity } from "@/components/activities/sandboxed-activity";
 import type { BlockContentValues } from "@/components/admin/lesson-contents/block-form-fields";
 import type { BlockType } from "@/schemas/lesson-contents";
 
@@ -12,7 +13,19 @@ export type PublishedBlock = {
   content: BlockContentValues;
 };
 
-function BlockBody({ block }: { block: PublishedBlock }) {
+export type HtmlPageCode = {
+  html_content: string;
+  css_content: string;
+  javascript_content: string;
+};
+
+function BlockBody({
+  block,
+  htmlPages,
+}: {
+  block: PublishedBlock;
+  htmlPages: Record<string, HtmlPageCode>;
+}) {
   switch (block.type) {
     case "text":
       return <p className="whitespace-pre-wrap text-sm leading-relaxed">{block.content.text}</p>;
@@ -80,14 +93,31 @@ function BlockBody({ block }: { block: PublishedBlock }) {
           Commencer l&apos;exercice →
         </Button>
       );
+    case "html": {
+      const page = block.content.html_page_id ? htmlPages[block.content.html_page_id] : undefined;
+      if (!page) return null;
+      return (
+        <SandboxedActivity
+          html={page.html_content}
+          css={page.css_content}
+          javascript={page.javascript_content}
+        />
+      );
+    }
   }
 }
 
-export function ContentBlockRenderer({ block }: { block: PublishedBlock }) {
+export function ContentBlockRenderer({
+  block,
+  htmlPages = {},
+}: {
+  block: PublishedBlock;
+  htmlPages?: Record<string, HtmlPageCode>;
+}) {
   if (!block.title) {
     return (
       <div>
-        <BlockBody block={block} />
+        <BlockBody block={block} htmlPages={htmlPages} />
       </div>
     );
   }
@@ -98,7 +128,7 @@ export function ContentBlockRenderer({ block }: { block: PublishedBlock }) {
         <CardTitle className="text-base">{block.title}</CardTitle>
       </CardHeader>
       <CardContent>
-        <BlockBody block={block} />
+        <BlockBody block={block} htmlPages={htmlPages} />
       </CardContent>
     </Card>
   );

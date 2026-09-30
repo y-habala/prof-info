@@ -16,16 +16,19 @@ export type BlockContentValues = {
   file_url?: string;
   file_name?: string;
   exercise_id?: string;
+  html_page_id?: string;
 };
 
 export function BlockFormFields({
   type,
   initialValues,
   exercises = [],
+  htmlPages = [],
 }: {
   type: BlockType;
   initialValues?: BlockContentValues;
   exercises?: { id: string; title: string }[];
+  htmlPages?: { id: string; title: string }[];
 }) {
   const [imageUrl, setImageUrl] = useState(initialValues?.url ?? "");
   const [fileUrl, setFileUrl] = useState(initialValues?.file_url ?? "");
@@ -144,6 +147,26 @@ export function BlockFormFields({
             {exercises.map((ex) => (
               <option key={ex.id} value={ex.id}>
                 {ex.title}
+              </option>
+            ))}
+          </select>
+        </div>
+      );
+    case "html":
+      return (
+        <div className="space-y-2">
+          <Label htmlFor="content_html_page_id">Activité HTML</Label>
+          <select
+            id="content_html_page_id"
+            name="content_html_page_id"
+            defaultValue={initialValues?.html_page_id ?? ""}
+            className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            required
+          >
+            <option value="">—</option>
+            {htmlPages.map((page) => (
+              <option key={page.id} value={page.id}>
+                {page.title}
               </option>
             ))}
           </select>

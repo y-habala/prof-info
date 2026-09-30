@@ -1,8 +1,10 @@
 import { z } from "zod";
 
-// 'interactive'/'html' still need Phase 13 (Activités HTML) data to pick
-// from — the DB check constraint already allows them, add here once built.
-export const AVAILABLE_BLOCK_TYPES = ["text", "image", "video", "pdf", "file", "exercise"] as const;
+// The DB check constraint also allows 'interactive' as a synonym for the
+// same { html_page_id } shape — unused here on purpose, one clear type
+// name ("html", matching the admin nav label "Activités HTML") is simpler
+// than offering two picker buttons that do the exact same thing.
+export const AVAILABLE_BLOCK_TYPES = ["text", "image", "video", "pdf", "file", "exercise", "html"] as const;
 export type BlockType = (typeof AVAILABLE_BLOCK_TYPES)[number];
 
 export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
@@ -12,6 +14,7 @@ export const BLOCK_TYPE_LABELS: Record<BlockType, string> = {
   pdf: "PDF",
   file: "Fichier",
   exercise: "Exercice",
+  html: "Activité HTML",
 };
 
 const textContentSchema = z.object({
@@ -36,6 +39,9 @@ const fileContentSchema = z.object({
 const exerciseContentSchema = z.object({
   exercise_id: z.string().uuid("Choisissez un exercice."),
 });
+const htmlContentSchema = z.object({
+  html_page_id: z.string().uuid("Choisissez une activité HTML."),
+});
 
 export const blockContentSchemas: Record<BlockType, z.ZodType> = {
   text: textContentSchema,
@@ -44,6 +50,7 @@ export const blockContentSchemas: Record<BlockType, z.ZodType> = {
   pdf: fileContentSchema,
   file: fileContentSchema,
   exercise: exerciseContentSchema,
+  html: htmlContentSchema,
 };
 
 export const blockTitleSchema = z.string().trim().max(200).optional().or(z.literal(""));

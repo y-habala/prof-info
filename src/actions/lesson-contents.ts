@@ -32,6 +32,8 @@ function buildContentFromFormData(type: BlockType, formData: FormData): unknown 
       };
     case "exercise":
       return { exercise_id: formData.get("content_exercise_id") ?? "" };
+    case "html":
+      return { html_page_id: formData.get("content_html_page_id") ?? "" };
   }
 }
 

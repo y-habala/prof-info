@@ -1,7 +1,11 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { CourseBreadcrumb } from "@/components/courses/course-breadcrumb";
-import { ContentBlockRenderer, type PublishedBlock } from "@/components/courses/content-block-renderer";
+import {
+  ContentBlockRenderer,
+  type HtmlPageCode,
+  type PublishedBlock,
+} from "@/components/courses/content-block-renderer";
 
 export default async function SessionPage({
   params,
@@ -65,6 +69,26 @@ export default async function SessionPage({
     .eq("is_published", true)
     .order("order_index");
 
+  const htmlPageIds = (blocks as PublishedBlock[] | null ?? [])
+    .filter((block) => block.type === "html" && block.content.html_page_id)
+    .map((block) => block.content.html_page_id as string);
+
+  const htmlPages: Record<string, HtmlPageCode> = {};
+  if (htmlPageIds.length > 0) {
+    const { data: htmlPagesData } = await supabase
+      .from("html_pages")
+      .select("id, html_content, css_content, javascript_content")
+      .in("id", htmlPageIds)
+      .eq("is_published", true);
+    for (const page of htmlPagesData ?? []) {
+      htmlPages[page.id] = {
+        html_content: page.html_content,
+        css_content: page.css_content,
+        javascript_content: page.javascript_content,
+      };
+    }
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <CourseBreadcrumb
@@ -87,7 +111,7 @@ export default async function SessionPage({
       {blocks && blocks.length > 0 ? (
         <div className="space-y-4">
           {(blocks as PublishedBlock[]).map((block) => (
-            <ContentBlockRenderer key={block.id} block={block} />
+            <ContentBlockRenderer key={block.id} block={block} htmlPages={htmlPages} />
           ))}
         </div>
       ) : (
