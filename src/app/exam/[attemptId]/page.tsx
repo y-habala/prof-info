@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXAM_SESSION_COOKIE, verifyExamSession } from "@/lib/auth/exam-session";
 import { ExamRunner } from "@/components/exams/exam-runner";
+import { shuffleSeeded } from "@/lib/shuffle";
 
 export default async function ExamAttemptPage({
   params,
@@ -48,15 +49,18 @@ export default async function ExamAttemptPage({
     .eq("exam_id", exam.id)
     .order("order_index");
 
-  const scrubbedQuestions = (questions ?? []).map((q) => ({
-    id: q.id,
-    questionText: q.question_text,
-    questionType: q.question_type,
-    points: q.points,
-    options: (q.exam_options ?? [])
-      .sort((a, b) => a.order_index - b.order_index)
-      .map((o) => ({ id: o.id, text: o.option_text })),
-  }));
+  const scrubbedQuestions = shuffleSeeded(
+    (questions ?? []).map((q) => ({
+      id: q.id,
+      questionText: q.question_text,
+      questionType: q.question_type,
+      points: q.points,
+      options: (q.exam_options ?? [])
+        .sort((a, b) => a.order_index - b.order_index)
+        .map((o) => ({ id: o.id, text: o.option_text })),
+    })),
+    attemptId
+  );
 
   const deadline = new Date(attempt.started_at).getTime() + exam.duration_minutes * 60_000;
 
