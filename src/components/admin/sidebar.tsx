@@ -21,11 +21,11 @@ const NAV_ITEMS = [
   { href: "/admin/files", label: "Fichiers" },
 ];
 
-export function AdminSidebar() {
+export function AdminSidebar({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
 
   return (
-    <nav className="w-48 shrink-0 border-e p-4">
+    <nav className="w-full shrink-0 border-e p-4 md:w-48">
       <ul className="space-y-1">
         {NAV_ITEMS.map((item) => {
           const isActive =
@@ -34,6 +34,7 @@ export function AdminSidebar() {
             <li key={item.href}>
               <Link
                 href={item.href}
+                onClick={onNavigate}
                 className={cn(
                   "block rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground",
                   isActive && "bg-muted font-medium text-foreground"
