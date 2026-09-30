@@ -23,7 +23,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exams";
 import { ExamQuestionDialog } from "./exam-question-dialog";
-import { deleteExamQuestion, reorderExamQuestions } from "@/actions/exam-questions";
+import {
+  deleteExamQuestion,
+  reorderExamQuestions,
+  moveExamQuestionToSection,
+} from "@/actions/exam-questions";
 
 export type ExamQuestionRow = {
   id: string;
@@ -33,18 +37,27 @@ export type ExamQuestionRow = {
   exam_options: { text: string; isCorrect: boolean }[];
 };
 
+const selectClass =
+  "h-8 rounded-lg border border-input bg-transparent px-2 text-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
 function SortableQuestionRow({
   question,
   index,
   examId,
+  sections,
+  currentSectionId,
   isPending,
   onDelete,
+  onMove,
 }: {
   question: ExamQuestionRow;
   index: number;
   examId: string;
+  sections: { id: string; title: string }[];
+  currentSectionId: string | null;
   isPending: boolean;
   onDelete: () => void;
+  onMove: (sectionId: string | null) => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
     id: question.id,
@@ -74,6 +87,21 @@ function SortableQuestionRow({
         <p className="text-sm font-medium">{question.question_text}</p>
       </div>
       <div className="flex shrink-0 items-center gap-2">
+        {sections.length > 0 ? (
+          <select
+            value={currentSectionId ?? ""}
+            onChange={(e) => onMove(e.target.value || null)}
+            className={selectClass}
+            aria-label="Déplacer vers une autre section"
+          >
+            <option value="">Sans section</option>
+            {sections.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.title}
+              </option>
+            ))}
+          </select>
+        ) : null}
         <ExamQuestionDialog
           mode="edit"
           examId={examId}
@@ -101,9 +129,13 @@ function SortableQuestionRow({
 export function ExamQuestionsList({
   examId,
   initialQuestions,
+  sections = [],
+  currentSectionId = null,
 }: {
   examId: string;
   initialQuestions: ExamQuestionRow[];
+  sections?: { id: string; title: string }[];
+  currentSectionId?: string | null;
 }) {
   const [orderOverride, setOrderOverride] = useState<string[] | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -120,7 +152,7 @@ export function ExamQuestionsList({
     : initialQuestions;
 
   if (questions.length === 0) {
-    return <p className="text-muted-foreground">Aucune question pour cet examen.</p>;
+    return <p className="text-sm text-muted-foreground">Aucune question pour le moment.</p>;
   }
 
   function handleDragEnd(event: DragEndEvent) {
@@ -148,12 +180,17 @@ export function ExamQuestionsList({
               question={question}
               index={index}
               examId={examId}
+              sections={sections}
+              currentSectionId={currentSectionId}
               isPending={isPending}
               onDelete={() => {
                 if (confirm("Supprimer cette question ?")) {
                   startTransition(() => deleteExamQuestion(question.id, examId));
                 }
               }}
+              onMove={(sectionId) =>
+                startTransition(() => moveExamQuestionToSection(question.id, examId, sectionId))
+              }
             />
           ))}
         </div>

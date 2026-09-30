@@ -27,6 +27,7 @@ type ExamQuestionDialogProps = {
   mode: "create" | "edit";
   examId: string;
   nextOrderIndex?: number;
+  sectionId?: string | null;
   initialValues?: {
     id: string;
     questionText: string;
@@ -38,7 +39,7 @@ type ExamQuestionDialogProps = {
 
 function initialOptionsFor(type: ExamQuestionType, existing?: OptionDraft[]): OptionDraft[] {
   if (existing && existing.length > 0) return existing;
-  if (type === "qcm_single" || type === "qcm_multiple") {
+  if (type === "qcm_single" || type === "qcm_multiple" || type === "matching") {
     return [
       { text: "", isCorrect: false },
       { text: "", isCorrect: false },
@@ -52,6 +53,7 @@ export function ExamQuestionDialog({
   mode,
   examId,
   nextOrderIndex,
+  sectionId,
   initialValues,
 }: ExamQuestionDialogProps) {
   const [open, setOpen] = useState(false);
@@ -107,7 +109,7 @@ export function ExamQuestionDialog({
     const result =
       mode === "edit" && initialValues
         ? await updateExamQuestion(initialValues.id, examId, values)
-        : await createExamQuestion(examId, nextOrderIndex ?? 0, values);
+        : await createExamQuestion(examId, nextOrderIndex ?? 0, values, sectionId);
 
     setIsPending(false);
     if (result?.error) {
@@ -157,21 +159,24 @@ export function ExamQuestionDialog({
               />
             </div>
 
-            {(questionType === "qcm_single" || questionType === "qcm_multiple") && (
+            {(questionType === "qcm_single" ||
+              questionType === "qcm_multiple" ||
+              questionType === "matching") && (
               <div className="space-y-2">
                 <Label>
-                  Réponses ({questionType === "qcm_single" ? "une seule correcte" : "plusieurs correctes"})
+                  {questionType === "matching" ? "Termes possibles" : "Réponses"} (
+                  {questionType === "qcm_multiple" ? "plusieurs correctes" : "une seule correcte"})
                 </Label>
                 {options.map((option, index) => (
                   <div key={index} className="flex items-center gap-2">
                     <input
-                      type={questionType === "qcm_single" ? "radio" : "checkbox"}
+                      type={questionType === "qcm_multiple" ? "checkbox" : "radio"}
                       name="correct-option"
                       checked={option.isCorrect}
                       onChange={(e) => {
                         setOptions((prev) =>
                           prev.map((o, i) => {
-                            if (questionType === "qcm_single") {
+                            if (questionType === "qcm_single" || questionType === "matching") {
                               return { ...o, isCorrect: i === index };
                             }
                             return i === index ? { ...o, isCorrect: e.target.checked } : o;
