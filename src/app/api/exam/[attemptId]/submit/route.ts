@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXAM_SESSION_COOKIE, EXAM_GRACE_SECONDS, verifyExamSession } from "@/lib/auth/exam-session";
+import { normalizeAnswerText } from "@/lib/normalize-text";
 
 const answerSchema = z.object({
   questionId: z.string().uuid(),
@@ -93,7 +94,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
     let isCorrect = false;
     let answerText = "";
 
-    if (question.question_type === "qcm_single" || question.question_type === "true_false") {
+    if (
+      question.question_type === "qcm_single" ||
+      question.question_type === "true_false" ||
+      question.question_type === "matching"
+    ) {
       const chosen = submitted?.optionIds?.[0];
       answerText = options.find((o) => o.id === chosen)?.option_text ?? "";
       isCorrect = !!chosen && correctOptionIds.has(chosen) && correctOptionIds.size === 1;
@@ -107,8 +112,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ att
         chosen.size === correctOptionIds.size && [...chosen].every((id) => correctOptionIds.has(id));
     } else if (question.question_type === "fill_blank") {
       answerText = submitted?.text?.trim() ?? "";
-      const expected = options[0]?.option_text.trim().toLowerCase() ?? "";
-      isCorrect = answerText.toLowerCase() === expected;
+      const expected = options[0]?.option_text ?? "";
+      isCorrect = normalizeAnswerText(answerText) === normalizeAnswerText(expected);
     }
 
     const pointsEarned = isCorrect ? question.points : 0;

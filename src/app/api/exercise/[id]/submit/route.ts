@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { normalizeAnswerText } from "@/lib/normalize-text";
 
 const answerSchema = z.object({
   questionId: z.string().uuid(),
@@ -93,8 +94,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         [...chosen].every((id) => correctOptionIds.has(id));
     } else if (question.question_type === "fill_blank") {
       answerText = submitted?.text?.trim() ?? "";
-      const expected = options[0]?.option_text.trim().toLowerCase() ?? "";
-      isCorrect = answerText.toLowerCase() === expected;
+      const expected = options[0]?.option_text ?? "";
+      isCorrect = normalizeAnswerText(answerText) === normalizeAnswerText(expected);
     }
 
     const pointsEarned = isCorrect ? question.points : 0;
