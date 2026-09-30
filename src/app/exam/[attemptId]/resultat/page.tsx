@@ -3,6 +3,7 @@ import { redirect, notFound } from "next/navigation";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXAM_SESSION_COOKIE, verifyExamSession } from "@/lib/auth/exam-session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 export default async function ExamResultPage({
   params,
@@ -57,6 +58,15 @@ export default async function ExamResultPage({
             {attempt.score} / {attempt.max_score}
           </p>
           <p className="text-muted-foreground">{attempt.percentage} %</p>
+          <Button
+            className="mt-3"
+            variant="outline"
+            size="sm"
+            nativeButton={false}
+            render={<a href={`/api/exam/${attemptId}/pdf`} />}
+          >
+            Télécharger la feuille de réponses (PDF)
+          </Button>
         </CardContent>
       </Card>
       {(questions ?? []).map((q, i) => {

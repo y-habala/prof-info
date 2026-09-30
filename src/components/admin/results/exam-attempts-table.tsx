@@ -56,7 +56,17 @@ export function ExamAttemptsTable({ examId, attempts }: { examId: string; attemp
             </TableCell>
             <TableCell>{row.submitted_at ? "Terminé" : "En cours"}</TableCell>
             <TableCell>{formatDateTime(row.submitted_at)}</TableCell>
-            <TableCell className="text-right">
+            <TableCell className="text-right space-x-2">
+              {row.submitted_at ? (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={<a href={`/api/exam/${row.id}/pdf`} target="_blank" />}
+                >
+                  PDF
+                </Button>
+              ) : null}
               <Button
                 variant="destructive"
                 size="sm"
