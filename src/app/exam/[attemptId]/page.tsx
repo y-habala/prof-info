@@ -65,12 +65,12 @@ export default async function ExamAttemptPage({
   const deadline = new Date(attempt.started_at).getTime() + exam.duration_minutes * 60_000;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-12">
-      <div>
-        <h1 className="text-2xl font-semibold">{exam.title}</h1>
-        {exam.description ? <p className="mt-1 text-muted-foreground">{exam.description}</p> : null}
-      </div>
-      <ExamRunner attemptId={attempt.id} deadline={deadline} questions={scrubbedQuestions} />
-    </div>
+    <ExamRunner
+      attemptId={attempt.id}
+      examTitle={exam.title}
+      examDescription={exam.description}
+      deadline={deadline}
+      questions={scrubbedQuestions}
+    />
   );
 }

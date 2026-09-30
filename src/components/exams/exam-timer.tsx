@@ -36,7 +36,11 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
   }, [deadline]);
 
   if (remainingMs === null) {
-    return <div className="rounded-md border px-3 py-2 text-center font-mono text-lg">--:--</div>;
+    return (
+      <div className="rounded-full bg-primary-foreground/20 px-4 py-1.5 text-center font-mono text-sm font-medium">
+        --:--
+      </div>
+    );
   }
 
   const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
@@ -46,8 +50,8 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
 
   return (
     <div
-      className={`rounded-md border px-3 py-2 text-center font-mono text-lg ${
-        isLow ? "border-destructive text-destructive" : ""
+      className={`rounded-full px-4 py-1.5 text-center font-mono text-sm font-medium ${
+        isLow ? "bg-destructive text-destructive-foreground" : "bg-primary-foreground/20"
       }`}
     >
       {minutes}:{String(seconds).padStart(2, "0")}

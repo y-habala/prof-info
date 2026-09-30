@@ -18,10 +18,14 @@ type Question = {
 
 export function ExamRunner({
   attemptId,
+  examTitle,
+  examDescription,
   deadline,
   questions,
 }: {
   attemptId: string;
+  examTitle: string;
+  examDescription: string | null;
   deadline: number;
   questions: Question[];
 }) {
@@ -91,11 +95,29 @@ export function ExamRunner({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="sticky top-4 z-10 flex justify-end">
-        <ExamTimer deadline={deadline} onExpire={handleSubmit} />
-      </div>
-      {questions.map((q, i) => (
+    <>
+      <header className="sticky top-0 z-10 flex items-center justify-between gap-4 bg-primary px-4 py-3 text-primary-foreground shadow-md sm:px-6">
+        <div className="min-w-0">
+          <h1 className="truncate text-lg font-semibold">{examTitle}</h1>
+          {examDescription ? (
+            <p className="truncate text-sm text-primary-foreground/80">{examDescription}</p>
+          ) : null}
+        </div>
+        <div className="flex shrink-0 items-center gap-3">
+          <ExamTimer deadline={deadline} onExpire={handleSubmit} />
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            disabled={isSubmitting}
+            onClick={handleSubmit}
+          >
+            Terminer
+          </Button>
+        </div>
+      </header>
+      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
+        {questions.map((q, i) => (
         <Card key={q.id}>
           <CardHeader>
             <CardTitle className="text-base">
@@ -151,9 +173,10 @@ export function ExamRunner({
           {error}
         </p>
       ) : null}
-      <Button disabled={isSubmitting} onClick={handleSubmit}>
-        {isSubmitting ? "Envoi..." : "Valider l'examen"}
-      </Button>
-    </div>
+        <Button disabled={isSubmitting} onClick={handleSubmit}>
+          {isSubmitting ? "Envoi..." : "Valider l'examen"}
+        </Button>
+      </div>
+    </>
   );
 }
