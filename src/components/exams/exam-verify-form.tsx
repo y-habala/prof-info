@@ -11,6 +11,7 @@ export function ExamVerifyForm() {
   const [secretCode, setSecretCode] = useState("");
   const [studentFirstName, setStudentFirstName] = useState("");
   const [studentName, setStudentName] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
   const [classNumber, setClassNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,6 +39,7 @@ export function ExamVerifyForm() {
           secretCode,
           studentName,
           studentFirstName,
+          studentNumber,
           classNumber: Number(classNumber),
         }),
       });
@@ -77,6 +79,15 @@ export function ExamVerifyForm() {
       <div className="space-y-2">
         <Label htmlFor="studentName">Nom</Label>
         <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="studentNumber">Numéro (optionnel)</Label>
+        <Input
+          id="studentNumber"
+          value={studentNumber}
+          onChange={(e) => setStudentNumber(e.target.value)}
+          placeholder="ex. 12"
+        />
       </div>
       <div className="space-y-2">
         <Label htmlFor="classNumber">Numéro de classe</Label>

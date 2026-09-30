@@ -16,18 +16,113 @@ type Question = {
   options: { id: string; text: string }[];
 };
 
+export type SectionGroup = {
+  id: string | null;
+  title: string | null;
+  imageUrl: string | null;
+  questions: Question[];
+};
+
+const selectClass =
+  "h-9 w-full max-w-xs rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
+
+function QuestionCard({
+  question: q,
+  index,
+  answer,
+  isSubmitting,
+  onSetSingle,
+  onToggleMulti,
+  onSetText,
+}: {
+  question: Question;
+  index: number;
+  answer: string[] | string | undefined;
+  isSubmitting: boolean;
+  onSetSingle: (optionId: string) => void;
+  onToggleMulti: (optionId: string) => void;
+  onSetText: (text: string) => void;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">
+          Q{index + 1}. {q.questionText}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {(q.questionType === "qcm_single" || q.questionType === "true_false") &&
+          q.options.map((o) => (
+            <label key={o.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name={q.id}
+                disabled={isSubmitting}
+                checked={Array.isArray(answer) && answer[0] === o.id}
+                onChange={() => onSetSingle(o.id)}
+              />
+              {o.text}
+            </label>
+          ))}
+        {q.questionType === "qcm_multiple" &&
+          q.options.map((o) => (
+            <label key={o.id} className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                disabled={isSubmitting}
+                checked={Array.isArray(answer) && answer.includes(o.id)}
+                onChange={() => onToggleMulti(o.id)}
+              />
+              {o.text}
+            </label>
+          ))}
+        {q.questionType === "matching" && (
+          <select
+            disabled={isSubmitting}
+            value={Array.isArray(answer) ? answer[0] ?? "" : ""}
+            onChange={(e) => onSetSingle(e.target.value)}
+            className={selectClass}
+          >
+            <option value="">…</option>
+            {q.options.map((o) => (
+              <option key={o.id} value={o.id}>
+                {o.text}
+              </option>
+            ))}
+          </select>
+        )}
+        {q.questionType === "fill_blank" && (
+          <Input
+            disabled={isSubmitting}
+            value={typeof answer === "string" ? answer : ""}
+            onChange={(e) => onSetText(e.target.value)}
+          />
+        )}
+        {q.questionType === "open" && (
+          <Textarea
+            rows={3}
+            disabled={isSubmitting}
+            value={typeof answer === "string" ? answer : ""}
+            onChange={(e) => onSetText(e.target.value)}
+          />
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function ExamRunner({
   attemptId,
   examTitle,
   examDescription,
   deadline,
-  questions,
+  sections,
 }: {
   attemptId: string;
   examTitle: string;
   examDescription: string | null;
   deadline: number;
-  questions: Question[];
+  sections: SectionGroup[];
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
@@ -38,6 +133,8 @@ export function ExamRunner({
   // that (both calls can read stale `isSubmitting` before either re-render
   // lands), so a ref gives a real synchronous re-entrancy check.
   const hasSubmittedRef = useRef(false);
+
+  const allQuestions = sections.flatMap((s) => s.questions);
 
   function setSingleAnswer(questionId: string, optionId: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: [optionId] }));
@@ -64,7 +161,7 @@ export function ExamRunner({
     setError(null);
 
     const payload = {
-      answers: questions.map((q) => {
+      answers: allQuestions.map((q) => {
         const a = answers[q.id];
         if (q.questionType === "fill_blank" || q.questionType === "open") {
           return { questionId: q.id, text: typeof a === "string" ? a : "" };
@@ -105,74 +202,42 @@ export function ExamRunner({
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <ExamTimer deadline={deadline} onExpire={handleSubmit} />
-          <Button
-            type="button"
-            variant="secondary"
-            size="sm"
-            disabled={isSubmitting}
-            onClick={handleSubmit}
-          >
+          <Button type="button" variant="secondary" size="sm" disabled={isSubmitting} onClick={handleSubmit}>
             Terminer
           </Button>
         </div>
       </header>
-      <div className="mx-auto max-w-2xl space-y-4 px-4 py-6">
-        {questions.map((q, i) => (
-        <Card key={q.id}>
-          <CardHeader>
-            <CardTitle className="text-base">
-              Q{i + 1}. {q.questionText}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {(q.questionType === "qcm_single" || q.questionType === "true_false") &&
-              q.options.map((o) => (
-                <label key={o.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name={q.id}
-                    disabled={isSubmitting}
-                    checked={Array.isArray(answers[q.id]) && answers[q.id]?.[0] === o.id}
-                    onChange={() => setSingleAnswer(q.id, o.id)}
-                  />
-                  {o.text}
-                </label>
-              ))}
-            {q.questionType === "qcm_multiple" &&
-              q.options.map((o) => (
-                <label key={o.id} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    disabled={isSubmitting}
-                    checked={Array.isArray(answers[q.id]) && answers[q.id]?.includes(o.id)}
-                    onChange={() => toggleMultiAnswer(q.id, o.id)}
-                  />
-                  {o.text}
-                </label>
-              ))}
-            {q.questionType === "fill_blank" && (
-              <Input
-                disabled={isSubmitting}
-                value={typeof answers[q.id] === "string" ? (answers[q.id] as string) : ""}
-                onChange={(e) => setTextAnswer(q.id, e.target.value)}
+      <div className="mx-auto max-w-2xl space-y-6 px-4 py-6">
+        {sections.map((section) => (
+          <div key={section.id ?? "unsectioned"} className="space-y-4">
+            {section.title ? (
+              <div className="space-y-2 border-b pb-2">
+                <h2 className="text-lg font-semibold">{section.title}</h2>
+                {section.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element -- admin-provided external URL
+                  <img src={section.imageUrl} alt="" className="max-h-80 w-full rounded-md object-contain" />
+                ) : null}
+              </div>
+            ) : null}
+            {section.questions.map((q, i) => (
+              <QuestionCard
+                key={q.id}
+                question={q}
+                index={i}
+                answer={answers[q.id]}
+                isSubmitting={isSubmitting}
+                onSetSingle={(optionId) => setSingleAnswer(q.id, optionId)}
+                onToggleMulti={(optionId) => toggleMultiAnswer(q.id, optionId)}
+                onSetText={(text) => setTextAnswer(q.id, text)}
               />
-            )}
-            {q.questionType === "open" && (
-              <Textarea
-                rows={3}
-                disabled={isSubmitting}
-                value={typeof answers[q.id] === "string" ? (answers[q.id] as string) : ""}
-                onChange={(e) => setTextAnswer(q.id, e.target.value)}
-              />
-            )}
-          </CardContent>
-        </Card>
-      ))}
-      {error ? (
-        <p className="text-sm text-destructive" role="alert">
-          {error}
-        </p>
-      ) : null}
+            ))}
+          </div>
+        ))}
+        {error ? (
+          <p className="text-sm text-destructive" role="alert">
+            {error}
+          </p>
+        ) : null}
         <Button disabled={isSubmitting} onClick={handleSubmit}>
           {isSubmitting ? "Envoi..." : "Valider l'examen"}
         </Button>

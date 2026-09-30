@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 400 });
   }
-  const { secretCode, studentName, studentFirstName, classNumber } = parsed.data;
+  const { secretCode, studentName, studentFirstName, studentNumber, classNumber } = parsed.data;
   const ip = getClientIp(request);
 
   if (await isRateLimited("exam", ip, secretCode)) {
@@ -95,6 +95,7 @@ export async function POST(request: Request) {
       exam_id: exam.id,
       student_name: studentName,
       student_first_name: studentFirstName,
+      student_number: studentNumber || null,
       student_class: studentClass,
       student_code: accessCode.code,
       ip_address: ip,
