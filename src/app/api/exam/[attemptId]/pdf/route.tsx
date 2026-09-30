@@ -36,7 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   const { data: attempt } = await admin
     .from("exam_attempts")
     .select(
-      "student_name, student_first_name, student_class, score, max_score, percentage, submitted_at, exam_id, exams(title)"
+      "student_name, student_first_name, student_number, student_class, score, max_score, percentage, submitted_at, exam_id, exams(title)"
     )
     .eq("id", attemptId)
     .maybeSingle();
@@ -88,7 +88,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   };
 
   const buffer = await renderToBuffer(<AnswerSheetDocument data={data} />);
-  const filename = `reponses-${data.studentFirstName}-${data.studentName}.pdf`.replace(/\s+/g, "-");
+  // e.g. "Youssef_Kamal_12_3APIC-4.pdf" — name, roll number, class, each
+  // space-safe; missing number/class segments are simply omitted.
+  const filenameParts = [
+    data.studentFirstName,
+    data.studentName,
+    attempt.student_number,
+    data.studentClass,
+  ].filter((part): part is string => !!part && part.trim().length > 0);
+  const filename = `${filenameParts.map((p) => p.trim().replace(/\s+/g, "-")).join("_")}.pdf`;
 
   return new Response(new Uint8Array(buffer), {
     headers: {

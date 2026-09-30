@@ -9,6 +9,7 @@ export type ExamAttemptRow = {
   id: string;
   student_name: string;
   student_first_name: string;
+  student_number: string | null;
   student_class: string | null;
   student_code: string | null;
   score: number | null;
@@ -35,6 +36,7 @@ export function ExamAttemptsTable({ examId, attempts }: { examId: string; attemp
       <TableHeader>
         <TableRow>
           <TableHead>Élève</TableHead>
+          <TableHead>N°</TableHead>
           <TableHead>Classe</TableHead>
           <TableHead>Code</TableHead>
           <TableHead>Score</TableHead>
@@ -49,6 +51,7 @@ export function ExamAttemptsTable({ examId, attempts }: { examId: string; attemp
             <TableCell className="font-medium">
               {row.student_first_name} {row.student_name}
             </TableCell>
+            <TableCell>{row.student_number ?? "—"}</TableCell>
             <TableCell>{row.student_class ?? "—"}</TableCell>
             <TableCell className="font-mono text-xs">{row.student_code ?? "—"}</TableCell>
             <TableCell>

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { ExamAttemptsTable } from "@/components/admin/results/exam-attempts-table";
+import { compareByClassAndNumber } from "@/lib/exam-attempt-sort";
 
 export const metadata: Metadata = {
   title: "Résultats de l'examen — Administration",
@@ -25,10 +26,11 @@ export default async function AdminExamResultsPage({
   const { data: attempts } = await supabase
     .from("exam_attempts")
     .select(
-      "id, student_name, student_first_name, student_class, student_code, score, max_score, percentage, started_at, submitted_at"
+      "id, student_name, student_first_name, student_number, student_class, student_code, score, max_score, percentage, started_at, submitted_at"
     )
-    .eq("exam_id", examId)
-    .order("started_at", { ascending: false });
+    .eq("exam_id", examId);
+
+  const sortedAttempts = [...(attempts ?? [])].sort(compareByClassAndNumber);
 
   return (
     <div className="space-y-6">
@@ -47,7 +49,7 @@ export default async function AdminExamResultsPage({
           </Button>
         </div>
       </div>
-      <ExamAttemptsTable examId={exam.id} attempts={attempts ?? []} />
+      <ExamAttemptsTable examId={exam.id} attempts={sortedAttempts} />
     </div>
   );
 }

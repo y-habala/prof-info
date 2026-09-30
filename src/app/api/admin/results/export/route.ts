@@ -1,5 +1,6 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
+import { compareByClassAndNumber } from "@/lib/exam-attempt-sort";
 
 export const runtime = "nodejs";
 
@@ -31,20 +32,22 @@ export async function GET(request: Request) {
     supabase
       .from("exam_attempts")
       .select(
-        "student_first_name, student_name, student_class, student_code, score, max_score, percentage, submitted_at"
+        "student_first_name, student_name, student_number, student_class, student_code, score, max_score, percentage, submitted_at"
       )
-      .eq("exam_id", id)
-      .order("started_at", { ascending: false }),
+      .eq("exam_id", id),
   ]);
   if (!exam) {
     return new Response("Examen introuvable.", { status: 404 });
   }
+
+  const sortedAttempts = [...(attempts ?? [])].sort(compareByClassAndNumber);
 
   const workbook = new ExcelJS.Workbook();
   const sheet = workbook.addWorksheet("Résultats");
   sheet.columns = [
     { header: "Prénom", key: "firstName", width: 18 },
     { header: "Nom", key: "name", width: 18 },
+    { header: "N°", key: "number", width: 8 },
     { header: "Classe", key: "class", width: 14 },
     { header: "Code d'accès", key: "code", width: 12 },
     { header: "Score", key: "score", width: 10 },
@@ -53,10 +56,11 @@ export async function GET(request: Request) {
     { header: "Statut", key: "status", width: 12 },
     { header: "Soumis le", key: "submittedAt", width: 20 },
   ];
-  for (const a of attempts ?? []) {
+  for (const a of sortedAttempts) {
     sheet.addRow({
       firstName: a.student_first_name,
       name: a.student_name,
+      number: a.student_number ?? "",
       class: a.student_class ?? "",
       code: a.student_code ?? "",
       score: a.score,
