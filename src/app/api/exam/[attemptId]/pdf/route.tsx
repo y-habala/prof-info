@@ -51,10 +51,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
 
   const exam = attempt.exams as unknown as { title: string };
 
-  const [{ data: questions }, { data: answers }] = await Promise.all([
+  const [{ data: sectionsData }, { data: questions }, { data: answers }] = await Promise.all([
+    admin
+      .from("exam_sections")
+      .select("id, title, order_index")
+      .eq("exam_id", attempt.exam_id)
+      .order("order_index"),
     admin
       .from("exam_questions")
-      .select("id, question_text, points, order_index, exam_options(option_text, is_correct)")
+      .select("id, section_id, question_text, points, order_index, exam_options(option_text, is_correct)")
       .eq("exam_id", attempt.exam_id)
       .order("order_index"),
     admin
@@ -65,26 +70,38 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
 
   const answerByQuestion = new Map((answers ?? []).map((a) => [a.question_id, a]));
 
+  function buildQuestions(sectionId: string | null) {
+    return (questions ?? [])
+      .filter((q) => q.section_id === sectionId)
+      .map((q) => {
+        const a = answerByQuestion.get(q.id);
+        return {
+          questionText: q.question_text,
+          points: q.points,
+          isCorrect: a?.is_correct ?? null,
+          pointsEarned: a?.points_earned ?? 0,
+          answerText: a?.answer_text ?? "",
+          correctAnswerTexts: (q.exam_options ?? []).filter((o) => o.is_correct).map((o) => o.option_text),
+        };
+      });
+  }
+
+  const sections = [
+    ...(sectionsData ?? []).map((s) => ({ title: s.title, questions: buildQuestions(s.id) })),
+    { title: null, questions: buildQuestions(null) },
+  ].filter((s) => s.questions.length > 0);
+
   const data: AnswerSheetData = {
     examTitle: exam.title,
     studentFirstName: attempt.student_first_name,
     studentName: attempt.student_name,
+    studentNumber: attempt.student_number,
     studentClass: attempt.student_class,
     score: attempt.score ?? 0,
     maxScore: attempt.max_score ?? 0,
     percentage: attempt.percentage ?? 0,
     submittedAt: attempt.submitted_at,
-    questions: (questions ?? []).map((q) => {
-      const a = answerByQuestion.get(q.id);
-      return {
-        questionText: q.question_text,
-        points: q.points,
-        isCorrect: a?.is_correct ?? null,
-        pointsEarned: a?.points_earned ?? 0,
-        answerText: a?.answer_text ?? "",
-        correctAnswerTexts: (q.exam_options ?? []).filter((o) => o.is_correct).map((o) => o.option_text),
-      };
-    }),
+    sections,
   };
 
   const buffer = await renderToBuffer(<AnswerSheetDocument data={data} />);
