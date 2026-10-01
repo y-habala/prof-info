@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -25,7 +24,6 @@ type QuestionResult = {
 };
 
 type SubmitResult = {
-  attemptId: string;
   score: number;
   maxScore: number;
   percentage: number;
@@ -39,10 +37,7 @@ export function ExerciseRunner({
   exerciseId: string;
   questions: Question[];
 }) {
-  const [step, setStep] = useState<"info" | "questions" | "results">("info");
-  const [studentName, setStudentName] = useState("");
-  const [studentFirstName, setStudentFirstName] = useState("");
-  const [studentClass, setStudentClass] = useState("");
+  const [step, setStep] = useState<"questions" | "results">("questions");
   const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -71,9 +66,6 @@ export function ExerciseRunner({
     setIsSubmitting(true);
 
     const payload = {
-      studentName,
-      studentFirstName,
-      studentClass,
       answers: questions.map((q) => {
         const a = answers[q.id];
         if (q.questionType === "fill_blank" || q.questionType === "open") {
@@ -102,50 +94,6 @@ export function ExerciseRunner({
       setError("Une erreur est survenue.");
     }
     setIsSubmitting(false);
-  }
-
-  if (step === "info") {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Vos informations</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="studentFirstName">Prénom</Label>
-            <Input
-              id="studentFirstName"
-              value={studentFirstName}
-              onChange={(e) => setStudentFirstName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="studentName">Nom</Label>
-            <Input
-              id="studentName"
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="studentClass">Classe (optionnel)</Label>
-            <Input
-              id="studentClass"
-              value={studentClass}
-              onChange={(e) => setStudentClass(e.target.value)}
-            />
-          </div>
-          <Button
-            disabled={!studentName.trim() || !studentFirstName.trim()}
-            onClick={() => setStep("questions")}
-          >
-            Commencer
-          </Button>
-        </CardContent>
-      </Card>
-    );
   }
 
   if (step === "results" && result) {

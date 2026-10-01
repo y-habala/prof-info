@@ -12,9 +12,6 @@ const answerSchema = z.object({
 });
 
 const submitSchema = z.object({
-  studentName: z.string().trim().min(1).max(100),
-  studentFirstName: z.string().trim().min(1).max(100),
-  studentClass: z.string().trim().max(100).optional().or(z.literal("")),
   answers: z.array(answerSchema),
 });
 
@@ -105,35 +102,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const percentage = maxScore > 0 ? Math.round((score / maxScore) * 1000) / 10 : 0;
 
-  const { data: attempt, error: attemptError } = await admin
-    .from("exercise_attempts")
-    .insert({
-      exercise_id: exerciseId,
-      student_name: parsed.data.studentName,
-      student_first_name: parsed.data.studentFirstName,
-      student_class: parsed.data.studentClass || null,
-      score,
-      max_score: maxScore,
-      percentage,
-      completed_at: new Date().toISOString(),
-    })
-    .select("id")
-    .single();
-
-  if (attemptError || !attempt) {
-    return NextResponse.json({ error: "Une erreur est survenue." }, { status: 500 });
-  }
-
-  await admin.from("exercise_answers").insert(
-    results.map((r) => ({
-      attempt_id: attempt.id,
-      question_id: r.questionId,
-      answer_text: r.answerText,
-      is_correct: r.isCorrect,
-      points_earned: r.pointsEarned,
-    }))
-  );
-
   const questionResults = questions.map((q) => {
     const r = results.find((res) => res.questionId === q.id)!;
     return {
@@ -148,7 +116,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   });
 
   return NextResponse.json({
-    attemptId: attempt.id,
     score,
     maxScore,
     percentage,
