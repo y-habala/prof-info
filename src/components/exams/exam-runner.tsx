@@ -323,7 +323,7 @@ export function ExamRunner({
   }
 
   return (
-    <div className="student-theme min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-muted/20">
       <header className="sticky top-0 z-10 bg-primary text-primary-foreground shadow-md">
         <div className="flex items-center justify-between gap-4 px-4 py-3 sm:px-6">
           <div className="min-w-0">
