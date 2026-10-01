@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 
 export default function ExamEntryPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+    <div className="student-theme flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-sm rounded-2xl border-border shadow-lg">
         <CardHeader className="items-center pt-8 text-center">
           <div className="mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">

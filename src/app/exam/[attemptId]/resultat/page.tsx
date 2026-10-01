@@ -35,7 +35,7 @@ export default async function ExamResultPage({
   const exam = attempt.exams as unknown as { title: string };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+    <div className="student-theme flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <Card className="w-full max-w-md rounded-2xl border-border text-center shadow-lg">
         <CardHeader className="items-center pt-8">
           <CardTitle className="text-lg font-bold text-muted-foreground">{exam.title}</CardTitle>

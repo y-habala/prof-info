@@ -62,7 +62,10 @@
   /* A deliberate blue identity (tech/code association) — this was a plain
      grayscale shadcn default (primary oklch(...0 0), zero chroma) until
      now, which combined with the font-sans bug below made the whole app
-     render as unstyled black-on-white Times New Roman since Phase 1. */
+     render as unstyled black-on-white Times New Roman since Phase 1.
+     This root blue is now the ADMIN dashboard's identity specifically —
+     the public/student site runs a separate red identity scoped via the
+     `.student-theme` class below (see that block for why). */
   --background: oklch(0.995 0.002 260);
   --foreground: oklch(0.18 0.02 260);
   --card: oklch(1 0 0);
@@ -117,6 +120,30 @@
      underline accents and small highlight badges, never as a base surface. */
   --gold: oklch(0.78 0.15 85);
   --gold-foreground: oklch(0.32 0.1 70);
+}
+
+/* Public/student site identity, copied from autobladi.ma's actual palette
+   per explicit request (not just its structural patterns, unlike the
+   telmidtice/masup passes) — a deep crimson primary + the same gold
+   accent already defined above. Scoped to this class (applied at the
+   (student) layout root and the standalone /exam/* page roots) rather
+   than redefined in :root, so the admin dashboard — explicitly out of
+   scope for this redesign — keeps the original blue identity untouched;
+   every component already reads --primary/--brand-from/--brand-to via
+   Tailwind's bg-primary/bg-gradient-brand etc., so this cascades with no
+   component-level changes needed. Primary sits at a visibly different
+   hue/lightness than --destructive (27°) on purpose — autobladi itself
+   uses a brighter alarm-red only for badges like "OCCASION", a deeper
+   crimson for actual brand/CTA surfaces — so error-red and brand-red
+   don't collide here either. */
+.student-theme {
+  --primary: oklch(0.42 0.18 20);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.95 0.035 20);
+  --accent-foreground: oklch(0.35 0.12 20);
+  --ring: oklch(0.55 0.17 20);
+  --brand-from: oklch(0.38 0.17 15);
+  --brand-to: oklch(0.52 0.21 25);
 }
 
 .dark {
