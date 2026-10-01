@@ -1,22 +1,11 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Check,
-  CircleDot,
-  ListChecks,
-  ToggleLeft,
-  Link2,
-  PenLine,
-  AlignLeft,
-  Award,
-  type LucideIcon,
-} from "lucide-react";
+import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -36,23 +25,16 @@ export type SectionGroup = {
   questions: Question[];
 };
 
-const TYPE_LABELS: Record<string, string> = {
-  qcm_single: "Choix unique",
-  qcm_multiple: "Choix multiple",
-  true_false: "Vrai ou faux",
-  matching: "Association",
-  fill_blank: "Texte à trous",
-  open: "Réponse libre",
-};
+const LETTERS = "abcdefghij";
 
-const TYPE_ICONS: Record<string, LucideIcon> = {
-  qcm_single: CircleDot,
-  qcm_multiple: ListChecks,
-  true_false: ToggleLeft,
-  matching: Link2,
-  fill_blank: PenLine,
-  open: AlignLeft,
-};
+function isVraiOption(text: string) {
+  const t = text.trim().toLowerCase();
+  return t === "vrai" || t === "true" || t === "oui";
+}
+function isFauxOption(text: string) {
+  const t = text.trim().toLowerCase();
+  return t === "faux" || t === "false" || t === "non";
+}
 
 function isAnswered(q: Question, answer: string[] | string | undefined): boolean {
   if (q.questionType === "fill_blank" || q.questionType === "open") {
@@ -68,6 +50,7 @@ function isAnswered(q: Question, answer: string[] | string | undefined): boolean
 function ChoiceOption({
   name,
   type,
+  letter,
   label,
   checked,
   disabled,
@@ -75,6 +58,7 @@ function ChoiceOption({
 }: {
   name: string;
   type: "radio" | "checkbox";
+  letter: string;
   label: string;
   checked: boolean;
   disabled: boolean;
@@ -83,7 +67,7 @@ function ChoiceOption({
   return (
     <label
       className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-xl border-2 border-border p-3 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
+        "flex cursor-pointer items-center gap-2.5 rounded-lg border-2 border-border px-3 py-2 text-sm transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
         disabled ? "pointer-events-none opacity-60" : "hover:border-primary/40 hover:bg-muted/40"
       )}
     >
@@ -103,12 +87,67 @@ function ChoiceOption({
       >
         {type === "checkbox" ? <Check className="size-3.5" strokeWidth={3} /> : null}
       </span>
+      <span className="font-semibold text-muted-foreground">{letter})</span>
       <span className="flex-1 leading-snug">{label}</span>
     </label>
   );
 }
 
-function QuestionCard({
+// Compact inline Vrai/Faux pill pair, color-coded by meaning (green/red) —
+// mirrors the reference exam file's own .radio-label.vrai/.faux treatment,
+// not a generic choice-card. Matched to the real option by text first
+// ("Vrai"/"Faux"/"Oui"/"Non"/english), falling back to position (index 0 =
+// vrai-styled, 1 = faux-styled) since every true_false question in this
+// app always has exactly 2 admin-authored options.
+function TrueFalseToggle({
+  options,
+  name,
+  answer,
+  disabled,
+  onChange,
+}: {
+  options: { id: string; text: string }[];
+  name: string;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onChange: (optionId: string) => void;
+}) {
+  const selected = Array.isArray(answer) ? answer[0] : undefined;
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o, i) => {
+        const isVrai = isVraiOption(o.text) || (!isFauxOption(o.text) && i === 0);
+        const checked = selected === o.id;
+        return (
+          <label
+            key={o.id}
+            className={cn(
+              "cursor-pointer rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-colors",
+              disabled ? "pointer-events-none opacity-60" : "",
+              checked
+                ? isVrai
+                  ? "border-success bg-success text-success-foreground"
+                  : "border-destructive bg-destructive text-white"
+                : "border-border text-muted-foreground hover:border-muted-foreground/60"
+            )}
+          >
+            <input
+              type="radio"
+              name={name}
+              checked={checked}
+              disabled={disabled}
+              onChange={() => onChange(o.id)}
+              className="sr-only"
+            />
+            {o.text}
+          </label>
+        );
+      })}
+    </div>
+  );
+}
+
+function QuestionRow({
   question: q,
   index,
   answer,
@@ -125,54 +164,38 @@ function QuestionCard({
   onToggleMulti: (optionId: string) => void;
   onSetText: (text: string) => void;
 }) {
-  const isChoice =
-    q.questionType === "qcm_single" || q.questionType === "true_false" || q.questionType === "qcm_multiple";
   const isMulti = q.questionType === "qcm_multiple";
-  const TypeIcon = TYPE_ICONS[q.questionType] ?? CircleDot;
-  // A stable reference (not a fresh array literal on every keystroke across
-  // the whole exam) — Base UI's Select re-syncs its internal selected-index
-  // state off `items`/`value` together, and a new `items` identity on every
-  // unrelated re-render was enough to make it misreport this Select as
-  // having started uncontrolled.
-  const matchingItems = useMemo(
-    () => [{ value: null, label: "Choisissez une réponse…" }, ...q.options.map((o) => ({ value: o.id, label: o.text }))],
-    [q.options]
-  );
+  const isChoice = q.questionType === "qcm_single" || isMulti;
 
   return (
-    <Card className="rounded-2xl border-border py-5 shadow-sm">
-      <CardHeader>
-        <div className="flex items-start gap-3">
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-            {index + 1}
-          </span>
-          <div className="flex-1 space-y-1.5">
-            <CardTitle className="text-base leading-snug font-semibold">{q.questionText}</CardTitle>
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-medium text-muted-foreground">
-              <span className="inline-flex items-center gap-1.5">
-                <TypeIcon className="size-3.5 text-primary/70" />
-                {TYPE_LABELS[q.questionType] ?? q.questionType}
-              </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Award className="size-3.5 text-gold-foreground" />
-                {q.points} {q.points > 1 ? "pts" : "pt"}
-              </span>
-            </div>
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent
-        className={cn(
-          "space-y-2",
-          isChoice && q.options.length === 2 && "grid grid-cols-2 gap-2 space-y-0"
-        )}
-      >
-        {isChoice &&
-          q.options.map((o) => (
+    <div className="space-y-2.5 p-4">
+      <div className="flex items-start justify-between gap-3">
+        <p className="flex-1 text-sm leading-snug font-medium">
+          <span className="font-bold text-primary">{index + 1}.</span> {q.questionText}
+        </p>
+        <span className="shrink-0 text-xs font-medium text-muted-foreground">
+          {q.points} {q.points > 1 ? "pts" : "pt"}
+        </span>
+      </div>
+
+      {q.questionType === "true_false" && (
+        <TrueFalseToggle
+          options={q.options}
+          name={q.id}
+          answer={answer}
+          disabled={isSubmitting}
+          onChange={onSetSingle}
+        />
+      )}
+
+      {isChoice && (
+        <div className="space-y-1.5">
+          {q.options.map((o, i) => (
             <ChoiceOption
               key={o.id}
               name={q.id}
               type={isMulti ? "checkbox" : "radio"}
+              letter={LETTERS[i] ?? String(i + 1)}
               label={o.text}
               disabled={isSubmitting}
               checked={
@@ -183,60 +206,119 @@ function QuestionCard({
               onChange={() => (isMulti ? onToggleMulti(o.id) : onSetSingle(o.id))}
             />
           ))}
-        {q.questionType === "matching" && (
-          <Select
-            disabled={isSubmitting}
-            // Without `items`, Base UI's <Select.Value> renders the raw
-            // value instead of the matching option's label. The `value: null`
-            // entry matters just as much: without an item that actually
-            // matches a `null` value, Base UI treats "no match found" as
-            // unresolved and silently snaps selectedIndex (and then the
-            // controlled value, via its mount-time sync) to the first real
-            // item — i.e. an unanswered question would auto-grade as
-            // whatever option happens to render first.
-            items={matchingItems}
-            // Base UI's Select decides controlled-vs-uncontrolled from
-            // whether `value` is `undefined` on the first render — an
-            // unanswered question must still pass a defined `null`, never
-            // `undefined`, or it starts uncontrolled and then flips
-            // (triggering a dev warning and breaking the label lookup) the
-            // moment an answer is picked.
-            value={Array.isArray(answer) ? (answer[0] ?? null) : null}
-            onValueChange={(value) => onSetSingle(value as string)}
-          >
-            <SelectTrigger className="w-full max-w-xs rounded-lg">
-              <SelectValue placeholder="Choisissez une réponse…" />
-            </SelectTrigger>
-            <SelectContent>
-              {q.options.map((o) => (
-                <SelectItem key={o.id} value={o.id}>
-                  {o.text}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
-        {q.questionType === "fill_blank" && (
-          <Input
-            disabled={isSubmitting}
-            value={typeof answer === "string" ? answer : ""}
-            onChange={(e) => onSetText(e.target.value)}
-            placeholder="Votre réponse…"
-            className="rounded-lg"
+        </div>
+      )}
+
+      {q.questionType === "matching" && (
+        <Select
+          disabled={isSubmitting}
+          // Without `items`, Base UI's <Select.Value> renders the raw value
+          // instead of the matching option's label. The `value: null` entry
+          // matters just as much: without an item that actually matches a
+          // `null` value, Base UI treats "no match found" as unresolved and
+          // silently snaps selectedIndex (and then the controlled value, via
+          // its mount-time sync) to the first real item — i.e. an unanswered
+          // question would auto-grade as whatever option happens to render
+          // first. Built inline (not useMemo'd) since this row only
+          // re-renders when its own answer changes, unlike the old
+          // one-component-per-exam layout where every row re-rendered on
+          // every keystroke anywhere in the exam.
+          items={[{ value: null, label: "Choisissez une réponse…" }, ...q.options.map((o) => ({ value: o.id, label: o.text }))]}
+          // Base UI's Select decides controlled-vs-uncontrolled from whether
+          // `value` is `undefined` on the first render — an unanswered
+          // question must still pass a defined `null`, never `undefined`.
+          value={Array.isArray(answer) ? (answer[0] ?? null) : null}
+          onValueChange={(value) => onSetSingle(value as string)}
+        >
+          <SelectTrigger className="w-full max-w-xs rounded-lg bg-muted/30">
+            <SelectValue placeholder="Choisissez une réponse…" />
+          </SelectTrigger>
+          <SelectContent>
+            {q.options.map((o) => (
+              <SelectItem key={o.id} value={o.id}>
+                {o.text}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+
+      {q.questionType === "fill_blank" && (
+        <Input
+          disabled={isSubmitting}
+          value={typeof answer === "string" ? answer : ""}
+          onChange={(e) => onSetText(e.target.value)}
+          placeholder="Votre réponse…"
+          className="max-w-sm rounded-lg"
+        />
+      )}
+
+      {q.questionType === "open" && (
+        <Textarea
+          rows={3}
+          disabled={isSubmitting}
+          value={typeof answer === "string" ? answer : ""}
+          onChange={(e) => onSetText(e.target.value)}
+          placeholder="Votre réponse…"
+          className="rounded-lg"
+        />
+      )}
+    </div>
+  );
+}
+
+// One bordered, top-accented card per section — mirrors the reference exam
+// file's .exercise-card (white card, colored top border strip, header row
+// with title + a total-points badge), with individual questions as plain
+// divided rows inside rather than a heavy card-per-question — the
+// reference's own "exercise groups several light items" structure, not an
+// app-generic "card grid."
+function SectionCard({
+  section,
+  answers,
+  isSubmitting,
+  onSetSingle,
+  onToggleMulti,
+  onSetText,
+}: {
+  section: SectionGroup;
+  answers: Record<string, string[] | string>;
+  isSubmitting: boolean;
+  onSetSingle: (questionId: string, optionId: string) => void;
+  onToggleMulti: (questionId: string, optionId: string) => void;
+  onSetText: (questionId: string, text: string) => void;
+}) {
+  const totalPoints = section.questions.reduce((sum, q) => sum + q.points, 0);
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-border border-t-4 border-t-primary bg-card shadow-sm">
+      {section.title ? (
+        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/30 px-4 py-3">
+          <h2 className="font-bold">{section.title}</h2>
+          <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+            {totalPoints} {totalPoints > 1 ? "pts" : "pt"}
+          </span>
+        </div>
+      ) : null}
+      {section.imageUrl ? (
+        // eslint-disable-next-line @next/next/no-img-element -- admin-provided external URL
+        <img src={section.imageUrl} alt="" className="max-h-80 w-full border-b border-border object-contain p-3" />
+      ) : null}
+      <div className="divide-y divide-border">
+        {section.questions.map((q, i) => (
+          <QuestionRow
+            key={q.id}
+            question={q}
+            index={i}
+            answer={answers[q.id]}
+            isSubmitting={isSubmitting}
+            onSetSingle={(optionId) => onSetSingle(q.id, optionId)}
+            onToggleMulti={(optionId) => onToggleMulti(q.id, optionId)}
+            onSetText={(text) => onSetText(q.id, text)}
           />
-        )}
-        {q.questionType === "open" && (
-          <Textarea
-            rows={3}
-            disabled={isSubmitting}
-            value={typeof answer === "string" ? answer : ""}
-            onChange={(e) => onSetText(e.target.value)}
-            placeholder="Votre réponse…"
-            className="rounded-lg"
-          />
-        )}
-      </CardContent>
-    </Card>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -350,59 +432,27 @@ export function ExamRunner({
           </div>
         </div>
         <div className="h-1 w-full bg-primary-foreground/15">
-          <div
-            className="h-full bg-gold transition-all duration-300"
-            style={{ width: `${progress}%` }}
-          />
+          <div className="h-full bg-gold transition-all duration-300" style={{ width: `${progress}%` }} />
         </div>
       </header>
-      <div className="mx-auto max-w-3xl space-y-8 px-4 py-8">
-        {sections.map((section, sIndex) => (
-          <div key={section.id ?? "unsectioned"} className="space-y-4">
-            {section.title ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-sm font-bold text-primary-foreground">
-                    {sIndex + 1}
-                  </span>
-                  <h2 className="text-xl font-extrabold tracking-tight">{section.title}</h2>
-                </div>
-                {section.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element -- admin-provided external URL
-                  <img
-                    src={section.imageUrl}
-                    alt=""
-                    className="max-h-80 w-full rounded-2xl border border-border object-contain shadow-sm"
-                  />
-                ) : null}
-              </div>
-            ) : null}
-            <div className="space-y-4">
-              {section.questions.map((q, i) => (
-                <QuestionCard
-                  key={q.id}
-                  question={q}
-                  index={i}
-                  answer={answers[q.id]}
-                  isSubmitting={isSubmitting}
-                  onSetSingle={(optionId) => setSingleAnswer(q.id, optionId)}
-                  onToggleMulti={(optionId) => toggleMultiAnswer(q.id, optionId)}
-                  onSetText={(text) => setTextAnswer(q.id, text)}
-                />
-              ))}
-            </div>
-          </div>
+      <div className="mx-auto max-w-3xl space-y-6 px-4 py-8">
+        {sections.map((section) => (
+          <SectionCard
+            key={section.id ?? "unsectioned"}
+            section={section}
+            answers={answers}
+            isSubmitting={isSubmitting}
+            onSetSingle={setSingleAnswer}
+            onToggleMulti={toggleMultiAnswer}
+            onSetText={setTextAnswer}
+          />
         ))}
         {error ? (
           <p className="text-sm text-destructive" role="alert">
             {error}
           </p>
         ) : null}
-        <Button
-          disabled={isSubmitting}
-          onClick={handleSubmit}
-          className="h-11 w-full rounded-full text-base font-bold"
-        >
+        <Button disabled={isSubmitting} onClick={handleSubmit} className="h-11 w-full rounded-full text-base font-bold">
           {isSubmitting ? "Envoi..." : "Valider l'examen"}
         </Button>
       </div>

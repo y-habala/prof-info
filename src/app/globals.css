@@ -49,6 +49,8 @@
   --color-level-4-foreground: var(--level-4-foreground);
   --color-gold: var(--gold);
   --color-gold-foreground: var(--gold-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -78,6 +80,12 @@
   --accent: oklch(0.94 0.03 258);
   --accent-foreground: oklch(0.3 0.1 258);
   --destructive: oklch(0.577 0.245 27.325);
+  /* A semantic green, paired with --destructive's red for the exam
+     Vrai/Faux toggle — this is the near-universal true/false color
+     convention (traffic-light semantics), not a brand/identity choice,
+     so it's independent of whichever primary color the site runs. */
+  --success: oklch(0.6 0.16 148);
+  --success-foreground: oklch(0.99 0 0);
   --border: oklch(0.9 0.01 260);
   --input: oklch(0.9 0.01 260);
   --ring: oklch(0.6 0.15 258);
@@ -135,6 +143,8 @@
   --accent: oklch(0.3 0.06 258);
   --accent-foreground: oklch(0.9 0.03 258);
   --destructive: oklch(0.704 0.191 22.216);
+  --success: oklch(0.68 0.17 148);
+  --success-foreground: oklch(0.145 0.02 148);
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.65 0.15 258);
