@@ -35,20 +35,22 @@ export default async function ExamResultPage({
   const exam = attempt.exams as unknown as { title: string };
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-12">
-      <Card>
-        <CardHeader>
-          <CardTitle>Résultat — {exam.title}</CardTitle>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+      <Card className="w-full max-w-md rounded-2xl border-border text-center shadow-lg">
+        <CardHeader className="items-center pt-8">
+          <CardTitle className="text-lg font-bold text-muted-foreground">{exam.title}</CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-2xl font-semibold">
-            {attempt.score} / {attempt.max_score}
-          </p>
-          <p className="text-muted-foreground">{attempt.percentage} %</p>
+        <CardContent className="space-y-5 pb-8">
+          <div className="mx-auto flex size-28 flex-col items-center justify-center rounded-full border-4 border-gold bg-primary text-primary-foreground">
+            <span className="text-3xl font-extrabold leading-none">
+              {attempt.score}
+              <span className="text-lg font-medium text-primary-foreground/70">/{attempt.max_score}</span>
+            </span>
+            <span className="mt-1 text-xs font-medium text-primary-foreground/80">{attempt.percentage} %</span>
+          </div>
           <Button
-            className="mt-3"
             variant="outline"
-            size="sm"
+            className="rounded-full"
             nativeButton={false}
             render={<a href={`/api/exam/${attemptId}/pdf`} />}
           >

@@ -47,6 +47,8 @@
   --color-level-3-foreground: var(--level-3-foreground);
   --color-level-4: var(--level-4);
   --color-level-4-foreground: var(--level-4-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -67,7 +69,7 @@
   --card-foreground: oklch(0.18 0.02 260);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 260);
-  --primary: oklch(0.52 0.19 258);
+  --primary: oklch(0.47 0.21 258);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.96 0.008 260);
   --secondary-foreground: oklch(0.25 0.03 260);
@@ -104,6 +106,17 @@
   --level-3-foreground: oklch(0.48 0.15 300);
   --level-4: oklch(0.95 0.035 230);
   --level-4-foreground: oklch(0.45 0.14 240);
+  /* Brand gradient — same blue family as --primary (hue 258), carried into
+     a deeper indigo (hue ~300) rather than reaching for an unrelated color,
+     so every gradient surface still reads as "this platform's blue." Used
+     sparingly now (CTA buttons only) — not as a background wash. */
+  --brand-from: oklch(0.47 0.21 258);
+  --brand-to: oklch(0.42 0.2 295);
+  /* Warm accent, paired against the blue primary the way a confident
+     commercial site pairs a second color against its brand hue — used for
+     underline accents and small highlight badges, never as a base surface. */
+  --gold: oklch(0.78 0.15 85);
+  --gold-foreground: oklch(0.32 0.1 70);
 }
 
 .dark {
@@ -146,6 +159,10 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --brand-from: oklch(0.7 0.16 258);
+  --brand-to: oklch(0.62 0.19 302);
+  --gold: oklch(0.78 0.15 85);
+  --gold-foreground: oklch(0.22 0.07 70);
 }
 
 @layer base {
@@ -157,5 +174,17 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+@layer utilities {
+  .bg-gradient-brand {
+    background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+  }
+  .text-gradient-brand {
+    background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
+    background-clip: text;
+    -webkit-background-clip: text;
+    color: transparent;
   }
 }

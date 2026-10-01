@@ -21,12 +21,12 @@ export function LevelCard({ level, index = 0 }: { level: Level; index?: number }
 
   return (
     <Link href={`/courses/${level.id}`}>
-      <Card className="h-full items-center py-8 text-center transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <Card className="h-full items-center rounded-2xl border border-border py-8 text-center shadow-none ring-0 transition-all hover:border-primary/30 hover:shadow-md">
         <CardHeader className="items-center">
           <div className={`mb-2 flex size-14 items-center justify-center rounded-2xl ${accent}`}>
             <Icon className="size-7" />
           </div>
-          <CardTitle className="text-lg">{level.name}</CardTitle>
+          <CardTitle className="text-lg font-bold">{level.name}</CardTitle>
         </CardHeader>
         {level.description ? (
           <CardContent>

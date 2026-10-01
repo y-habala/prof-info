@@ -1,3 +1,4 @@
+import { GraduationCap } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { LevelCard } from "@/components/courses/level-card";
 
@@ -10,19 +11,25 @@ export default async function HomePage() {
     .order("order_index");
 
   return (
-    <div className="mx-auto max-w-6xl space-y-16 px-4 py-16">
-      <section className="space-y-4 text-center">
-        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
-          Apprendre l&apos;informatique,{" "}
-          <span className="text-primary">simplement</span>
+    <div className="mx-auto max-w-6xl space-y-20 px-4 py-16 sm:py-20">
+      <section className="space-y-5 text-center">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/5 px-3.5 py-1.5 text-xs font-bold tracking-wide text-primary uppercase">
+          <GraduationCap className="size-3.5" />
+          Collège · Informatique
+        </span>
+        <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl">
+          Apprendre l&apos;informatique, <span className="text-primary">simplement</span>
         </h1>
-        <p className="mx-auto max-w-xl text-lg text-muted-foreground">
+        <p className="mx-auto max-w-xl text-lg text-muted-foreground text-balance">
           Cours, exercices interactifs et activités pour les collégiens marocains.
         </p>
       </section>
 
       <section className="space-y-6">
-        <h2 className="text-center text-2xl font-semibold">Les niveaux</h2>
+        <div className="text-center">
+          <h2 className="text-2xl font-extrabold">Les niveaux</h2>
+          <span className="mx-auto mt-2 block h-1 w-14 rounded-full bg-gold" />
+        </div>
         {levels && levels.length > 0 ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             {levels.map((level, i) => (

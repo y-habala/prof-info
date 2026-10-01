@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -67,47 +68,52 @@ export function ExamVerifyForm() {
           className="h-14 text-center text-2xl tracking-[0.4em]"
         />
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="studentFirstName">Prénom</Label>
-        <Input
-          id="studentFirstName"
-          value={studentFirstName}
-          onChange={(e) => setStudentFirstName(e.target.value)}
-          required
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="studentFirstName">Prénom</Label>
+          <Input
+            id="studentFirstName"
+            value={studentFirstName}
+            onChange={(e) => setStudentFirstName(e.target.value)}
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="studentName">Nom</Label>
+          <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+        </div>
       </div>
-      <div className="space-y-2">
-        <Label htmlFor="studentName">Nom</Label>
-        <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="studentNumber">Numéro (optionnel)</Label>
-        <Input
-          id="studentNumber"
-          value={studentNumber}
-          onChange={(e) => setStudentNumber(e.target.value)}
-          placeholder="ex. 12"
-        />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="classNumber">Numéro de classe</Label>
-        <Input
-          id="classNumber"
-          value={classNumber}
-          onChange={(e) => setClassNumber(e.target.value.replace(/\D/g, "").slice(0, 3))}
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="ex. 3"
-          required
-        />
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="classNumber">N° de classe</Label>
+          <Input
+            id="classNumber"
+            value={classNumber}
+            onChange={(e) => setClassNumber(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            placeholder="ex. 3"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="studentNumber">N° (optionnel)</Label>
+          <Input
+            id="studentNumber"
+            value={studentNumber}
+            onChange={(e) => setStudentNumber(e.target.value)}
+            placeholder="ex. 12"
+          />
+        </div>
       </div>
       {error ? (
         <p className="text-sm text-destructive" role="alert">
           {error}
         </p>
       ) : null}
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button type="submit" className="h-11 w-full gap-1.5 rounded-full text-base font-semibold" disabled={isPending}>
         {isPending ? "Vérification..." : "Commencer l'examen"}
+        {isPending ? null : <ArrowRight className="size-4" />}
       </Button>
     </form>
   );
