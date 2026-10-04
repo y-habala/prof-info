@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { DEVOIR_SESSIONS, DEVOIR_SESSION_LABELS, type DevoirSession } from "@/schemas/devoirs";
 
 export const metadata: Metadata = {
@@ -22,9 +23,9 @@ type DevoirOption = {
 export default async function DevoirReportSearchPage({
   searchParams,
 }: {
-  searchParams: Promise<{ level?: string; session?: string; devoir?: string }>;
+  searchParams: Promise<{ level?: string; session?: string; devoir?: string; class?: string }>;
 }) {
-  const { level: levelFilter, session: sessionFilter, devoir: devoirId } = await searchParams;
+  const { level: levelFilter, session: sessionFilter, devoir: devoirId, class: classFilter } = await searchParams;
   const supabase = await createClient();
 
   const [{ data: levels }, { data: devoirsData }] = await Promise.all([
@@ -85,6 +86,12 @@ export default async function DevoirReportSearchPage({
     }
   }
 
+  // Only meaningful once a real class name from *this* devoir's own data is
+  // picked — a stale `class` param left over from switching to a different
+  // devoir (whose classes differ) must fall back to the full table, not
+  // silently show a focused view for a class that isn't actually in it.
+  const selectedClassRow = classFilter ? classRows.find((row) => row.className === classFilter) : undefined;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-semibold">Rapport de devoir</h1>
@@ -131,6 +138,25 @@ export default async function DevoirReportSearchPage({
                 ))}
               </select>
             </div>
+            <div className="space-y-1">
+              <label htmlFor="class" className="text-sm text-muted-foreground">
+                Classe
+              </label>
+              <select
+                id="class"
+                name="class"
+                defaultValue={classFilter ?? ""}
+                disabled={!selectedDevoir}
+                className={selectClass}
+              >
+                <option value="">Toutes les classes</option>
+                {classRows.map((row) => (
+                  <option key={row.className} value={row.className}>
+                    {row.className}
+                  </option>
+                ))}
+              </select>
+            </div>
             <button
               type="submit"
               className="h-9 rounded-lg bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90"
@@ -150,6 +176,39 @@ export default async function DevoirReportSearchPage({
             <p className="text-muted-foreground">Choisissez un devoir puis cliquez sur Chercher.</p>
           ) : classRows.length === 0 ? (
             <p className="text-muted-foreground">Aucune tentative soumise pour ce devoir.</p>
+          ) : selectedClassRow ? (
+            <div className="flex flex-wrap items-center justify-between gap-6 rounded-lg border border-border p-4">
+              <div className="flex flex-wrap gap-8">
+                <div>
+                  <p className="text-xs text-muted-foreground">Classe</p>
+                  <p className="font-semibold">{selectedClassRow.className}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Effectif</p>
+                  <p className="font-semibold">{selectedClassRow.count}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Moyenne</p>
+                  <p className="font-semibold">{selectedClassRow.average.toFixed(2)} / 20</p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Taux de réussite</p>
+                  <p className="font-semibold">{selectedClassRow.successRate} %</p>
+                </div>
+              </div>
+              <Button
+                nativeButton={false}
+                render={
+                  <a
+                    href={`/api/admin/devoirs/${selectedDevoir.id}/report?class=${encodeURIComponent(selectedClassRow.className)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Télécharger le rapport PDF
+              </Button>
+            </div>
           ) : (
             <Table>
               <TableHeader>
