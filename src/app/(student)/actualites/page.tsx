@@ -3,9 +3,6 @@ import Link from "next/link";
 import { Megaphone } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { SearchFilterBar } from "@/components/layout/search-filter-bar";
-import { ANNOUNCEMENT_TYPES, ANNOUNCEMENT_TYPE_LABELS } from "@/schemas/announcements";
 
 export const metadata: Metadata = {
   title: "Actualités — Plateforme Informatique",
@@ -19,30 +16,36 @@ function formatDate(iso: string | null) {
 export default async function AnnouncementsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; type?: string }>;
+  searchParams: Promise<{ q?: string }>;
 }) {
-  const { q, type } = await searchParams;
+  const { q } = await searchParams;
   const supabase = await createClient();
 
   let query = supabase
     .from("announcements")
-    .select("id, title, slug, description, image_url, type, published_at")
+    .select("id, title, slug, description, image_url, published_at")
     .eq("is_published", true);
-  if (type) query = query.eq("type", type);
   if (q) query = query.ilike("title", `%${q}%`);
   const { data: announcements } = await query.order("published_at", { ascending: false });
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 px-4 py-12">
       <h1 className="text-3xl font-bold tracking-tight">Actualités</h1>
-      <SearchFilterBar
-        searchPlaceholder="Rechercher une actualité…"
-        searchDefault={q}
-        filterName="type"
-        filterLabel="Type"
-        filterOptions={ANNOUNCEMENT_TYPES.map((t) => ({ value: t, label: ANNOUNCEMENT_TYPE_LABELS[t] }))}
-        filterDefault={type}
-      />
+      <form method="GET" className="flex items-center gap-2">
+        <input
+          type="text"
+          name="q"
+          placeholder="Rechercher une actualité…"
+          defaultValue={q ?? ""}
+          className="h-9 flex-1 max-w-sm rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+        />
+        <button
+          type="submit"
+          className="h-9 rounded-lg border border-input bg-transparent px-4 text-sm hover:bg-muted"
+        >
+          Rechercher
+        </button>
+      </form>
       {announcements && announcements.length > 0 ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
           {announcements.map((item) => (
@@ -57,12 +60,7 @@ export default async function AnnouncementsPage({
                   </div>
                 )}
                 <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      {ANNOUNCEMENT_TYPE_LABELS[item.type as (typeof ANNOUNCEMENT_TYPES)[number]]}
-                    </Badge>
-                    <span className="text-xs text-muted-foreground">{formatDate(item.published_at)}</span>
-                  </div>
+                  <span className="text-xs text-muted-foreground">{formatDate(item.published_at)}</span>
                   <CardTitle className="text-base">{item.title}</CardTitle>
                 </CardHeader>
                 {item.description ? (

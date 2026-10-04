@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { Badge } from "@/components/ui/badge";
-import { ANNOUNCEMENT_TYPE_LABELS, type ANNOUNCEMENT_TYPES } from "@/schemas/announcements";
 
 function formatDate(iso: string | null) {
   if (!iso) return "";
@@ -18,7 +16,7 @@ export default async function AnnouncementPage({
 
   const { data: item } = await supabase
     .from("announcements")
-    .select("title, description, content, image_url, type, published_at")
+    .select("title, description, content, image_url, published_at")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
@@ -34,12 +32,7 @@ export default async function AnnouncementPage({
         <img src={item.image_url} alt="" className="w-full rounded-md object-cover" />
       ) : null}
       <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Badge variant="secondary">
-            {ANNOUNCEMENT_TYPE_LABELS[item.type as (typeof ANNOUNCEMENT_TYPES)[number]]}
-          </Badge>
-          <span className="text-xs text-muted-foreground">{formatDate(item.published_at)}</span>
-        </div>
+        <span className="text-xs text-muted-foreground">{formatDate(item.published_at)}</span>
         <h1 className="text-2xl font-semibold">{item.title}</h1>
         {item.description ? <p className="text-muted-foreground">{item.description}</p> : null}
       </div>
