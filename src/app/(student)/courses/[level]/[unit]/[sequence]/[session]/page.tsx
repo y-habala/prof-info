@@ -94,8 +94,11 @@ export default async function SessionPage({
       <CourseBreadcrumb
         segments={[
           { label: level.name, href: `/courses/${level.id}` },
-          { label: unit.title, href: `/courses/${level.id}/${unit.id}` },
-          { label: sequence.title, href: `/courses/${level.id}/${unit.id}/${sequence.id}` },
+          // Unité/séquence no longer have their own listing page — both
+          // link back to the level's consolidated outline rather than a
+          // now-nonexistent route.
+          { label: unit.title, href: `/courses/${level.id}` },
+          { label: sequence.title, href: `/courses/${level.id}` },
           { label: session.title },
         ]}
       />

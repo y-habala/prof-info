@@ -15,9 +15,19 @@ function parseForm(formData: FormData) {
   });
 }
 
-function revalidateSessionPaths(levelId: string, unitId: string, sequenceId: string) {
+// The student-facing unit/sequence listing pages no longer exist — the
+// whole level's unit→séquence→séance outline lives on one page — but the
+// session's own content page is still a real route and still needs its
+// own revalidation (a pre-existing gap: the previous version of this
+// helper never revalidated it either, only the now-deleted sequence
+// listing above it). sessionId is omitted for createSession, where the
+// page doesn't exist yet until the next request fetches it fresh anyway.
+function revalidateSessionPaths(levelId: string, unitId: string, sequenceId: string, sessionId?: string) {
   revalidatePath("/admin/sessions");
-  revalidatePath(`/courses/${levelId}/${unitId}/${sequenceId}`);
+  revalidatePath(`/courses/${levelId}`);
+  if (sessionId) {
+    revalidatePath(`/courses/${levelId}/${unitId}/${sequenceId}/${sessionId}`);
+  }
 }
 
 export async function createSession(
@@ -70,7 +80,7 @@ export async function updateSession(
     .eq("id", id);
 
   if (error) return { error: "Une erreur est survenue." };
-  revalidateSessionPaths(levelId, unitId, sequenceId);
+  revalidateSessionPaths(levelId, unitId, sequenceId, id);
 }
 
 export async function toggleSessionPublished(
@@ -82,7 +92,7 @@ export async function toggleSessionPublished(
 ) {
   const supabase = await createClient();
   await supabase.from("sessions").update({ is_published: isPublished }).eq("id", id);
-  revalidateSessionPaths(levelId, unitId, sequenceId);
+  revalidateSessionPaths(levelId, unitId, sequenceId, id);
 }
 
 export async function deleteSession(
@@ -93,5 +103,5 @@ export async function deleteSession(
 ) {
   const supabase = await createClient();
   await supabase.from("sessions").delete().eq("id", id);
-  revalidateSessionPaths(levelId, unitId, sequenceId);
+  revalidateSessionPaths(levelId, unitId, sequenceId, id);
 }

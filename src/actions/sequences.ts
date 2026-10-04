@@ -14,9 +14,13 @@ function parseForm(formData: FormData) {
   });
 }
 
-function revalidateSequencePaths(unitLevelId: string, unitId: string) {
+function revalidateSequencePaths(unitLevelId: string) {
   revalidatePath("/admin/sequences");
-  revalidatePath(`/courses/${unitLevelId}/${unitId}`);
+  // The student-facing unit listing page no longer exists — the whole
+  // level's unit→séquence→séance outline now lives on one page. Unlike a
+  // session, a séquence never had its own standalone content page to
+  // additionally target.
+  revalidatePath(`/courses/${unitLevelId}`);
 }
 
 export async function createSequence(
@@ -39,7 +43,7 @@ export async function createSequence(
   });
 
   if (error) return { error: "Une erreur est survenue." };
-  revalidateSequencePaths(unitLevelId, unitId);
+  revalidateSequencePaths(unitLevelId);
 }
 
 export async function updateSequence(
@@ -65,7 +69,7 @@ export async function updateSequence(
     .eq("id", id);
 
   if (error) return { error: "Une erreur est survenue." };
-  revalidateSequencePaths(unitLevelId, unitId);
+  revalidateSequencePaths(unitLevelId);
 }
 
 export async function toggleSequencePublished(
@@ -76,11 +80,11 @@ export async function toggleSequencePublished(
 ) {
   const supabase = await createClient();
   await supabase.from("sequences").update({ is_published: isPublished }).eq("id", id);
-  revalidateSequencePaths(unitLevelId, unitId);
+  revalidateSequencePaths(unitLevelId);
 }
 
 export async function deleteSequence(id: string, unitId: string, unitLevelId: string) {
   const supabase = await createClient();
   await supabase.from("sequences").delete().eq("id", id);
-  revalidateSequencePaths(unitLevelId, unitId);
+  revalidateSequencePaths(unitLevelId);
 }
