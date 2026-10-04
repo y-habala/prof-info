@@ -9,6 +9,15 @@ function formatDateTime(iso: string | null) {
   return new Date(iso).toLocaleString("fr-FR");
 }
 
+// Always /20 regardless of the exam's own max_score — the usual "note"
+// convention — and explicitly clamped even though score <= max_score
+// should already guarantee it, matching the same defensive clamp the
+// teacher's own reference exam file applies before displaying a score.
+function scoreOutOf20(score: number, maxScore: number): number {
+  if (maxScore <= 0) return 0;
+  return Math.min(20, (score / maxScore) * 20);
+}
+
 export async function GET(request: Request) {
   // Middleware already gates /api/admin/* on a Supabase Auth session, but
   // per this codebase's "never trust middleware alone" rule (see the admin
@@ -61,11 +70,15 @@ export async function GET(request: Request) {
       { header: "Note", key: "score", width: 12 },
       { header: "Classe", key: "class", width: 14 },
     ];
+    // Real number (not a string) with a fixed 2-decimal format, so it
+    // reads as "16.50" in Excel — not "16.5" — while staying sortable/
+    // usable in formulas rather than locking it to display-only text.
+    sheet.getColumn("score").numFmt = "0.00";
     for (const a of sortedAttempts) {
       sheet.addRow({
         fullName: `${a.student_first_name} ${a.student_name}`,
         number: a.student_number ?? "",
-        score: a.submitted_at ? `${a.score}/${a.max_score}` : "",
+        score: a.submitted_at ? scoreOutOf20(Number(a.score), Number(a.max_score)) : null,
         class: a.student_class ?? "",
       });
     }
