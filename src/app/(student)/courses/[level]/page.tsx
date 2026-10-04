@@ -51,8 +51,9 @@ export default async function LevelPage({
   // One fetch for the whole Unité → Séquence → Séance tree — publication
   // filtering/ordering for the nested tables happens in JS below rather
   // than via PostgREST's embedded-filter syntax, matching how this
-  // codebase already does any non-trivial grouping (see the devoirs
-  // report page) rather than leaning on a fussier query-string approach.
+  // codebase already does any non-trivial grouping (see the admin results
+  // pages' class breakdowns) rather than leaning on a fussier query-string
+  // approach.
   const { data: unitsData } = await supabase
     .from("units")
     .select(

@@ -91,13 +91,27 @@ export default async function AdminExamResultsPage({
             Filtrer
           </button>
           {classFilter ? (
-            <Button
-              variant="outline"
-              nativeButton={false}
-              render={<a href={`/api/admin/results/export?id=${exam.id}&class=${encodeURIComponent(classFilter)}`} />}
-            >
-              Télécharger {classFilter} (Excel)
-            </Button>
+            <>
+              <Button
+                variant="outline"
+                nativeButton={false}
+                render={<a href={`/api/admin/results/export?id=${exam.id}&class=${encodeURIComponent(classFilter)}`} />}
+              >
+                Télécharger {classFilter} (Excel)
+              </Button>
+              <Button
+                nativeButton={false}
+                render={
+                  <a
+                    href={`/api/admin/exams/${exam.id}/report?class=${encodeURIComponent(classFilter)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  />
+                }
+              >
+                Générer le rapport (PDF)
+              </Button>
+            </>
           ) : null}
         </form>
       ) : null}

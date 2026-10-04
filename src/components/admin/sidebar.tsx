@@ -14,7 +14,6 @@ const NAV_ITEMS = [
   { href: "/admin/sessions", label: "Séances" },
   { href: "/admin/exercises", label: "Exercices" },
   { href: "/admin/html-pages", label: "Activités HTML" },
-  { href: "/admin/devoirs", label: "Devoirs" },
   { href: "/admin/exams", label: "Examens" },
   { href: "/admin/results", label: "Résultats" },
   { href: "/admin/announcements", label: "Actualités" },

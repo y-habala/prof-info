@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet, Font, Svg, Path } from "@react-pdf/renderer";
 import path from "node:path";
 
-// Fixed for this single-school deployment (see devoir-report.tsx for the
+// Fixed for this single-school deployment (see class-report.tsx for the
 // same pattern, Arabic-side) — no home in the schema for 3 values that
 // never change, not worth a settings table for.
 const INSTITUTION = "IBN BATTOUTA";
@@ -20,7 +20,7 @@ Font.register({
 function currentSchoolYear(): string {
   // Morocco's school year runs Sept→June — before September, we're still
   // in the year that started the previous September. Duplicated from
-  // devoir-report.tsx deliberately (separate, unrelated documents — see
+  // class-report.tsx deliberately (separate, unrelated documents — see
   // this project's established "parallel not shared" precedent for
   // exam vs. exercise code) rather than cross-imported.
   const now = new Date();

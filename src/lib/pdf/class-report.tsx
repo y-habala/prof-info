@@ -33,9 +33,9 @@ function currentSchoolYear(): string {
 type Mention = { label: string; color: string };
 
 // Single scale used everywhere in this report (header badge, donut, list) —
-// the reference PDF actually mixes two slightly different scales between
-// its donut and its per-student list; using one consistent scale throughout
-// is a deliberate simplification, not an oversight.
+// the original reference PDF this was modeled on actually mixes two
+// slightly different scales between its donut and its per-student list;
+// using one consistent scale throughout is a deliberate simplification.
 function getMention(score20: number): Mention {
   if (score20 < 10) return { label: "ضعيف", color: "#dc2626" };
   if (score20 < 14) return { label: "متوسط", color: "#9333ea" };
@@ -172,17 +172,16 @@ function KpiCard({ label, value }: { label: string; value: string }) {
   );
 }
 
-export type DevoirReportStudent = { name: string; score: number };
+export type ClassReportStudent = { name: string; score: number };
 
-export type DevoirReportData = {
-  devoirTitle: string;
-  sessionLabel: string;
+export type ClassReportData = {
+  examTitle: string;
   className: string;
-  students: DevoirReportStudent[];
+  students: ClassReportStudent[];
   absentCount: number;
 };
 
-export function DevoirReportDocument({ data }: { data: DevoirReportData }) {
+export function ClassReportDocument({ data }: { data: ClassReportData }) {
   const scores = data.students.map((s) => s.score);
   const total = data.students.length;
   const passing = scores.filter((s) => s >= 10).length;
@@ -225,7 +224,7 @@ export function DevoirReportDocument({ data }: { data: DevoirReportData }) {
           </View>
           <View style={styles.letterColCenter}>
             <View style={styles.reportTitleRow}>
-              <Text style={styles.reportTitle}>{data.devoirTitle} </Text>
+              <Text style={styles.reportTitle}>{data.examTitle} </Text>
               <Text style={styles.reportTitle}>تقرير</Text>
             </View>
             <Text style={styles.reportSubtitle}>Rapport d&apos;Évaluation</Text>
@@ -238,7 +237,6 @@ export function DevoirReportDocument({ data }: { data: DevoirReportData }) {
 
         <View style={styles.metaRow}>
           <MetaBox label="القسم" value={data.className} latin />
-          <MetaBox label="الدورة" value={data.sessionLabel} />
           <MetaBox label="المادة" value={SUBJECT} />
           <MetaBox label="الأستاذ(ة)" value={TEACHER_NAME} />
           <MetaBox label="السنة الدراسية" value={currentSchoolYear()} latin />

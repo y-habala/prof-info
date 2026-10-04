@@ -4,7 +4,6 @@ export const examFormSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis.").max(200),
   description: z.string().trim().max(1000).optional().or(z.literal("")),
   levelId: z.string().uuid().optional().or(z.literal("")),
-  devoirId: z.string().uuid().optional().or(z.literal("")),
   durationMinutes: z.coerce.number().int().positive(),
   secretCode: z.string().regex(/^\d{4}$/, "Le code doit contenir exactement 4 chiffres."),
   startAt: z.string().optional().or(z.literal("")),
@@ -56,7 +55,7 @@ export type ExamQuestionFormValues = z.infer<typeof examQuestionFormSchema>;
 // limitation, see architecture doc). The student never picks a level (the
 // exam's own level_id fixes it) — only their class NUMBER within that level,
 // so the server can build a canonical "Niveau-N" label reliable enough to
-// group by class in the devoir report (free text would defeat that).
+// group by class in the per-exam class report (free text would defeat that).
 export const examVerifySchema = z.object({
   secretCode: z.string().regex(/^\d{4}$/),
   studentName: z.string().trim().min(1).max(100),

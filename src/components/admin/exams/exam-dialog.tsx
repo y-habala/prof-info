@@ -13,7 +13,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createExam, updateExam } from "@/actions/exams";
-import { DEVOIR_SESSION_LABELS, type DevoirSession } from "@/schemas/devoirs";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -25,19 +24,16 @@ function SubmitButton({ label }: { label: string }) {
 }
 
 type Level = { id: string; name: string };
-type Devoir = { id: string; title: string; session: DevoirSession; level_name: string };
 
 type ExamDialogProps = {
   trigger: React.ReactNode;
   mode: "create" | "edit";
   levels: Level[];
-  devoirs: Devoir[];
   initialValues?: {
     id: string;
     title: string;
     description: string | null;
     levelId: string | null;
-    devoirId: string | null;
     durationMinutes: number;
     secretCode: string;
     startAt: string | null;
@@ -60,7 +56,7 @@ function toDateTimeLocal(iso: string | null) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function ExamDialog({ trigger, mode, levels, devoirs, initialValues }: ExamDialogProps) {
+export function ExamDialog({ trigger, mode, levels, initialValues }: ExamDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formKey, setFormKey] = useState(0);
@@ -125,22 +121,6 @@ export function ExamDialog({ trigger, mode, levels, devoirs, initialValues }: Ex
               {levels.map((l) => (
                 <option key={l.id} value={l.id}>
                   {l.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="devoirId">Devoir (optionnel — pour le rapport de classe)</Label>
-            <select
-              id="devoirId"
-              name="devoirId"
-              className={selectClass}
-              defaultValue={initialValues?.devoirId ?? ""}
-            >
-              <option value="">—</option>
-              {devoirs.map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.level_name} — {d.title} ({DEVOIR_SESSION_LABELS[d.session]})
                 </option>
               ))}
             </select>
