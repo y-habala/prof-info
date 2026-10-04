@@ -6,9 +6,9 @@ import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
+import { MatchingGroup } from "./matching-dnd";
 
 type Question = {
   id: string;
@@ -209,40 +209,6 @@ function QuestionRow({
         </div>
       )}
 
-      {q.questionType === "matching" && (
-        <Select
-          disabled={isSubmitting}
-          // Without `items`, Base UI's <Select.Value> renders the raw value
-          // instead of the matching option's label. The `value: null` entry
-          // matters just as much: without an item that actually matches a
-          // `null` value, Base UI treats "no match found" as unresolved and
-          // silently snaps selectedIndex (and then the controlled value, via
-          // its mount-time sync) to the first real item — i.e. an unanswered
-          // question would auto-grade as whatever option happens to render
-          // first. Built inline (not useMemo'd) since this row only
-          // re-renders when its own answer changes, unlike the old
-          // one-component-per-exam layout where every row re-rendered on
-          // every keystroke anywhere in the exam.
-          items={[{ value: null, label: "Choisissez une réponse…" }, ...q.options.map((o) => ({ value: o.id, label: o.text }))]}
-          // Base UI's Select decides controlled-vs-uncontrolled from whether
-          // `value` is `undefined` on the first render — an unanswered
-          // question must still pass a defined `null`, never `undefined`.
-          value={Array.isArray(answer) ? (answer[0] ?? null) : null}
-          onValueChange={(value) => onSetSingle(value as string)}
-        >
-          <SelectTrigger className="w-full max-w-xs rounded-lg bg-muted/30">
-            <SelectValue placeholder="Choisissez une réponse…" />
-          </SelectTrigger>
-          <SelectContent>
-            {q.options.map((o) => (
-              <SelectItem key={o.id} value={o.id}>
-                {o.text}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      )}
-
       {q.questionType === "fill_blank" && (
         <Input
           disabled={isSubmitting}
@@ -267,6 +233,42 @@ function QuestionRow({
   );
 }
 
+type RenderItem = { kind: "question"; question: Question } | { kind: "matchingGroup"; questions: Question[] };
+
+// Groups consecutive "matching" questions that share an identical option-text
+// pool into one drag-and-drop set — exactly how src/actions/exam-questions.ts's
+// createMatchingSet writes a batch (every pair gets the same pool texts, same
+// section, consecutive order_index), so this reconstructs "which pairs were
+// authored together" purely from the data shape, with no new schema/column.
+// A matching question with no such neighbor still gets its own one-pair group.
+function groupQuestions(questions: Question[]): RenderItem[] {
+  const poolKey = (q: Question) =>
+    q.options
+      .map((o) => o.text)
+      .slice()
+      .sort()
+      .join("\u0001");
+  const items: RenderItem[] = [];
+  let i = 0;
+  while (i < questions.length) {
+    const q = questions[i];
+    if (q.questionType !== "matching") {
+      items.push({ kind: "question", question: q });
+      i++;
+      continue;
+    }
+    const group = [q];
+    let j = i + 1;
+    while (j < questions.length && questions[j].questionType === "matching" && poolKey(questions[j]) === poolKey(q)) {
+      group.push(questions[j]);
+      j++;
+    }
+    items.push({ kind: "matchingGroup", questions: group });
+    i = j;
+  }
+  return items;
+}
+
 // One bordered, top-accented card per section — mirrors the reference exam
 // file's .exercise-card (white card, colored top border strip, header row
 // with title + a total-points badge), with individual questions as plain
@@ -280,6 +282,7 @@ function SectionCard({
   onSetSingle,
   onToggleMulti,
   onSetText,
+  onClear,
 }: {
   section: SectionGroup;
   answers: Record<string, string[] | string>;
@@ -287,8 +290,16 @@ function SectionCard({
   onSetSingle: (questionId: string, optionId: string) => void;
   onToggleMulti: (questionId: string, optionId: string) => void;
   onSetText: (questionId: string, text: string) => void;
+  onClear: (questionId: string) => void;
 }) {
   const totalPoints = section.questions.reduce((sum, q) => sum + q.points, 0);
+  const items = groupQuestions(section.questions);
+  const indexedItems: { item: RenderItem; startIndex: number }[] = [];
+  let cursor = 0;
+  for (const item of items) {
+    indexedItems.push({ item, startIndex: cursor });
+    cursor += item.kind === "question" ? 1 : item.questions.length;
+  }
 
   return (
     <div className="overflow-hidden rounded-xl border border-border border-t-4 border-t-primary bg-card shadow-sm">
@@ -305,18 +316,31 @@ function SectionCard({
         <img src={section.imageUrl} alt="" className="max-h-80 w-full border-b border-border object-contain p-3" />
       ) : null}
       <div className="divide-y divide-border">
-        {section.questions.map((q, i) => (
-          <QuestionRow
-            key={q.id}
-            question={q}
-            index={i}
-            answer={answers[q.id]}
-            isSubmitting={isSubmitting}
-            onSetSingle={(optionId) => onSetSingle(q.id, optionId)}
-            onToggleMulti={(optionId) => onToggleMulti(q.id, optionId)}
-            onSetText={(text) => onSetText(q.id, text)}
-          />
-        ))}
+        {indexedItems.map(({ item, startIndex }) =>
+          item.kind === "question" ? (
+            <QuestionRow
+              key={item.question.id}
+              question={item.question}
+              index={startIndex}
+              answer={answers[item.question.id]}
+              isSubmitting={isSubmitting}
+              onSetSingle={(optionId) => onSetSingle(item.question.id, optionId)}
+              onToggleMulti={(optionId) => onToggleMulti(item.question.id, optionId)}
+              onSetText={(text) => onSetText(item.question.id, text)}
+            />
+          ) : (
+            <div key={item.questions[0].id} className="p-4">
+              <MatchingGroup
+                questions={item.questions}
+                startIndex={startIndex}
+                answers={answers}
+                isSubmitting={isSubmitting}
+                onAssign={onSetSingle}
+                onClear={onClear}
+              />
+            </div>
+          )
+        )}
       </div>
     </div>
   );
@@ -365,6 +389,14 @@ export function ExamRunner({
 
   function setTextAnswer(questionId: string, text: string) {
     setAnswers((prev) => ({ ...prev, [questionId]: text }));
+  }
+
+  function clearAnswer(questionId: string) {
+    setAnswers((prev) => {
+      const next = { ...prev };
+      delete next[questionId];
+      return next;
+    });
   }
 
   async function handleSubmit() {
@@ -445,6 +477,7 @@ export function ExamRunner({
             onSetSingle={setSingleAnswer}
             onToggleMulti={toggleMultiAnswer}
             onSetText={setTextAnswer}
+            onClear={clearAnswer}
           />
         ))}
         {error ? (
