@@ -1,29 +1,24 @@
-import type { Metadata } from "next";
-import { ShieldCheck } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExamVerifyForm } from "@/components/exams/exam-verify-form";
+import { Construction } from "lucide-react";
+import Link from "next/link";
 
-export const metadata: Metadata = {
-  title: "Examen — Plateforme Informatique",
-};
-
-export default function ExamEntryPage() {
+export default function ExamComingSoonPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
-      <Card className="w-full max-w-sm rounded-2xl border-border shadow-lg">
-        <CardHeader className="items-center pt-8 text-center">
-          <div className="mb-2 flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-            <ShieldCheck className="size-7" />
-          </div>
-          <CardTitle className="text-xl font-extrabold">Accès à l&apos;examen</CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Entrez le code communiqué par votre enseignant ainsi que vos informations.
-          </p>
-        </CardHeader>
-        <CardContent className="pb-8">
-          <ExamVerifyForm />
-        </CardContent>
-      </Card>
-    </div>
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-20">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
+        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
+          <Construction className="size-6" />
+        </div>
+        <h1 className="mt-4 text-2xl font-bold">Examen bientôt disponible</h1>
+        <p className="mt-2 text-sm text-muted-foreground">
+          L&apos;entrée des codes d&apos;examen sera activée dans la prochaine mise à jour.
+        </p>
+        <Link
+          href="/"
+          className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
+        >
+          Retour à l&apos;accueil
+        </Link>
+      </div>
+    </main>
   );
 }

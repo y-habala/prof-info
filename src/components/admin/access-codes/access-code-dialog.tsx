@@ -1,50 +1,31 @@
 "use client";
-
 import { useState } from "react";
-import { useFormStatus } from "react-dom";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import { Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { createAccessCode, updateAccessCode } from "@/actions/access-codes";
+import { upsertAccessCode } from "@/actions/access-codes";
 
-function SubmitButton({ label }: { label: string }) {
-  const { pending } = useFormStatus();
-  return (
-    <Button type="submit" disabled={pending}>
-      {pending ? "Enregistrement..." : label}
-    </Button>
-  );
-}
-
-type AccessCodeDialogProps = {
-  trigger: React.ReactNode;
+type Props = {
+  trigger: React.ReactElement<{ children?: React.ReactNode }>;
   mode: "create" | "edit";
-  initialValues?: { id: string; code: string; label: string | null; expiresAt: string | null };
+  initialValues?: { id: string; code: string; label: string | null };
 };
 
-export function AccessCodeDialog({ trigger, mode, initialValues }: AccessCodeDialogProps) {
+export function AccessCodeDialog({ trigger, mode, initialValues }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const [formKey, setFormKey] = useState(0);
 
   async function handleAction(formData: FormData) {
+    setIsPending(true);
     setError(null);
-    const result =
-      mode === "edit" && initialValues
-        ? await updateAccessCode(initialValues.id, undefined, formData)
-        : await createAccessCode(undefined, formData);
-
-    if (result?.error) {
-      setError(result.error);
-    } else {
-      setOpen(false);
-    }
+    const result = await upsertAccessCode(initialValues?.id ?? null, undefined, formData);
+    setIsPending(false);
+    if (result?.error) setError(result.error);
+    else setOpen(false);
   }
 
   return (
@@ -52,17 +33,18 @@ export function AccessCodeDialog({ trigger, mode, initialValues }: AccessCodeDia
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setError(null);
+        if (next) {
+          setError(null);
+          setFormKey((k) => k + 1);
+        }
       }}
     >
-      <DialogTrigger render={trigger as React.ReactElement}>
-        {(trigger as React.ReactElement<{ children?: React.ReactNode }>).props.children}
-      </DialogTrigger>
+      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouveau code" : "Modifier le code"}</DialogTitle>
         </DialogHeader>
-        <form action={handleAction} className="space-y-4">
+        <form key={formKey} action={handleAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="code">Code (4 chiffres)</Label>
             <Input
@@ -70,34 +52,25 @@ export function AccessCodeDialog({ trigger, mode, initialValues }: AccessCodeDia
               name="code"
               inputMode="numeric"
               maxLength={4}
+              pattern="[0-9]*"
+              placeholder="ex. 2026"
               defaultValue={initialValues?.code}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="label">Description</Label>
-            <Input
-              id="label"
-              name="label"
-              placeholder="ex. 3APIC - Groupe 1"
-              defaultValue={initialValues?.label ?? ""}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="expiresAt">Expiration (optionnel)</Label>
-            <Input
-              id="expiresAt"
-              name="expiresAt"
-              type="date"
-              defaultValue={initialValues?.expiresAt?.slice(0, 10) ?? ""}
-            />
+            <Label htmlFor="label">Libellé (optionnel)</Label>
+            <Input id="label" name="label" placeholder="ex. 3APIC — Groupe A" defaultValue={initialValues?.label ?? ""} />
           </div>
           {error ? (
-            <p className="text-sm text-destructive" role="alert">
+            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </p>
           ) : null}
-          <SubmitButton label={mode === "create" ? "Créer" : "Enregistrer"} />
+          <Button type="submit" disabled={isPending} className="w-full gap-2">
+            {isPending ? <Loader2 className="size-4 animate-spin" /> : null}
+            {mode === "create" ? "Créer" : "Enregistrer"}
+          </Button>
         </form>
       </DialogContent>
     </Dialog>

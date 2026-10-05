@@ -1,130 +1,58 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-@import "shadcn/tailwind.css";
 
 @custom-variant dark (&:is(.dark *));
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-geist-sans);
-  --color-sidebar-ring: var(--sidebar-ring);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar: var(--sidebar);
-  --color-chart-5: var(--chart-5);
-  --color-chart-4: var(--chart-4);
-  --color-chart-3: var(--chart-3);
-  --color-chart-2: var(--chart-2);
-  --color-chart-1: var(--chart-1);
-  --color-ring: var(--ring);
-  --color-input: var(--input);
-  --color-border: var(--border);
-  --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-muted: var(--muted);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-secondary: var(--secondary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-primary: var(--primary);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-popover: var(--popover);
-  --color-card-foreground: var(--card-foreground);
-  --color-card: var(--card);
-  --color-level-1: var(--level-1);
-  --color-level-1-foreground: var(--level-1-foreground);
-  --color-level-2: var(--level-2);
-  --color-level-2-foreground: var(--level-2-foreground);
-  --color-level-3: var(--level-3);
-  --color-level-3-foreground: var(--level-3-foreground);
-  --color-level-4: var(--level-4);
-  --color-level-4-foreground: var(--level-4-foreground);
-  --color-gold: var(--gold);
-  --color-gold-foreground: var(--gold-foreground);
-  --color-success: var(--success);
-  --color-success-foreground: var(--success-foreground);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
-}
-
+/* Design tokens -----------------------------------------------------------
+ * Light-first, dark-mode-ready. Colors are in OKLCH so hue/chroma tweaks are
+ * surgical. Rounded corners are generous (--radius 0.75rem) and spacing is
+ * driven by Tailwind's own scale — no custom spacing scale.
+ *
+ * Primary = platform's warm blue (settled identity, 2 rounds of design
+ * precedent). Gold accent for CTAs. Success/destructive carry pass/fail
+ * semantics in exam feedback (keep these — their meaning is wired into
+ * exam logic, not just visual).
+ */
 :root {
-  /* A deliberate blue identity (tech/code association) — this was a plain
-     grayscale shadcn default (primary oklch(...0 0), zero chroma) until
-     now, which combined with the font-sans bug below made the whole app
-     render as unstyled black-on-white Times New Roman since Phase 1. */
-  --background: oklch(0.995 0.002 260);
-  --foreground: oklch(0.18 0.02 260);
+  --background: oklch(0.995 0 0);
+  --foreground: oklch(0.145 0 0);
+
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.02 260);
+  --card-foreground: oklch(0.145 0 0);
+
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.02 260);
+  --popover-foreground: oklch(0.145 0 0);
+
   --primary: oklch(0.47 0.21 258);
   --primary-foreground: oklch(0.99 0 0);
-  --secondary: oklch(0.96 0.008 260);
-  --secondary-foreground: oklch(0.25 0.03 260);
-  --muted: oklch(0.96 0.008 260);
-  --muted-foreground: oklch(0.5 0.02 260);
-  --accent: oklch(0.94 0.03 258);
-  --accent-foreground: oklch(0.3 0.1 258);
+
+  --secondary: oklch(0.97 0.005 258);
+  --secondary-foreground: oklch(0.205 0.03 258);
+
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.52 0 0);
+
+  --accent: oklch(0.95 0.03 258);
+  --accent-foreground: oklch(0.25 0.08 258);
+
   --destructive: oklch(0.577 0.245 27.325);
-  /* A semantic green, paired with --destructive's red for the exam
-     Vrai/Faux toggle — this is the near-universal true/false color
-     convention (traffic-light semantics), not a brand/identity choice,
-     so it's independent of whichever primary color the site runs. */
-  --success: oklch(0.6 0.16 148);
+  --destructive-foreground: oklch(0.99 0 0);
+
+  --success: oklch(0.60 0.16 148);
   --success-foreground: oklch(0.99 0 0);
-  --border: oklch(0.9 0.01 260);
-  --input: oklch(0.9 0.01 260);
-  --ring: oklch(0.6 0.15 258);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
+
+  --gold: oklch(0.80 0.14 85);
+  --gold-foreground: oklch(0.25 0.08 85);
+
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.92 0 0);
+  --ring: oklch(0.52 0.19 258);
+
   --radius: 0.75rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  /* Per-level accent pair, cycled by order_index in LevelCard — mirrors
-     the "each level gets its own soft accent color" pattern (a genuinely
-     useful organizing idea, not a copied visual asset). */
-  --level-1: oklch(0.95 0.045 175);
-  --level-1-foreground: oklch(0.42 0.1 175);
-  --level-2: oklch(0.96 0.05 75);
-  --level-2-foreground: oklch(0.48 0.13 65);
-  --level-3: oklch(0.95 0.04 300);
-  --level-3-foreground: oklch(0.48 0.15 300);
-  --level-4: oklch(0.95 0.035 230);
-  --level-4-foreground: oklch(0.45 0.14 240);
-  /* Brand gradient — same blue family as --primary (hue 258), carried into
-     a deeper indigo (hue ~300) rather than reaching for an unrelated color,
-     so every gradient surface still reads as "this platform's blue." Used
-     sparingly now (CTA buttons only) — not as a background wash. */
-  --brand-from: oklch(0.47 0.21 258);
-  --brand-to: oklch(0.42 0.2 295);
-  /* Warm accent, paired against the blue primary the way a confident
-     commercial site pairs a second color against its brand hue — used for
-     underline accents and small highlight badges, never as a base surface. */
-  --gold: oklch(0.78 0.15 85);
-  --gold-foreground: oklch(0.32 0.1 70);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-heading: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
 .dark {
@@ -134,67 +62,87 @@
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.205 0 0);
   --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.7 0.16 258);
-  --primary-foreground: oklch(0.145 0.02 260);
-  --secondary: oklch(0.269 0 0);
+  --primary: oklch(0.68 0.19 258);
+  --primary-foreground: oklch(0.145 0.02 258);
+  --secondary: oklch(0.225 0.02 258);
   --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.3 0.06 258);
-  --accent-foreground: oklch(0.9 0.03 258);
+  --muted: oklch(0.235 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --accent: oklch(0.28 0.05 258);
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
+  --destructive-foreground: oklch(0.985 0 0);
   --success: oklch(0.68 0.17 148);
   --success-foreground: oklch(0.145 0.02 148);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.65 0.15 258);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --level-1: oklch(0.3 0.045 175);
-  --level-1-foreground: oklch(0.82 0.08 175);
-  --level-2: oklch(0.32 0.05 75);
-  --level-2-foreground: oklch(0.85 0.1 75);
-  --level-3: oklch(0.3 0.04 300);
-  --level-3-foreground: oklch(0.82 0.1 300);
-  --level-4: oklch(0.3 0.035 230);
-  --level-4-foreground: oklch(0.8 0.1 230);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --brand-from: oklch(0.7 0.16 258);
-  --brand-to: oklch(0.62 0.19 302);
-  --gold: oklch(0.78 0.15 85);
-  --gold-foreground: oklch(0.22 0.07 70);
+  --gold: oklch(0.80 0.14 85);
+  --gold-foreground: oklch(0.20 0.05 85);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.28 0 0);
+  --ring: oklch(0.68 0.19 258);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-gold: var(--gold);
+  --color-gold-foreground: var(--gold-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --radius-sm: calc(var(--radius) - 0.25rem);
+  --radius-md: calc(var(--radius) - 0.125rem);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 0.25rem);
+
+  --font-sans: var(--font-sans);
+  --font-heading: var(--font-heading);
+  --font-mono: var(--font-mono);
 }
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;
+    @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-sans antialiased;
   }
-  html {
-    @apply font-sans;
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-tight;
   }
 }
 
-@layer utilities {
-  .bg-gradient-brand {
-    background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-  }
-  .text-gradient-brand {
-    background-image: linear-gradient(135deg, var(--brand-from), var(--brand-to));
-    background-clip: text;
-    -webkit-background-clip: text;
-    color: transparent;
-  }
+/* Prose-ish defaults for markdown-rendered content in sessions.
+ * Minimal — relies on Tailwind utilities for most styling, this only sets
+ * the base rhythm. Admin writes markdown in /admin, this renders it. */
+.markdown-content {
+  @apply space-y-3 leading-relaxed;
 }
+.markdown-content h1 { @apply text-2xl font-bold mt-6 mb-3; }
+.markdown-content h2 { @apply text-xl font-semibold mt-5 mb-2; }
+.markdown-content h3 { @apply text-lg font-semibold mt-4 mb-2; }
+.markdown-content p { @apply leading-relaxed; }
+.markdown-content ul { @apply list-disc list-inside space-y-1 pl-2; }
+.markdown-content ol { @apply list-decimal list-inside space-y-1 pl-2; }
+.markdown-content a { @apply text-primary underline underline-offset-4 hover:text-primary/80; }
+.markdown-content code { @apply rounded bg-muted px-1.5 py-0.5 text-sm font-mono; }
+.markdown-content pre { @apply rounded-lg bg-muted p-4 overflow-x-auto; }
+.markdown-content pre code { @apply bg-transparent p-0; }
+.markdown-content blockquote { @apply border-l-4 border-primary/30 pl-4 italic text-muted-foreground; }
+.markdown-content img { @apply rounded-lg my-4 max-w-full; }

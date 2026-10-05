@@ -1,16 +1,18 @@
-// Shared "note sur 20" conversion + appreciation wording — used by the PDF
-// answer sheet, the Excel export, and the student-facing result page alike,
-// so the same score always reads the same way everywhere in the app.
+// Shared grading helpers used by exam runner, result page, PDF report, and
+// Excel export. Keeps the wording and the /20 conversion consistent across
+// every surface in the app.
 
-// Always /20 regardless of the exam's own max_score — the usual "note"
-// convention — and explicitly clamped even though score <= max_score should
-// already guarantee it, matching the defensive clamp the teacher's own
-// reference exam file applies before displaying a score.
+// Normalize any raw score/max_score pair to a value in [0, 20], defensively
+// clamped — matches the convention used throughout the Moroccan collège
+// grading system.
 export function scoreOutOf20(score: number, maxScore: number): number {
   if (maxScore <= 0) return 0;
   return Math.min(20, (score / maxScore) * 20);
 }
 
+// Verbal appreciation for a /20 score. Thresholds reused in the student
+// résultat page card AND the per-student PDF stamp, so they MUST stay in
+// sync — one source of truth here.
 export function getAppreciation(score20: number): string {
   if (score20 >= 18) return "Excellent !";
   if (score20 >= 15) return "Très bien.";

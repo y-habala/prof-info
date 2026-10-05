@@ -1,22 +1,16 @@
 import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
+import { SUPABASE_SERVICE_ROLE_KEY, SUPABASE_URL } from "@/lib/env";
 
-/**
- * Service-role client — bypasses RLS entirely. Import ONLY in server-only
- * code that must mediate access to a table with zero anon grants: access
- * code verification, exam code verification, server-side score writes,
- * and admin reads of attempts/results. The `server-only` import above
- * turns an accidental client-side import into a build failure.
- */
+// Service-role client — bypasses RLS entirely. Used ONLY from server-side
+// code gated by its own auth check (admin auth for /admin routes, platform-
+// session cookie for /api/exam/*, etc.). The "server-only" import at the top
+// makes this a hard build error if ever imported from a client component.
 export function createAdminClient() {
-  return createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  if (!SUPABASE_SERVICE_ROLE_KEY) {
+    throw new Error("SUPABASE_SERVICE_ROLE_KEY is required for admin client.");
+  }
+  return createSupabaseClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }

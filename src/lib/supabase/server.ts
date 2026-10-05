@@ -1,33 +1,29 @@
+import "server-only";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 
-/**
- * Server Component / Server Action / Route Handler client.
- * Uses the anon key — RLS applies. This is the client for all
- * "published content" reads described in the architecture's RLS strategy.
- */
+// Server-side Supabase client bound to the current request's cookies.
+// Reads use the anon key with RLS enforcing published-content visibility —
+// anything sensitive (secrets, attempts, codes) is 0-grant to anon and goes
+// through createAdminClient() instead.
 export async function createClient() {
   const cookieStore = await cookies();
-
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // Called from a Server Component render — the middleware is
-            // responsible for refreshing the session cookie in that case.
-          }
-        },
+  return createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        try {
+          for (const { name, value, options } of cookiesToSet) {
+            cookieStore.set(name, value, options);
+          }
+        } catch {
+          // Called from a Server Component (read-only context) — safe to ignore;
+          // refresh happens via middleware.
+        }
+      },
+    },
+  });
 }

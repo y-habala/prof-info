@@ -1,31 +1,42 @@
-"use client"
+"use client";
+import * as React from "react";
+import { cn } from "@/lib/utils";
 
-import { Switch as SwitchPrimitive } from "@base-ui/react/switch"
-import { cn } from "cn"
+type Props = Omit<React.InputHTMLAttributes<HTMLInputElement>, "type" | "size"> & {
+  checked?: boolean;
+  onCheckedChange?: (checked: boolean) => void;
+};
 
-function Switch({
-  className,
-  size = "default",
-  ...props
-}: SwitchPrimitive.Root.Props & {
-  size?: "sm" | "default"
-}) {
+// Minimal, accessible switch — a real styled checkbox with sr-only input so
+// native focus/keyboard work out of the box. onCheckedChange is a thin
+// shim over onChange for parity with v1's call sites.
+export function Switch({ className, checked, onCheckedChange, onChange, ...props }: Props) {
   return (
-    <SwitchPrimitive.Root
-      data-slot="switch"
-      data-size={size}
+    <label
       className={cn(
-        "peer group/switch relative inline-flex shrink-0 items-center rounded-full border border-transparent transition-all outline-none group-has-[:focus-visible]/field-label:border-transparent group-has-[:focus-visible]/field-label:ring-0 after:absolute after:-inset-x-3 after:-inset-y-2 focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 data-[size=default]:h-[18.4px] data-[size=default]:w-[32px] data-[size=sm]:h-[14px] data-[size=sm]:w-[24px] dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 data-checked:bg-primary data-unchecked:bg-input dark:data-unchecked:bg-input/80 data-disabled:cursor-not-allowed data-disabled:opacity-50",
+        "inline-flex h-6 w-10 shrink-0 cursor-pointer items-center rounded-full border border-input p-0.5 transition-colors",
+        checked ? "bg-primary border-primary" : "bg-muted",
+        props.disabled && "pointer-events-none opacity-50",
         className
       )}
-      {...props}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
-        className="pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 group-data-[size=default]/switch:data-checked:translate-x-[calc(100%-2px)] rtl:group-data-[size=default]/switch:data-checked:-translate-x-[calc(100%-2px)] group-data-[size=sm]/switch:data-checked:translate-x-[calc(100%-2px)] rtl:group-data-[size=sm]/switch:data-checked:-translate-x-[calc(100%-2px)] dark:data-checked:bg-primary-foreground group-data-[size=default]/switch:data-unchecked:translate-x-0 rtl:group-data-[size=default]/switch:data-unchecked:-translate-x-0 group-data-[size=sm]/switch:data-unchecked:translate-x-0 rtl:group-data-[size=sm]/switch:data-unchecked:-translate-x-0 dark:data-unchecked:bg-foreground"
+      <input
+        type="checkbox"
+        className="peer sr-only"
+        checked={checked}
+        onChange={(e) => {
+          onCheckedChange?.(e.target.checked);
+          onChange?.(e);
+        }}
+        {...props}
       />
-    </SwitchPrimitive.Root>
-  )
+      <span
+        aria-hidden
+        className={cn(
+          "size-5 rounded-full bg-background shadow-sm transition-transform",
+          checked ? "translate-x-4" : "translate-x-0"
+        )}
+      />
+    </label>
+  );
 }
-
-export { Switch }

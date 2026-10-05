@@ -1,95 +1,58 @@
+import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@supabase/ssr";
-import { NextResponse, type NextRequest } from "next/server";
-import { ACCESS_SESSION_COOKIE, verifyAccessSession } from "@/lib/auth/access-session";
+import { verifyAccessSession, ACCESS_SESSION_COOKIE } from "@/lib/auth/access-session";
+import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 
-const STUDENT_PROTECTED_PREFIXES = [
-  "/courses",
-  "/exercises",
-  "/activities",
-  "/exam",
-  "/actualites",
-  "/api/exercise",
-  "/api/exam",
-];
+// Student-protected routes — the whole student app sits behind the access
+// code gate. The access page itself and the verify API must stay reachable.
+const STUDENT_PROTECTED_PREFIXES = ["/courses", "/exercises", "/exam"];
 
 function isStudentProtectedPath(pathname: string) {
-  // Admin-only route (reviewing a submitted answer sheet from
-  // /admin/results — see ExamAttemptsTable), via Supabase Auth, never a
-  // platform_session. Gating it here too would block that admin path
-  // whenever their browser never happened to also visit /access.
+  // PDF download of an attempt (admin-only, via Supabase Auth, no platform
+  // session) is handled in Session 3 — kept out of the student gate here.
   if (pathname.startsWith("/api/exam/") && pathname.endsWith("/pdf")) return false;
   return pathname === "/" || STUDENT_PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 }
 
-async function handleAdminRoute(request: NextRequest) {
-  let response = NextResponse.next({ request });
+export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  // Admin routes — Supabase Auth session.
+  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
+    if (pathname === "/admin/login") return NextResponse.next();
+    const res = NextResponse.next();
+    const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-          response = NextResponse.next({ request });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          );
+        getAll: () => req.cookies.getAll(),
+        setAll: (toSet) => {
+          for (const { name, value, options } of toSet) {
+            res.cookies.set(name, value, options);
+          }
         },
       },
+    });
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/admin/login";
+      url.search = "";
+      return NextResponse.redirect(url);
     }
-  );
-
-  // getUser() (not getSession()) re-validates against Supabase Auth rather
-  // than trusting the cookie's own claims — required when the result gates
-  // access, per Supabase's SSR guidance.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const isAdminLogin = request.nextUrl.pathname === "/admin/login";
-
-  if (!isAdminLogin && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin/login";
-    return NextResponse.redirect(url);
+    return res;
   }
 
-  if (isAdminLogin && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/admin";
-    return NextResponse.redirect(url);
-  }
-
-  return response;
-}
-
-async function handleStudentRoute(request: NextRequest) {
-  const token = request.cookies.get(ACCESS_SESSION_COOKIE)?.value;
-  const session = await verifyAccessSession(token);
-
-  if (!session) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/access";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
-  return NextResponse.next();
-}
-
-export async function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-
-  if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    return handleAdminRoute(request);
-  }
-
+  // Student routes — JWT platform session (our own cookie).
   if (isStudentProtectedPath(pathname)) {
-    return handleStudentRoute(request);
+    const token = req.cookies.get(ACCESS_SESSION_COOKIE)?.value;
+    const session = await verifyAccessSession(token);
+    if (!session) {
+      const url = req.nextUrl.clone();
+      url.pathname = "/access";
+      url.searchParams.set("redirect", pathname);
+      return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();
@@ -97,15 +60,12 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/admin/:path*",
     "/",
     "/courses/:path*",
     "/exercises/:path*",
-    "/activities/:path*",
     "/exam/:path*",
-    "/actualites/:path*",
-    "/api/exercise/:path*",
-    "/api/exam/:path*",
+    "/admin/:path*",
     "/api/admin/:path*",
+    "/api/exam/:path*",
   ],
 };
