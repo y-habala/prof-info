@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -368,6 +368,22 @@ export function ExamRunner({
   // that (both calls can read stale `isSubmitting` before either re-render
   // lands), so a ref gives a real synchronous re-entrancy check.
   const hasSubmittedRef = useRef(false);
+  // Anti-cheating deterrent: a browser can never be FORCED to stay on a page
+  // (the student can always force-close it or click through the dialog) —
+  // beforeunload's native "Leave site?" confirm is the only lever a website
+  // actually has, for reload, back/forward, closing the tab, or typing a new
+  // URL alike. Stays armed until a real successful submit disarms it below.
+  const unloadGuardArmedRef = useRef(true);
+
+  useEffect(() => {
+    function handleBeforeUnload(e: BeforeUnloadEvent) {
+      if (!unloadGuardArmedRef.current) return;
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, []);
 
   const allQuestions = sections.flatMap((s) => s.questions);
   const answeredCount = allQuestions.filter((q) => isAnswered(q, answers[q.id])).length;
@@ -428,6 +444,7 @@ export function ExamRunner({
         setIsSubmitting(false);
         return;
       }
+      unloadGuardArmedRef.current = false;
       router.push(`/exam/${attemptId}/resultat`);
     } catch {
       setError("Une erreur est survenue.");

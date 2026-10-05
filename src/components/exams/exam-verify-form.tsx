@@ -54,7 +54,7 @@ export function ExamVerifyForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
       <div className="space-y-2">
         <Label htmlFor="secretCode">Code de l&apos;examen (4 chiffres)</Label>
         <Input
@@ -65,6 +65,7 @@ export function ExamVerifyForm() {
           pattern="[0-9]*"
           maxLength={4}
           placeholder="• • • •"
+          autoComplete="off"
           className="h-14 text-center text-2xl tracking-[0.4em]"
         />
       </div>
@@ -75,12 +76,19 @@ export function ExamVerifyForm() {
             id="studentFirstName"
             value={studentFirstName}
             onChange={(e) => setStudentFirstName(e.target.value)}
+            autoComplete="off"
             required
           />
         </div>
         <div className="space-y-2">
           <Label htmlFor="studentName">Nom</Label>
-          <Input id="studentName" value={studentName} onChange={(e) => setStudentName(e.target.value)} required />
+          <Input
+            id="studentName"
+            value={studentName}
+            onChange={(e) => setStudentName(e.target.value)}
+            autoComplete="off"
+            required
+          />
         </div>
       </div>
       <div className="grid grid-cols-2 gap-3">
@@ -93,6 +101,7 @@ export function ExamVerifyForm() {
             inputMode="numeric"
             pattern="[0-9]*"
             placeholder="ex. 3"
+            autoComplete="off"
             required
           />
         </div>
@@ -103,6 +112,7 @@ export function ExamVerifyForm() {
             value={studentNumber}
             onChange={(e) => setStudentNumber(e.target.value)}
             placeholder="ex. 12"
+            autoComplete="off"
           />
         </div>
       </div>
