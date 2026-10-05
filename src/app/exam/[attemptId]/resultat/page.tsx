@@ -4,7 +4,6 @@ import { BookOpen } from "lucide-react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXAM_SESSION_COOKIE, verifyExamSession } from "@/lib/auth/exam-session";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { scoreOutOf20, getAppreciation } from "@/lib/grading";
 
@@ -52,24 +51,14 @@ export default async function ExamResultPage({
         <CardHeader className="items-center pt-8">
           <CardTitle className="text-sm font-medium text-muted-foreground">{exam.title}</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5 pb-8">
-          <div className="space-y-1">
-            <p className={cn("text-lg font-bold", tierClass)}>Note Finale</p>
-            <p className={cn("text-6xl leading-none font-extrabold", tierClass)}>
-              {score20.toFixed(2)}
-              <span className="text-2xl font-medium text-muted-foreground">/20</span>
-            </p>
-            <p className="text-muted-foreground">{appreciation}</p>
-            <BookOpen className="mx-auto size-5 text-muted-foreground" />
-          </div>
-          <Button
-            variant="outline"
-            className="rounded-full"
-            nativeButton={false}
-            render={<a href={`/api/exam/${attemptId}/pdf`} />}
-          >
-            Télécharger la feuille de réponses (PDF)
-          </Button>
+        <CardContent className="space-y-1 pb-8">
+          <p className={cn("text-lg font-bold", tierClass)}>Note Finale</p>
+          <p className={cn("text-6xl leading-none font-extrabold", tierClass)}>
+            {score20.toFixed(2)}
+            <span className="text-2xl font-medium text-muted-foreground">/20</span>
+          </p>
+          <p className="text-muted-foreground">{appreciation}</p>
+          <BookOpen className="mx-auto size-5 text-muted-foreground" />
         </CardContent>
       </Card>
     </div>

@@ -13,11 +13,10 @@ const STUDENT_PROTECTED_PREFIXES = [
 ];
 
 function isStudentProtectedPath(pathname: string) {
-  // The PDF route serves two legitimate callers — the student (platform +
-  // exam-attempt session) and the admin (Supabase Auth only, reviewing from
-  // /admin/results, who was never issued a platform_session) — and enforces
-  // that itself. Gating it here too would block the admin path whenever
-  // their browser never happened to also visit /access.
+  // Admin-only route (reviewing a submitted answer sheet from
+  // /admin/results — see ExamAttemptsTable), via Supabase Auth, never a
+  // platform_session. Gating it here too would block that admin path
+  // whenever their browser never happened to also visit /access.
   if (pathname.startsWith("/api/exam/") && pathname.endsWith("/pdf")) return false;
   return pathname === "/" || STUDENT_PROTECTED_PREFIXES.some((p) => pathname.startsWith(p));
 }

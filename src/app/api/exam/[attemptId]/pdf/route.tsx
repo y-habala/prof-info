@@ -1,8 +1,6 @@
-import { cookies } from "next/headers";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
-import { EXAM_SESSION_COOKIE, verifyExamSession } from "@/lib/auth/exam-session";
 import { AnswerSheetDocument, type AnswerSheetData } from "@/lib/pdf/answer-sheet";
 
 // @react-pdf/renderer needs Node APIs (Buffer, fs for fonts) — not available
@@ -12,23 +10,18 @@ export const runtime = "nodejs";
 export async function GET(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
 
-  // Two legitimate callers: the student themselves (matching attempt
-  // cookie, right after finishing) or the admin (Supabase Auth session,
-  // reviewing from /admin/results) — never anyone else.
-  const cookieStore = await cookies();
-  const examSession = await verifyExamSession(cookieStore.get(EXAM_SESSION_COOKIE)?.value);
-  const isOwnAttempt = examSession?.attemptId === attemptId;
-
-  let isAdmin = false;
-  if (!isOwnAttempt) {
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    isAdmin = !!user;
-  }
-
-  if (!isOwnAttempt && !isAdmin) {
+  // Admin-only: the student's own exam-attempt session used to also work
+  // here, but the answer sheet shows full correction (check/cross marks,
+  // correct answers for wrong ones) — exactly what the exam résultat page
+  // deliberately withholds from the student. Letting the student fetch this
+  // route directly would have undermined that. The per-row "PDF" button in
+  // ExamAttemptsTable (/admin/results/exams/[examId]) is this route's only
+  // real caller now.
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
     return new Response("Non autorisé.", { status: 401 });
   }
 
@@ -43,10 +36,6 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
 
   if (!attempt || !attempt.submitted_at) {
     return new Response("Tentative introuvable.", { status: 404 });
-  }
-  // Only the matching student's own exam, never a cross-exam id mismatch.
-  if (isOwnAttempt && attempt.exam_id !== examSession!.examId) {
-    return new Response("Non autorisé.", { status: 401 });
   }
 
   const exam = attempt.exams as unknown as { title: string };
