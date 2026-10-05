@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const SEMESTERS = ["semestre1", "semestre2"] as const;
+export type Semester = (typeof SEMESTERS)[number];
+export const SEMESTER_LABELS: Record<Semester, string> = {
+  semestre1: "Semestre 1",
+  semestre2: "Semestre 2",
+};
+
 export const examFormSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis.").max(200),
   description: z.string().trim().max(1000).optional().or(z.literal("")),
@@ -9,6 +16,13 @@ export const examFormSchema = z.object({
   startAt: z.string().optional().or(z.literal("")),
   endAt: z.string().optional().or(z.literal("")),
   maxAttempts: z.coerce.number().int().positive().default(1),
+  // Both optional and independent — an exam not part of a formal "devoir"
+  // series just leaves these unset, and simply won't surface in the
+  // devoir-grouped results view. Several exam rows ("modèles", each its own
+  // secret_code, the teacher's own anti-cheating practice) sharing the same
+  // level + devoirNumber + semester are what the grouped report aggregates.
+  devoirNumber: z.coerce.number().int().positive().optional().or(z.literal("")),
+  semester: z.enum(SEMESTERS).optional().or(z.literal("")),
 });
 
 // exam_questions' DB check constraint allows these 6 — no "ordering" (same

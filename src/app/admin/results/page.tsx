@@ -34,7 +34,15 @@ export default async function AdminResultsPage() {
 
   return (
     <div className="space-y-8">
-      <h1 className="text-2xl font-semibold">Résultats</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-semibold">Résultats</h1>
+        <Link
+          href="/admin/results/devoirs"
+          className="text-sm text-muted-foreground hover:text-foreground hover:underline"
+        >
+          Résultats par devoir (plusieurs modèles, PDF) →
+        </Link>
+      </div>
 
       <Card>
         <CardHeader>

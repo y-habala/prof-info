@@ -29,6 +29,8 @@ export type ExamRow = {
   is_published: boolean;
   is_active: boolean;
   question_count: number;
+  devoir_number: number | null;
+  semester: string | null;
 };
 
 type Level = { id: string; name: string };
@@ -107,6 +109,8 @@ export function ExamsTable({
                   startAt: row.start_at,
                   endAt: row.end_at,
                   maxAttempts: row.max_attempts,
+                  devoirNumber: row.devoir_number,
+                  semester: row.semester,
                 }}
                 trigger={
                   <Button variant="outline" size="sm">

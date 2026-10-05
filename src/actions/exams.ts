@@ -16,6 +16,8 @@ function parseForm(formData: FormData) {
     startAt: formData.get("startAt") ?? "",
     endAt: formData.get("endAt") ?? "",
     maxAttempts: formData.get("maxAttempts") || 1,
+    devoirNumber: formData.get("devoirNumber") ?? "",
+    semester: formData.get("semester") ?? "",
   });
 }
 
@@ -38,6 +40,8 @@ export async function createExam(
     start_at: parsed.data.startAt || null,
     end_at: parsed.data.endAt || null,
     max_attempts: parsed.data.maxAttempts,
+    devoir_number: parsed.data.devoirNumber || null,
+    semester: parsed.data.semester || null,
   });
 
   if (error) return { error: "Une erreur est survenue." };
@@ -66,6 +70,8 @@ export async function updateExam(
       start_at: parsed.data.startAt || null,
       end_at: parsed.data.endAt || null,
       max_attempts: parsed.data.maxAttempts,
+      devoir_number: parsed.data.devoirNumber || null,
+      semester: parsed.data.semester || null,
     })
     .eq("id", id);
 

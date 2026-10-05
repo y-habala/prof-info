@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createExam, updateExam } from "@/actions/exams";
+import { SEMESTERS, SEMESTER_LABELS } from "@/schemas/exams";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -39,6 +40,8 @@ type ExamDialogProps = {
     startAt: string | null;
     endAt: string | null;
     maxAttempts: number;
+    devoirNumber: number | null;
+    semester: string | null;
   };
 };
 
@@ -167,6 +170,35 @@ export function ExamDialog({ trigger, mode, levels, initialValues }: ExamDialogP
                 type="datetime-local"
                 defaultValue={toDateTimeLocal(initialValues?.endAt ?? null)}
               />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="devoirNumber">N° de devoir (optionnel)</Label>
+              <Input
+                id="devoirNumber"
+                name="devoirNumber"
+                type="number"
+                min="1"
+                placeholder="ex. 2"
+                defaultValue={initialValues?.devoirNumber ?? ""}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="semester">Semestre (optionnel)</Label>
+              <select
+                id="semester"
+                name="semester"
+                className={selectClass}
+                defaultValue={initialValues?.semester ?? ""}
+              >
+                <option value="">—</option>
+                {SEMESTERS.map((s) => (
+                  <option key={s} value={s}>
+                    {SEMESTER_LABELS[s]}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
           <div className="space-y-2">
