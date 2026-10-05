@@ -1,21 +1,13 @@
 import ExcelJS from "exceljs";
 import { createClient } from "@/lib/supabase/server";
 import { compareByClassAndNumber } from "@/lib/exam-attempt-sort";
+import { scoreOutOf20 } from "@/lib/grading";
 
 export const runtime = "nodejs";
 
 function formatDateTime(iso: string | null) {
   if (!iso) return "";
   return new Date(iso).toLocaleString("fr-FR");
-}
-
-// Always /20 regardless of the exam's own max_score — the usual "note"
-// convention — and explicitly clamped even though score <= max_score
-// should already guarantee it, matching the same defensive clamp the
-// teacher's own reference exam file applies before displaying a score.
-function scoreOutOf20(score: number, maxScore: number): number {
-  if (maxScore <= 0) return 0;
-  return Math.min(20, (score / maxScore) * 20);
 }
 
 export async function GET(request: Request) {

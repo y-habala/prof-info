@@ -1,5 +1,6 @@
 import { Document, Page, View, Text, StyleSheet, Font, Svg, Path } from "@react-pdf/renderer";
 import path from "node:path";
+import { scoreOutOf20, getAppreciation } from "@/lib/grading";
 
 // Fixed for this single-school deployment (see class-report.tsx for the
 // same pattern, Arabic-side) — no home in the schema for 3 values that
@@ -27,14 +28,6 @@ function currentSchoolYear(): string {
   const y = now.getFullYear();
   const startYear = now.getMonth() >= 8 ? y : y - 1;
   return `${startYear}/${startYear + 1}`;
-}
-
-function getAppreciation(score20: number): string {
-  if (score20 >= 18) return "Excellent !";
-  if (score20 >= 15) return "Très bien.";
-  if (score20 >= 12) return "Bien.";
-  if (score20 >= 10) return "Passable.";
-  return "Insuffisant.";
 }
 
 // @react-pdf/renderer's fonts (Helvetica, Kalam, ...) have no glyph for
@@ -219,7 +212,7 @@ function SectionBlock({ section }: { section: AnswerSheetSection }) {
 
 export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
   const submittedDate = new Date(data.submittedAt).toLocaleDateString("fr-FR");
-  const score20 = data.maxScore > 0 ? (data.score / data.maxScore) * 20 : 0;
+  const score20 = scoreOutOf20(data.score, data.maxScore);
 
   return (
     <Document>
