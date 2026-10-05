@@ -2,12 +2,22 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, type LucideIcon } from "lucide-react";
+import { Menu, X, Home, BookOpen, FileCheck2, GraduationCap, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
 
-export function StudentNav({ items }: { items: NavItem[] }) {
+// Defined inside this client component — Lucide icons can't cross the
+// server→client boundary as props (they carry internal functions). The
+// student layout just renders <StudentNav />, no prop plumbing needed.
+const ITEMS: NavItem[] = [
+  { href: "/", label: "Accueil", icon: Home },
+  { href: "/courses", label: "Cours", icon: BookOpen },
+  { href: "/exercises", label: "Exercices", icon: FileCheck2 },
+  { href: "/exam", label: "Examen", icon: GraduationCap },
+];
+
+export function StudentNav() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -20,7 +30,7 @@ export function StudentNav({ items }: { items: NavItem[] }) {
     <>
       {/* Desktop */}
       <nav className="hidden items-center gap-1 sm:flex">
-        {items.map((item) => {
+        {ITEMS.map((item) => {
           const Icon = item.icon;
           const active = isActive(item.href);
           return (
@@ -54,7 +64,7 @@ export function StudentNav({ items }: { items: NavItem[] }) {
       {open ? (
         <div className="fixed inset-x-0 top-16 z-40 border-b border-border bg-background p-4 shadow-lg sm:hidden">
           <ul className="flex flex-col gap-1">
-            {items.map((item) => {
+            {ITEMS.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
               return (

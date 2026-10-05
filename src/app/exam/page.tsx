@@ -1,23 +1,25 @@
-import { Construction } from "lucide-react";
-import Link from "next/link";
+import type { Metadata } from "next";
+import { Shield } from "lucide-react";
+import { ExamVerifyForm } from "@/components/exams/exam-verify-form";
 
-export default function ExamComingSoonPage() {
+export const metadata: Metadata = { title: "Examen — Plateforme Informatique" };
+
+export default function ExamEntryPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-20">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-sm">
-        <div className="mx-auto flex size-14 items-center justify-center rounded-2xl bg-accent text-accent-foreground">
-          <Construction className="size-6" />
+    <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
+      <div className="w-full max-w-md">
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-lg shadow-primary/20">
+            <Shield className="size-6" strokeWidth={2.5} />
+          </div>
+          <h1 className="text-2xl font-bold">Accès à l&apos;examen</h1>
+          <p className="text-sm text-muted-foreground">
+            Saisis le code communiqué par ton enseignant et tes informations.
+          </p>
         </div>
-        <h1 className="mt-4 text-2xl font-bold">Examen bientôt disponible</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          L&apos;entrée des codes d&apos;examen sera activée dans la prochaine mise à jour.
-        </p>
-        <Link
-          href="/"
-          className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:underline"
-        >
-          Retour à l&apos;accueil
-        </Link>
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+          <ExamVerifyForm />
+        </div>
       </div>
     </main>
   );

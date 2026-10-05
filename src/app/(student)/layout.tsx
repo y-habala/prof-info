@@ -1,14 +1,7 @@
 import Link from "next/link";
-import { Code2, Home, BookOpen, FileCheck2, GraduationCap } from "lucide-react";
+import { Code2 } from "lucide-react";
 import { getSettings } from "@/lib/settings";
 import { StudentNav } from "@/components/student/student-nav";
-
-const NAV = [
-  { href: "/", label: "Accueil", icon: Home },
-  { href: "/courses", label: "Cours", icon: BookOpen },
-  { href: "/exercises", label: "Exercices", icon: FileCheck2 },
-  { href: "/exam", label: "Examen", icon: GraduationCap },
-];
 
 export default async function StudentLayout({ children }: { children: React.ReactNode }) {
   const settings = await getSettings();
@@ -25,7 +18,7 @@ export default async function StudentLayout({ children }: { children: React.Reac
               <span className="text-[10px] text-muted-foreground">{settings.institution}</span>
             </div>
           </Link>
-          <StudentNav items={NAV} />
+          <StudentNav />
         </div>
       </header>
 

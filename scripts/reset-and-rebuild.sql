@@ -23,6 +23,14 @@ create schema public;
 grant all on schema public to postgres;
 grant all on schema public to anon, authenticated, service_role;
 
+-- Default privileges — any table created from here on grants the right
+-- access to Supabase's three default roles. Without these, service_role
+-- (even though it bypasses RLS) still gets "permission denied" at the
+-- Postgres level on tables it didn't itself create.
+alter default privileges in schema public grant all on tables    to postgres, anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to postgres, anon, authenticated, service_role;
+alter default privileges in schema public grant all on functions to postgres, anon, authenticated, service_role;
+
 -- shared helpers -------------------------------------------------------------
 create or replace function set_updated_at() returns trigger language plpgsql as $$
 begin
