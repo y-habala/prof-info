@@ -15,11 +15,13 @@ function parseForm(formData: FormData) {
 }
 
 function revalidateSequencePaths(unitLevelId: string) {
-  revalidatePath("/admin/sequences");
-  // The student-facing unit listing page no longer exists — the whole
-  // level's unit→séquence→séance outline now lives on one page. Unlike a
-  // session, a séquence never had its own standalone content page to
-  // additionally target.
+  // Séquences are now managed inline on the unified /admin/sessions?level=
+  // tree page (no standalone /admin/sequences page anymore).
+  revalidatePath("/admin/sessions");
+  // The student-facing unit listing page no longer exists either — the
+  // whole level's unit→séquence→séance outline now lives on one page.
+  // Unlike a session, a séquence never had its own standalone content page
+  // to additionally target.
   revalidatePath(`/courses/${unitLevelId}`);
 }
 

@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { slugify } from "@/lib/slugify";
-import { ANNOUNCEMENT_TYPES, ANNOUNCEMENT_TYPE_LABELS } from "@/schemas/announcements";
 import { createAnnouncement, updateAnnouncement } from "@/actions/announcements";
 
 type AnnouncementDialogProps = {
@@ -26,12 +25,8 @@ type AnnouncementDialogProps = {
     content: string | null;
     slug: string;
     imageUrl: string | null;
-    type: (typeof ANNOUNCEMENT_TYPES)[number];
   };
 };
-
-const selectClass =
-  "h-8 w-full rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50";
 
 // A Base UI Dialog does not unmount its content on close, so controlled
 // fields (title/slug here, for the auto-slugify) would otherwise leak the
@@ -91,16 +86,6 @@ function AnnouncementForm({
           }}
           required
         />
-      </div>
-      <div className="space-y-2">
-        <Label htmlFor="type">Type</Label>
-        <select id="type" name="type" className={selectClass} defaultValue={initialValues?.type ?? "actualite"}>
-          {ANNOUNCEMENT_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {ANNOUNCEMENT_TYPE_LABELS[type]}
-            </option>
-          ))}
-        </select>
       </div>
       <div className="space-y-2">
         <Label htmlFor="description">Description courte</Label>

@@ -13,7 +13,6 @@ function parseForm(formData: FormData) {
     content: formData.get("content") ?? "",
     slug: formData.get("slug"),
     imageUrl: formData.get("imageUrl") ?? "",
-    type: formData.get("type"),
   });
 }
 
@@ -33,7 +32,6 @@ export async function createAnnouncement(
     content: parsed.data.content || null,
     slug: parsed.data.slug,
     image_url: parsed.data.imageUrl || null,
-    type: parsed.data.type,
   });
 
   if (error) {
@@ -63,7 +61,6 @@ export async function updateAnnouncement(
       content: parsed.data.content || null,
       slug: parsed.data.slug,
       image_url: parsed.data.imageUrl || null,
-      type: parsed.data.type,
     })
     .eq("id", id);
 

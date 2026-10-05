@@ -48,6 +48,7 @@ export function SessionDialog({
 }: SessionDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   async function handleAction(formData: FormData) {
     setError(null);
@@ -75,7 +76,10 @@ export function SessionDialog({
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setError(null);
+        if (next) {
+          setError(null);
+          setFormKey((k) => k + 1);
+        }
       }}
     >
       <DialogTrigger render={trigger as React.ReactElement}>
@@ -85,7 +89,7 @@ export function SessionDialog({
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle séance" : "Modifier la séance"}</DialogTitle>
         </DialogHeader>
-        <form action={handleAction} className="space-y-4">
+        <form key={formKey} action={handleAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input

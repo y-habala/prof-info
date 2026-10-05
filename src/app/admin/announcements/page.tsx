@@ -12,7 +12,7 @@ export default async function AnnouncementsPage() {
   const supabase = await createClient();
   const { data: announcements } = await supabase
     .from("announcements")
-    .select("id, title, slug, description, content, image_url, type, is_published, published_at")
+    .select("id, title, slug, description, content, image_url, is_published, published_at")
     .order("created_at", { ascending: false });
 
   return (

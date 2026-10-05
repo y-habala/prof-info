@@ -67,9 +67,9 @@ export function LevelsTable({ levels }: { levels: LevelRow[] }) {
                 variant="outline"
                 size="sm"
                 nativeButton={false}
-                render={<Link href={`/admin/units?level=${row.id}`} />}
+                render={<Link href={`/admin/sessions?level=${row.id}`} />}
               >
-                Unités →
+                Gérer →
               </Button>
               <LevelDialog
                 mode="edit"

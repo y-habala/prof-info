@@ -14,7 +14,6 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { AnnouncementDialog } from "./announcement-dialog";
-import { ANNOUNCEMENT_TYPE_LABELS, ANNOUNCEMENT_TYPES } from "@/schemas/announcements";
 import { toggleAnnouncementPublished, deleteAnnouncement } from "@/actions/announcements";
 
 export type AnnouncementRow = {
@@ -24,7 +23,6 @@ export type AnnouncementRow = {
   description: string | null;
   content: string | null;
   image_url: string | null;
-  type: (typeof ANNOUNCEMENT_TYPES)[number];
   is_published: boolean;
   published_at: string | null;
 };
@@ -46,7 +44,6 @@ export function AnnouncementsTable({ announcements }: { announcements: Announcem
       <TableHeader>
         <TableRow>
           <TableHead>Titre</TableHead>
-          <TableHead>Type</TableHead>
           <TableHead>Statut</TableHead>
           <TableHead>Publié le</TableHead>
           <TableHead className="text-right">Actions</TableHead>
@@ -56,9 +53,6 @@ export function AnnouncementsTable({ announcements }: { announcements: Announcem
         {announcements.map((row) => (
           <TableRow key={row.id}>
             <TableCell className="font-medium">{row.title}</TableCell>
-            <TableCell>
-              <Badge variant="secondary">{ANNOUNCEMENT_TYPE_LABELS[row.type]}</Badge>
-            </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
                 <Switch
@@ -94,7 +88,6 @@ export function AnnouncementsTable({ announcements }: { announcements: Announcem
                   content: row.content,
                   slug: row.slug,
                   imageUrl: row.image_url,
-                  type: row.type,
                 }}
                 trigger={
                   <Button variant="outline" size="sm">

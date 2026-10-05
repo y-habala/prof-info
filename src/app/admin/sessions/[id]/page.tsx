@@ -20,13 +20,16 @@ export default async function AdminSessionContentPage({
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, title, sequence_id")
+    .select("id, title, sequence_id, sequences(unit_id, units(level_id))")
     .eq("id", sessionId)
     .maybeSingle();
 
   if (!session) {
     notFound();
   }
+
+  const ancestry = session.sequences as unknown as { unit_id: string; units: { level_id: string } | null } | null;
+  const levelId = ancestry?.units?.level_id;
 
   const [{ data: blocks }, { data: exercises }, { data: htmlPages }] = await Promise.all([
     supabase
@@ -42,7 +45,7 @@ export default async function AdminSessionContentPage({
     <div className="space-y-6">
       <div>
         <Link
-          href={`/admin/sessions?sequence=${session.sequence_id}`}
+          href={levelId ? `/admin/sessions?level=${levelId}` : "/admin/sessions"}
           className="text-sm text-muted-foreground hover:text-foreground"
         >
           ← Retour aux séances

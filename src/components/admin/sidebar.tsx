@@ -9,9 +9,7 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { href: "/admin", label: "Tableau de bord" },
   { href: "/admin/levels", label: "Niveaux" },
-  { href: "/admin/units", label: "Unités" },
-  { href: "/admin/sequences", label: "Séquences" },
-  { href: "/admin/sessions", label: "Séances" },
+  { href: "/admin/sessions", label: "Unités & Séances" },
   { href: "/admin/exercises", label: "Exercices" },
   { href: "/admin/html-pages", label: "Activités HTML" },
   { href: "/admin/exams", label: "Examens" },

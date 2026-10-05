@@ -39,6 +39,7 @@ type UnitDialogProps = {
 export function UnitDialog({ trigger, mode, levelId, initialValues }: UnitDialogProps) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [formKey, setFormKey] = useState(0);
 
   async function handleAction(formData: FormData) {
     setError(null);
@@ -59,7 +60,10 @@ export function UnitDialog({ trigger, mode, levelId, initialValues }: UnitDialog
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) setError(null);
+        if (next) {
+          setError(null);
+          setFormKey((k) => k + 1);
+        }
       }}
     >
       <DialogTrigger render={trigger as React.ReactElement}>
@@ -69,7 +73,7 @@ export function UnitDialog({ trigger, mode, levelId, initialValues }: UnitDialog
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle unité" : "Modifier l'unité"}</DialogTitle>
         </DialogHeader>
-        <form action={handleAction} className="space-y-4">
+        <form key={formKey} action={handleAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input

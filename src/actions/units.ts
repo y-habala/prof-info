@@ -16,7 +16,9 @@ function parseForm(formData: FormData) {
 }
 
 function revalidateUnitPaths(levelId: string) {
-  revalidatePath("/admin/units");
+  // Unités are now managed inline on the unified /admin/sessions?level=
+  // tree page (no standalone /admin/units page anymore).
+  revalidatePath("/admin/sessions");
   revalidatePath(`/courses/${levelId}`);
 }
 
