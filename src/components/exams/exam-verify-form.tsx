@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,40 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
   const [studentNumber, setStudentNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  // Filtered class options based on the exam's level (resolved from secret code)
+  const [resolvedLevel, setResolvedLevel] = useState<string | null>(null);
+  const resolveRef = useRef<AbortController | null>(null);
+
+  const filteredOptions =
+    resolvedLevel
+      ? classOptions.filter((c) => c.startsWith(resolvedLevel + "-"))
+      : classOptions;
+
+  // When the code reaches 4 digits, quietly resolve the level
+  useEffect(() => {
+    if (!/^\d{4}$/.test(secretCode)) {
+      setResolvedLevel(null);
+      setStudentClass("");
+      return;
+    }
+    resolveRef.current?.abort();
+    const ctrl = new AbortController();
+    resolveRef.current = ctrl;
+
+    fetch("/api/exam/level", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ secretCode }),
+      signal: ctrl.signal,
+    })
+      .then((r) => r.json())
+      .then((data) => {
+        setResolvedLevel(data.levelName ?? null);
+        setStudentClass("");
+      })
+      .catch(() => {});
+  }, [secretCode]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -93,31 +127,31 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="studentClass">Classe</Label>
-          {classOptions.length > 0 ? (
-          <div className="relative">
-            <select
+          {filteredOptions.length > 0 ? (
+            <div className="relative">
+              <select
+                id="studentClass"
+                value={studentClass}
+                onChange={(e) => setStudentClass(e.target.value)}
+                required
+                className="w-full appearance-none rounded-xl border border-input bg-background px-3 py-2.5 pr-9 text-sm shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="" disabled>Choisir…</option>
+                {filteredOptions.map((cls) => (
+                  <option key={cls} value={cls}>{cls}</option>
+                ))}
+              </select>
+              <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+            </div>
+          ) : (
+            <Input
               id="studentClass"
+              autoComplete="off"
+              placeholder="ex. 2APIC-3"
               value={studentClass}
               onChange={(e) => setStudentClass(e.target.value)}
               required
-              className="w-full appearance-none rounded-xl border border-input bg-background px-3 py-2.5 pr-9 text-sm shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="" disabled>Choisir une classe…</option>
-              {classOptions.map((cls) => (
-                <option key={cls} value={cls}>{cls}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          </div>
-        ) : (
-          <Input
-            id="studentClass"
-            autoComplete="off"
-            placeholder="ex. 2APIC-3"
-            value={studentClass}
-            onChange={(e) => setStudentClass(e.target.value)}
-            required
-          />
+            />
           )}
         </div>
         <div className="space-y-2">
