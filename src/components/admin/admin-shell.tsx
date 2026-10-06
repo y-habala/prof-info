@@ -9,6 +9,7 @@ import {
   BarChart3,
   KeyRound,
   Settings,
+  FolderOpen,
   Menu,
   X,
   LogOut,
@@ -24,6 +25,7 @@ const NAV = [
   { href: "/admin/exams", label: "Examens", icon: GraduationCap },
   { href: "/admin/results", label: "Résultats", icon: BarChart3 },
   { href: "/admin/access-codes", label: "Codes d'accès", icon: KeyRound },
+  { href: "/admin/files", label: "Fichiers", icon: FolderOpen },
   { href: "/admin/settings", label: "Paramètres", icon: Settings },
 ];
 
