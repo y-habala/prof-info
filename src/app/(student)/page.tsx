@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, GraduationCap, Layers, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, GraduationCap, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 // Solid accents cycled across level cards — one saturated hue per level,
@@ -87,27 +87,6 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* ── Trois repères ────────────────────────────────────────────── */}
-      <section className="border-b border-border bg-muted/20">
-        <div className="mx-auto grid w-full max-w-5xl grid-cols-1 divide-y divide-border px-4 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
-          <Feature
-            icon={Layers}
-            title="Un programme clair"
-            desc="Unités, séquences et séances dans l'ordre du cours."
-          />
-          <Feature
-            icon={GraduationCap}
-            title="À ton rythme"
-            desc="Relis une séance autant de fois que nécessaire."
-          />
-          <Feature
-            icon={ShieldCheck}
-            title="Examens encadrés"
-            desc="Accès par code remis en classe par l'enseignant."
-          />
-        </div>
-      </section>
-
       {/* ── Niveaux ──────────────────────────────────────────────────── */}
       <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -162,52 +141,6 @@ export default async function HomePage() {
           </p>
         )}
       </section>
-
-      {/* ── Bandeau examen ───────────────────────────────────────────── */}
-      <section className="mx-auto w-full max-w-5xl px-4 pb-20">
-        <div className="relative overflow-hidden rounded-3xl bg-primary px-6 py-10 text-primary-foreground sm:px-10 sm:py-12">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -right-16 -top-16 size-64 rounded-full border-[24px] border-white/10"
-          />
-          <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="max-w-md">
-              <h2 className="text-2xl font-bold tracking-tight">Tu passes un examen ?</h2>
-              <p className="mt-2 text-sm leading-relaxed text-primary-foreground/80">
-                Saisis le code à 4 chiffres remis par ton enseignant, puis tes
-                informations pour commencer.
-              </p>
-            </div>
-            <Link
-              href="/exam"
-              className="group inline-flex shrink-0 items-center gap-2 rounded-full bg-background px-6 py-3 text-sm font-semibold text-primary shadow-sm transition-transform hover:-translate-y-0.5"
-            >
-              Accéder à l&apos;examen
-              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
-            </Link>
-          </div>
-        </div>
-      </section>
     </>
-  );
-}
-
-function Feature({
-  icon: Icon,
-  title,
-  desc,
-}: {
-  icon: typeof Layers;
-  title: string;
-  desc: string;
-}) {
-  return (
-    <div className="flex items-start gap-3 px-0 py-6 sm:px-6">
-      <Icon className="mt-0.5 size-5 shrink-0 text-primary" strokeWidth={2.25} />
-      <div>
-        <p className="text-sm font-semibold">{title}</p>
-        <p className="mt-0.5 text-sm text-muted-foreground">{desc}</p>
-      </div>
-    </div>
   );
 }
