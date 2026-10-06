@@ -1,6 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
 import {
   exerciseFormSchema,
   exerciseQuestionFormSchema,
@@ -165,4 +166,69 @@ export async function replaceExerciseOptions(
     await supabase.from("exercise_options").insert(cleaned);
   }
   revalidateExercise(exerciseId);
+}
+
+// ---- INLINE EXERCISE CHECK (used by lesson_block exercise renderer) --------
+// No attempt tracking — exercises embedded in sessions are self-check only.
+
+type AnswerPayload = { questionId: string; optionIds?: string[]; text?: string };
+
+export async function checkInlineExerciseAnswers(
+  exerciseId: string,
+  answers: AnswerPayload[]
+): Promise<{
+  results: { questionId: string; isCorrect: boolean; pointsEarned: number; correctOptionIds: string[] }[];
+  score: number;
+  maxScore: number;
+}> {
+  const admin = createAdminClient();
+
+  const { data: questions } = await admin
+    .from("exercise_questions")
+    .select("id, question_type, points")
+    .eq("exercise_id", exerciseId);
+
+  const qIds = (questions ?? []).map((q) => q.id);
+
+  const { data: options } =
+    qIds.length > 0
+      ? await admin
+          .from("exercise_options")
+          .select("id, question_id, option_text, is_correct")
+          .in("question_id", qIds)
+      : { data: [] as { id: string; question_id: string; option_text: string; is_correct: boolean }[] };
+
+  const results = answers.map((ans) => {
+    const q = (questions ?? []).find((x) => x.id === ans.questionId);
+    if (!q) return { questionId: ans.questionId, isCorrect: false, pointsEarned: 0, correctOptionIds: [] };
+
+    const qOpts = (options ?? []).filter((o) => o.question_id === q.id);
+    const correctOptionIds = qOpts.filter((o) => o.is_correct).map((o) => o.id);
+    const pts = Number(q.points);
+
+    let isCorrect = false;
+    if (q.question_type === "fill_blank") {
+      const correctTexts = qOpts
+        .filter((o) => o.is_correct)
+        .map((o) => o.option_text.trim().toLowerCase());
+      isCorrect = correctTexts.includes((ans.text ?? "").trim().toLowerCase());
+    } else if (q.question_type === "qcm_multiple") {
+      const selected = new Set(ans.optionIds ?? []);
+      const correct = new Set(correctOptionIds);
+      isCorrect =
+        selected.size === correct.size && [...selected].every((id) => correct.has(id));
+    } else {
+      // qcm_single, true_false, matching — single selection
+      isCorrect =
+        (ans.optionIds ?? []).length === 1 &&
+        correctOptionIds.includes(ans.optionIds![0]);
+    }
+
+    return { questionId: ans.questionId, isCorrect, pointsEarned: isCorrect ? pts : 0, correctOptionIds };
+  });
+
+  const score = results.reduce((s, r) => s + r.pointsEarned, 0);
+  const maxScore = (questions ?? []).reduce((s, q) => s + Number(q.points), 0);
+
+  return { results, score, maxScore };
 }

@@ -284,12 +284,33 @@ create policy "access_codes_admin_all" on access_codes for all to authenticated 
 create policy "settings_public_read"   on settings     for select to anon, authenticated using (true);
 create policy "settings_admin_all"     on settings     for all    to authenticated using (true) with check (true);
 
--- migration tracker (so scripts/migrate.mjs considers 0001 as already applied)
+-- polymorphic session content blocks (from 0002_lesson_blocks.sql)
+create table lesson_blocks (
+  id uuid primary key default gen_random_uuid(),
+  session_id uuid not null references sessions(id) on delete cascade,
+  type text not null check (type in ('text','image','video','file','exercise','interactive')),
+  title text,
+  content jsonb not null default '{}',
+  order_index int not null default 0,
+  is_published boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index lesson_blocks_session_id_idx on lesson_blocks(session_id);
+create trigger set_updated_at before update on lesson_blocks for each row execute function set_updated_at();
+alter table lesson_blocks enable row level security;
+create policy "lesson_blocks_public_read" on lesson_blocks for select to anon, authenticated using (
+  is_published = true
+  and exists (select 1 from sessions s where s.id = lesson_blocks.session_id and s.is_published = true)
+);
+create policy "lesson_blocks_admin_all" on lesson_blocks for all to authenticated using (true) with check (true);
+
+-- migration tracker (so scripts/migrate.mjs considers these as already applied)
 create table _migrations (
   filename text primary key,
   applied_at timestamptz not null default now()
 );
-insert into _migrations (filename) values ('0001_v2_schema.sql');
+insert into _migrations (filename) values ('0001_v2_schema.sql'), ('0002_lesson_blocks.sql');
 
 -- Seed one access code so the student side is immediately testable.
 -- Admin should change/rotate it from /admin/access-codes.

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, BookOpen, FileCheck2, GraduationCap, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpen, GraduationCap, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 // Pastel accents cycled across level cards — each level gets its own
@@ -97,10 +97,9 @@ export default async function HomePage() {
         )}
       </section>
 
-      {/* Quick links */}
+      {/* Quick link */}
       <section className="mx-auto w-full max-w-6xl px-4 pb-20">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <QuickCard href="/exercises" icon={FileCheck2} title="Exercices" desc="Entraîne-toi avec correction immédiate." />
+        <div className="grid grid-cols-1 gap-4">
           <QuickCard href="/exam" icon={BookOpen} title="Examens" desc="Passe l&apos;examen avec le code de ton enseignant." />
         </div>
       </section>

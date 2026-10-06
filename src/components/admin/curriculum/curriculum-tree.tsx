@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
-import { ChevronDown, Folder, Plus, Pencil, Trash2, ListOrdered, PlayCircle, Clock } from "lucide-react";
+import Link from "next/link";
+import { ChevronDown, Folder, Plus, Pencil, Trash2, ListOrdered, PlayCircle, Clock, FileEdit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -311,6 +312,13 @@ function SessionRowItem({
         disabled={isPending}
         onCheckedChange={(c) => startTransition(() => toggleSessionPublished(session.id, levelId, c))}
       />
+      <Link
+        href={`/admin/curriculum/sessions/${session.id}`}
+        className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+      >
+        <FileEdit className="size-3.5" />
+        Contenu
+      </Link>
       <SessionDialog
         mode="edit"
         sequenceId={sequenceId}
@@ -319,7 +327,6 @@ function SessionRowItem({
           id: session.id,
           title: session.title,
           durationMinutes: session.duration_minutes,
-          contentMarkdown: session.content_markdown,
           orderIndex: session.order_index,
         }}
         trigger={

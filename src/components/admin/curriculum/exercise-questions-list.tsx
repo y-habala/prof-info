@@ -29,7 +29,7 @@ export function ExerciseQuestionsList({
   if (questions.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/20 p-10 text-center text-muted-foreground">
-        Aucune question. Clique sur <strong>+ Nouvelle question</strong> pour en ajouter.
+        Aucune question. Clique sur <strong>+ Nouvelle question</strong>.
       </div>
     );
   }
@@ -44,14 +44,11 @@ export function ExerciseQuestionsList({
 
 function QuestionItem({ question, index, exerciseId }: { question: QuestionData; index: number; exerciseId: string }) {
   const [isPending, startTransition] = useTransition();
-
   return (
     <Card className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex min-w-0 flex-1 items-start gap-3">
-          <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-            Q{index}
-          </span>
+          <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">Q{index}</span>
           <div className="min-w-0 flex-1">
             <p className="font-medium leading-snug">{question.text}</p>
             <div className="mt-2 flex flex-wrap gap-2">
@@ -64,17 +61,8 @@ function QuestionItem({ question, index, exerciseId }: { question: QuestionData;
           <ExerciseQuestionDialog
             mode="edit"
             exerciseId={exerciseId}
-            initialValues={{
-              id: question.id,
-              text: question.text,
-              type: question.type,
-              points: question.points,
-            }}
-            trigger={
-              <Button size="sm" variant="outline" className="gap-1.5">
-                <Pencil className="size-3.5" />
-              </Button>
-            }
+            initialValues={{ id: question.id, text: question.text, type: question.type, points: question.points }}
+            trigger={<Button size="sm" variant="outline" className="gap-1.5"><Pencil className="size-3.5" /></Button>}
           />
           <Button
             size="sm"
@@ -101,16 +89,10 @@ function OptionsEditor({ question, exerciseId }: { question: QuestionData; exerc
     question.options.length > 0
       ? question.options.map((o) => ({ text: o.text, isCorrect: o.isCorrect }))
       : question.type === "true_false"
-        ? [
-            { text: "Vrai", isCorrect: false },
-            { text: "Faux", isCorrect: false },
-          ]
+        ? [{ text: "Vrai", isCorrect: false }, { text: "Faux", isCorrect: false }]
         : question.type === "fill_blank"
           ? [{ text: "", isCorrect: true }]
-          : [
-              { text: "", isCorrect: false },
-              { text: "", isCorrect: false },
-            ]
+          : [{ text: "", isCorrect: false }, { text: "", isCorrect: false }]
   );
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
@@ -130,14 +112,8 @@ function OptionsEditor({ question, exerciseId }: { question: QuestionData; exerc
     );
     setSaved(false);
   }
-  function addOption() {
-    setOptions((prev) => [...prev, { text: "", isCorrect: false }]);
-    setSaved(false);
-  }
-  function removeOption(i: number) {
-    setOptions((prev) => prev.filter((_, idx) => idx !== i));
-    setSaved(false);
-  }
+  function addOption() { setOptions((prev) => [...prev, { text: "", isCorrect: false }]); setSaved(false); }
+  function removeOption(i: number) { setOptions((prev) => prev.filter((_, idx) => idx !== i)); setSaved(false); }
   function save() {
     startTransition(async () => {
       await replaceExerciseOptions(question.id, exerciseId, options);
@@ -164,23 +140,12 @@ function OptionsEditor({ question, exerciseId }: { question: QuestionData; exerc
                   ? "border-success bg-success text-success-foreground"
                   : "border-input bg-background text-muted-foreground hover:border-foreground/40"
               )}
-              title={o.isCorrect ? "Bonne réponse" : "Marquer comme bonne réponse"}
             >
               {o.isCorrect ? <Check className="size-4" strokeWidth={3} /> : null}
             </button>
-            <Input
-              value={o.text}
-              onChange={(e) => updateText(i, e.target.value)}
-              placeholder={isFill ? "Réponse acceptée" : `Option ${String.fromCharCode(97 + i)}`}
-              className="h-8"
-            />
+            <Input value={o.text} onChange={(e) => updateText(i, e.target.value)} placeholder={isFill ? "Réponse acceptée" : `Option ${String.fromCharCode(97 + i)}`} className="h-8" />
             {!isFill && options.length > 2 ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="shrink-0 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
-                onClick={() => removeOption(i)}
-              >
+              <Button size="sm" variant="outline" className="shrink-0 gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive" onClick={() => removeOption(i)}>
                 <Trash2 className="size-3.5" />
               </Button>
             ) : null}
@@ -193,15 +158,8 @@ function OptionsEditor({ question, exerciseId }: { question: QuestionData; exerc
           {isFill ? "Ajouter une variante" : "Ajouter"}
         </Button>
         <div className="flex items-center gap-2">
-          {saved ? (
-            <span className="inline-flex items-center gap-1 text-xs text-success">
-              <Check className="size-3.5" />
-              Enregistré
-            </span>
-          ) : null}
-          <Button size="sm" disabled={isPending} onClick={save}>
-            Enregistrer les réponses
-          </Button>
+          {saved ? <span className="inline-flex items-center gap-1 text-xs text-success"><Check className="size-3.5" />Enregistré</span> : null}
+          <Button size="sm" disabled={isPending} onClick={save}>Enregistrer les réponses</Button>
         </div>
       </div>
     </div>

@@ -5,7 +5,6 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
   Library,
-  FileCheck2,
   GraduationCap,
   BarChart3,
   KeyRound,
@@ -22,7 +21,6 @@ import { cn } from "@/lib/utils";
 const NAV = [
   { href: "/admin", label: "Tableau de bord", icon: LayoutDashboard, exact: true },
   { href: "/admin/curriculum", label: "Cours", icon: Library },
-  { href: "/admin/exercises", label: "Exercices", icon: FileCheck2 },
   { href: "/admin/exams", label: "Examens", icon: GraduationCap },
   { href: "/admin/results", label: "Résultats", icon: BarChart3 },
   { href: "/admin/access-codes", label: "Codes d'accès", icon: KeyRound },

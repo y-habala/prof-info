@@ -3,26 +3,24 @@ import Link from "next/link";
 import { ArrowLeft, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { ExerciseQuestionDialog } from "@/components/admin/exercises/exercise-question-dialog";
-import { ExerciseQuestionsList, type QuestionData } from "@/components/admin/exercises/exercise-questions-list";
+import { ExerciseQuestionDialog } from "@/components/admin/curriculum/exercise-question-dialog";
+import { ExerciseQuestionsList, type QuestionData } from "@/components/admin/curriculum/exercise-questions-list";
 import type { ExerciseQuestionType } from "@/schemas/exercises";
 
-export default async function AdminExerciseBuilderPage({
+export default async function AdminSessionExercisePage({
   params,
 }: {
-  params: Promise<{ exerciseId: string }>;
+  params: Promise<{ sessionId: string; exerciseId: string }>;
 }) {
-  const { exerciseId } = await params;
+  const { sessionId, exerciseId } = await params;
   const supabase = await createClient();
 
   const { data: exercise } = await supabase
     .from("exercises")
-    .select("id, title, levels(name)")
+    .select("id, title")
     .eq("id", exerciseId)
     .maybeSingle();
   if (!exercise) notFound();
-
-  const levelName = (exercise.levels as unknown as { name: string } | null)?.name ?? null;
 
   const [{ data: questions }, { data: options }] = await Promise.all([
     supabase
@@ -55,14 +53,17 @@ export default async function AdminExerciseBuilderPage({
   return (
     <div className="space-y-6">
       <div>
-        <Link href="/admin/exercises" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href={`/admin/curriculum/sessions/${sessionId}`}
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="size-3.5" />
-          Tous les exercices
+          Retour au contenu de la séance
         </Link>
         <div className="mt-2 flex flex-wrap items-end justify-between gap-3">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{exercise.title}</h1>
-            {levelName ? <p className="mt-1 text-sm text-muted-foreground">Niveau : {levelName}</p> : null}
+            <p className="mt-1 text-sm text-muted-foreground">Édition des questions de l&apos;exercice</p>
           </div>
           <ExerciseQuestionDialog
             mode="create"

@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { upsertSession } from "@/actions/curriculum";
 
 type Props = {
@@ -17,7 +16,6 @@ type Props = {
     id: string;
     title: string;
     durationMinutes: number | null;
-    contentMarkdown: string;
     orderIndex: number;
   };
 };
@@ -31,6 +29,9 @@ export function SessionDialog({ trigger, mode, sequenceId, levelId, initialValue
   async function handleAction(formData: FormData) {
     setIsPending(true);
     setError(null);
+    // contentMarkdown is deprecated — content is now in lesson_blocks. Pass
+    // empty string so the schema accepts it and the DB column stays empty.
+    formData.set("contentMarkdown", "");
     const result = await upsertSession(initialValues?.id ?? null, sequenceId, levelId, undefined, formData);
     setIsPending(false);
     if (result?.error) setError(result.error);
@@ -49,16 +50,16 @@ export function SessionDialog({ trigger, mode, sequenceId, levelId, initialValue
       }}
     >
       <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
-      <DialogContent className="max-w-2xl">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle séance" : "Modifier la séance"}</DialogTitle>
         </DialogHeader>
         <form key={formKey} action={handleAction} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_120px_100px]">
-            <div className="space-y-2">
-              <Label htmlFor="title">Titre</Label>
-              <Input id="title" name="title" defaultValue={initialValues?.title} required />
-            </div>
+          <div className="space-y-2">
+            <Label htmlFor="title">Titre</Label>
+            <Input id="title" name="title" defaultValue={initialValues?.title} required />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="durationMinutes">Durée (min)</Label>
               <Input
@@ -74,20 +75,9 @@ export function SessionDialog({ trigger, mode, sequenceId, levelId, initialValue
               <Input id="orderIndex" name="orderIndex" type="number" min="0" defaultValue={initialValues?.orderIndex ?? 0} />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="contentMarkdown">Contenu (markdown)</Label>
-            <Textarea
-              id="contentMarkdown"
-              name="contentMarkdown"
-              rows={14}
-              placeholder="# Titre&#10;&#10;Un paragraphe explicatif.&#10;&#10;- Point 1&#10;- Point 2&#10;&#10;**Important** : …"
-              defaultValue={initialValues?.contentMarkdown ?? ""}
-              className="font-mono text-xs"
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Markdown : <code>#</code> titre, <code>**gras**</code>, <code>*italique*</code>, <code>-</code> liste, <code>[texte](lien)</code>, <code>![alt](image)</code>.
-            </p>
-          </div>
+          <p className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-xs text-muted-foreground">
+            Le contenu de la séance (textes, images, vidéos, exercices, activités) se gère via le bouton <strong>Contenu</strong> à côté de la séance.
+          </p>
           {error ? (
             <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}

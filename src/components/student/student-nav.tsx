@@ -2,7 +2,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Home, BookOpen, FileCheck2, GraduationCap, type LucideIcon } from "lucide-react";
+import { Menu, X, Home, BookOpen, GraduationCap, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type NavItem = { href: string; label: string; icon: LucideIcon };
@@ -13,7 +13,6 @@ type NavItem = { href: string; label: string; icon: LucideIcon };
 const ITEMS: NavItem[] = [
   { href: "/", label: "Accueil", icon: Home },
   { href: "/courses", label: "Cours", icon: BookOpen },
-  { href: "/exercises", label: "Exercices", icon: FileCheck2 },
   { href: "/exam", label: "Examen", icon: GraduationCap },
 ];
 

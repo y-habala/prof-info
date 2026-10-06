@@ -14,12 +14,7 @@ type Props = {
   trigger: React.ReactElement<{ children?: React.ReactNode }>;
   mode: "create" | "edit";
   exerciseId: string;
-  initialValues?: {
-    id: string;
-    text: string;
-    type: ExerciseQuestionType;
-    points: number;
-  };
+  initialValues?: { id: string; text: string; type: ExerciseQuestionType; points: number };
 };
 
 export function ExerciseQuestionDialog({ trigger, mode, exerciseId, initialValues }: Props) {
@@ -45,10 +40,7 @@ export function ExerciseQuestionDialog({ trigger, mode, exerciseId, initialValue
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (next) {
-          setError(null);
-          setFormKey((k) => k + 1);
-        }
+        if (next) { setError(null); setFormKey((k) => k + 1); }
       }}
     >
       <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
@@ -66,9 +58,7 @@ export function ExerciseQuestionDialog({ trigger, mode, exerciseId, initialValue
               <Label htmlFor="questionType">Type</Label>
               <Select id="questionType" name="questionType" defaultValue={initialValues?.type ?? "qcm_single"}>
                 {EXERCISE_QUESTION_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {EXERCISE_QUESTION_TYPE_LABELS[t]}
-                  </option>
+                  <option key={t} value={t}>{EXERCISE_QUESTION_TYPE_LABELS[t]}</option>
                 ))}
               </Select>
             </div>
