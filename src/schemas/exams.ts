@@ -47,4 +47,5 @@ export const examVerifySchema = z.object({
   studentFirstName: z.string().trim().min(1).max(100),
   studentName: z.string().trim().min(1).max(100),
   studentClass: z.string().trim().min(1).max(30),
+  studentNumber: z.string().trim().min(1).max(20),
 });

@@ -12,6 +12,7 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
   const [studentFirstName, setStudentFirstName] = useState("");
   const [studentName, setStudentName] = useState("");
   const [studentClass, setStudentClass] = useState("");
+  const [studentNumber, setStudentNumber] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -30,11 +31,15 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
       setError("Veuillez choisir votre classe.");
       return;
     }
+    if (!studentNumber.trim()) {
+      setError("Le numéro de l'élève est requis.");
+      return;
+    }
     startTransition(async () => {
       const res = await fetch("/api/exam/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ secretCode, studentFirstName, studentName, studentClass }),
+        body: JSON.stringify({ secretCode, studentFirstName, studentName, studentClass, studentNumber }),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
@@ -85,9 +90,10 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="studentClass">Classe</Label>
-        {classOptions.length > 0 ? (
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          <Label htmlFor="studentClass">Classe</Label>
+          {classOptions.length > 0 ? (
           <div className="relative">
             <select
               id="studentClass"
@@ -112,7 +118,20 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
             onChange={(e) => setStudentClass(e.target.value)}
             required
           />
-        )}
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="studentNumber">N° de l&apos;élève</Label>
+          <Input
+            id="studentNumber"
+            inputMode="numeric"
+            autoComplete="off"
+            placeholder="ex. 12"
+            value={studentNumber}
+            onChange={(e) => setStudentNumber(e.target.value)}
+            required
+          />
+        </div>
       </div>
 
       {error ? (

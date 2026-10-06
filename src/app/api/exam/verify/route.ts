@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       student_first_name: parsed.data.studentFirstName.trim(),
       student_name: parsed.data.studentName.trim(),
       student_class: studentClass,
+      student_number: parsed.data.studentNumber.trim(),
       ip_address: ip,
     })
     .select("id")
