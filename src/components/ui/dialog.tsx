@@ -31,7 +31,11 @@ export function DialogTrigger({
   children?: React.ReactNode;
 }) {
   if (render) {
-    return <BaseDialog.Trigger render={render}>{children}</BaseDialog.Trigger>;
+    // No children forwarded on purpose: Base UI clones the `render` element and
+    // its own props win the merge, so the element keeps its label by itself.
+    // Callers must never read `render.props` either — an element built inside a
+    // Server Component arrives here as a Flight lazy wrapper with no `.props`.
+    return <BaseDialog.Trigger render={render} />;
   }
   return <BaseDialog.Trigger>{children}</BaseDialog.Trigger>;
 }

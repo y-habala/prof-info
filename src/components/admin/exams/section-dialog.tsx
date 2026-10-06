@@ -41,7 +41,7 @@ export function SectionDialog({ trigger, mode, modelId, examId, initialValues }:
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle section" : "Modifier la section"}</DialogTitle>

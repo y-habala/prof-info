@@ -40,7 +40,7 @@ export function UnitDialog({ trigger, mode, levelId, initialValues }: Props) {
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle unité" : "Modifier l'unité"}</DialogTitle>

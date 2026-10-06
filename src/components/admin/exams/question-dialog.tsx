@@ -53,7 +53,7 @@ export function QuestionDialog({ trigger, mode, modelId, examId, sectionId, init
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle question" : "Modifier la question"}</DialogTitle>

@@ -43,7 +43,7 @@ export function ExamModelDialog({ trigger, examId, mode, initialValues }: Props)
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouveau modèle" : "Modifier le modèle"}</DialogTitle>

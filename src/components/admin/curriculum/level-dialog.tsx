@@ -39,7 +39,7 @@ export function LevelDialog({ trigger, mode, initialValues }: Props) {
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouveau niveau" : "Modifier le niveau"}</DialogTitle>

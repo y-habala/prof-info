@@ -58,7 +58,7 @@ export function ExamDialog({ trigger, mode, levels, initialValues }: Props) {
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvel examen" : "Modifier l'examen"}</DialogTitle>

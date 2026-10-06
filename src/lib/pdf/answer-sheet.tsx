@@ -212,7 +212,10 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
             <Text style={styles.examTitle}>
               {data.examTitle} ({data.modelLabel.toUpperCase()})
             </Text>
-            <Text style={styles.examMeta}>Matière : {SUBJECT} — {data.settings.institution}</Text>
+            <Text style={styles.examMeta}>{data.settings.institution}</Text>
+            <Text style={styles.examMeta}>
+              Matière : {SUBJECT} — Année scolaire : {currentSchoolYear()}
+            </Text>
           </View>
           <View style={styles.letterCol}>
             <Text style={styles.letterLineRight}>Académie : {data.settings.academie}</Text>

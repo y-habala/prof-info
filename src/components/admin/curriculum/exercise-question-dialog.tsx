@@ -43,7 +43,7 @@ export function ExerciseQuestionDialog({ trigger, mode, exerciseId, initialValue
         if (next) { setError(null); setFormKey((k) => k + 1); }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent className="max-w-xl">
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle question" : "Modifier la question"}</DialogTitle>

@@ -39,7 +39,7 @@ export function AccessCodeDialog({ trigger, mode, initialValues }: Props) {
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouveau code" : "Modifier le code"}</DialogTitle>

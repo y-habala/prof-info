@@ -41,7 +41,7 @@ export function SequenceDialog({ trigger, mode, unitId, levelId, initialValues }
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent>
         <DialogHeader>
           <DialogTitle>{mode === "create" ? "Nouvelle séquence" : "Modifier la séquence"}</DialogTitle>

@@ -104,7 +104,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
         }
       }}
     >
-      <DialogTrigger render={trigger}>{trigger.props.children}</DialogTrigger>
+      <DialogTrigger render={trigger} />
       <DialogContent className={needsBigDialog ? "max-w-3xl" : "max-w-xl"}>
         <DialogHeader>
           <DialogTitle>

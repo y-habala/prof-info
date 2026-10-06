@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,23 +18,27 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
 
   // Filtered class options based on the exam's level (resolved from secret code)
   const [resolvedLevel, setResolvedLevel] = useState<string | null>(null);
-  const resolveRef = useRef<AbortController | null>(null);
 
   const filteredOptions =
     resolvedLevel
       ? classOptions.filter((c) => c.startsWith(resolvedLevel + "-"))
       : classOptions;
 
-  // When the code reaches 4 digits, quietly resolve the level
-  useEffect(() => {
-    if (!/^\d{4}$/.test(secretCode)) {
+  // Code typing — the reset lives here rather than in the effect below, because
+  // a synchronous setState in an effect body causes a cascading render.
+  function handleCodeChange(raw: string) {
+    const next = raw.replace(/\D/g, "").slice(0, 4);
+    setSecretCode(next);
+    if (!/^\d{4}$/.test(next)) {
       setResolvedLevel(null);
       setStudentClass("");
-      return;
     }
-    resolveRef.current?.abort();
+  }
+
+  // When the code reaches 4 digits, quietly resolve the level
+  useEffect(() => {
+    if (!/^\d{4}$/.test(secretCode)) return;
     const ctrl = new AbortController();
-    resolveRef.current = ctrl;
 
     fetch("/api/exam/level", {
       method: "POST",
@@ -48,6 +52,8 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
         setStudentClass("");
       })
       .catch(() => {});
+
+    return () => ctrl.abort();
   }, [secretCode]);
 
   function handleSubmit(e: React.FormEvent) {
@@ -96,7 +102,7 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
           autoComplete="off"
           placeholder="• • • •"
           value={secretCode}
-          onChange={(e) => setSecretCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
+          onChange={(e) => handleCodeChange(e.target.value)}
           className="h-14 text-center text-2xl font-mono tracking-[0.5em]"
         />
       </div>
