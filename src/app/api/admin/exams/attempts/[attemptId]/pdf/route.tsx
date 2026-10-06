@@ -105,7 +105,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
     maxScore: Number(attempt.max_score ?? 0),
     submittedAt: attempt.submitted_at,
     sections: sectionBlocks,
-    settings: { institution: settings.institution },
+    settings: {
+      institution: settings.institution,
+      academie: settings.academie,
+      direction: settings.direction,
+      teacherName: settings.teacher_name,
+    },
   };
 
   const buffer = await renderToBuffer(<AnswerSheetDocument data={data} />);

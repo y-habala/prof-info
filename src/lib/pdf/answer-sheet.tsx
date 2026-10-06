@@ -140,6 +140,9 @@ export type AnswerSheetData = {
   sections: AnswerSheetSection[];
   settings: {
     institution: string;
+    academie: string;
+    direction: string;
+    teacherName: string;
   };
 };
 
@@ -209,10 +212,12 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
             <Text style={styles.examTitle}>
               {data.examTitle} ({data.modelLabel.toUpperCase()})
             </Text>
-            <Text style={styles.examMeta}>Matière : {SUBJECT} — Établissement : {data.settings.institution}</Text>
+            <Text style={styles.examMeta}>Matière : {SUBJECT} — {data.settings.institution}</Text>
           </View>
           <View style={styles.letterCol}>
-            <Text style={styles.letterLineRight}>Année scolaire : {currentSchoolYear()}</Text>
+            <Text style={styles.letterLineRight}>Académie : {data.settings.academie}</Text>
+            <Text style={styles.letterLineRight}>Direction : {data.settings.direction}</Text>
+            <Text style={styles.letterLineRight}>Enseignant(e) : {data.settings.teacherName}</Text>
             <Text style={styles.letterLineRight}>Date : {submittedDate}</Text>
           </View>
         </View>
