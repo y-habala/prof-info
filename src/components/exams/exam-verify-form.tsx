@@ -1,18 +1,17 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-export function ExamVerifyForm() {
+export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
   const router = useRouter();
   const [secretCode, setSecretCode] = useState("");
   const [studentFirstName, setStudentFirstName] = useState("");
   const [studentName, setStudentName] = useState("");
-  const [classNumber, setClassNumber] = useState("");
-  const [studentNumber, setStudentNumber] = useState("");
+  const [studentClass, setStudentClass] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -27,21 +26,15 @@ export function ExamVerifyForm() {
       setError("Prénom et nom sont requis.");
       return;
     }
-    if (!classNumber || Number(classNumber) < 1) {
-      setError("Le numéro de classe est requis.");
+    if (!studentClass) {
+      setError("Veuillez choisir votre classe.");
       return;
     }
     startTransition(async () => {
       const res = await fetch("/api/exam/verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          secretCode,
-          studentFirstName,
-          studentName,
-          classNumber: Number(classNumber),
-          studentNumber,
-        }),
+        body: JSON.stringify({ secretCode, studentFirstName, studentName, studentClass }),
       });
       const body = await res.json().catch(() => null);
       if (!res.ok) {
@@ -68,6 +61,7 @@ export function ExamVerifyForm() {
           className="h-14 text-center text-2xl font-mono tracking-[0.5em]"
         />
       </div>
+
       <div className="grid grid-cols-2 gap-3">
         <div className="space-y-2">
           <Label htmlFor="studentFirstName">Prénom</Label>
@@ -90,36 +84,43 @@ export function ExamVerifyForm() {
           />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          <Label htmlFor="classNumber">N° de classe</Label>
+
+      <div className="space-y-2">
+        <Label htmlFor="studentClass">Classe</Label>
+        {classOptions.length > 0 ? (
+          <div className="relative">
+            <select
+              id="studentClass"
+              value={studentClass}
+              onChange={(e) => setStudentClass(e.target.value)}
+              required
+              className="w-full appearance-none rounded-xl border border-input bg-background px-3 py-2.5 pr-9 text-sm shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              <option value="" disabled>Choisir une classe…</option>
+              {classOptions.map((cls) => (
+                <option key={cls} value={cls}>{cls}</option>
+              ))}
+            </select>
+            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          </div>
+        ) : (
           <Input
-            id="classNumber"
-            inputMode="numeric"
-            pattern="[0-9]*"
+            id="studentClass"
             autoComplete="off"
-            placeholder="ex. 3"
-            value={classNumber}
-            onChange={(e) => setClassNumber(e.target.value.replace(/\D/g, "").slice(0, 3))}
+            placeholder="ex. 2APIC-3"
+            value={studentClass}
+            onChange={(e) => setStudentClass(e.target.value)}
             required
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="studentNumber">N° (optionnel)</Label>
-          <Input
-            id="studentNumber"
-            autoComplete="off"
-            placeholder="ex. 12"
-            value={studentNumber}
-            onChange={(e) => setStudentNumber(e.target.value)}
-          />
-        </div>
+        )}
       </div>
+
       {error ? (
         <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
         </p>
       ) : null}
+
       <Button type="submit" size="lg" className="w-full gap-2" disabled={isPending}>
         {isPending ? (
           <>

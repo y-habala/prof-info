@@ -1,10 +1,27 @@
 import type { Metadata } from "next";
 import { Shield } from "lucide-react";
 import { ExamVerifyForm } from "@/components/exams/exam-verify-form";
+import { getSettings } from "@/lib/settings";
+import { createClient } from "@/lib/supabase/server";
 
 export const metadata: Metadata = { title: "Examen — Plateforme Informatique" };
 
-export default function ExamEntryPage() {
+export default async function ExamEntryPage() {
+  const supabase = await createClient();
+  const [settings, { data: levelsData }] = await Promise.all([
+    getSettings(),
+    supabase.from("levels").select("id, name, order_index").eq("is_active", true).order("order_index"),
+  ]);
+
+  // Build class options list: "1APIC-1", "1APIC-2", ... for each level
+  const classOptions: string[] = [];
+  for (const level of levelsData ?? []) {
+    const count = settings.class_counts[level.name] ?? 0;
+    for (let i = 1; i <= count; i++) {
+      classOptions.push(`${level.name}-${i}`);
+    }
+  }
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-12">
       <div className="w-full max-w-md">
@@ -18,7 +35,7 @@ export default function ExamEntryPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
-          <ExamVerifyForm />
+          <ExamVerifyForm classOptions={classOptions} />
         </div>
       </div>
     </main>

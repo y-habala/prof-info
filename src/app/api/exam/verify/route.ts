@@ -61,9 +61,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "L'examen est terminé." }, { status: 401 });
   }
 
-  // Build the canonical class label: "<LevelName>-<N>", e.g. "3APIC-5"
-  const levelName = exam.levels?.name ?? "SansNiveau";
-  const studentClass = `${levelName}-${parsed.data.classNumber}`;
+  const studentClass = parsed.data.studentClass;
 
   // Enforce max_attempts: count submitted attempts by this student (name+firstname)
   // against ANY model of this exam (so the student can't just switch models to
@@ -91,7 +89,6 @@ export async function POST(request: Request) {
       student_first_name: parsed.data.studentFirstName.trim(),
       student_name: parsed.data.studentName.trim(),
       student_class: studentClass,
-      student_number: parsed.data.studentNumber?.trim() || null,
       ip_address: ip,
     })
     .select("id")

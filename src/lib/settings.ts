@@ -9,6 +9,8 @@ export type SettingsBundle = {
   institution: string;
   academie: string;
   direction: string;
+  /** Number of classes per level name, e.g. {"1APIC": 4, "2APIC": 3} */
+  class_counts: Record<string, number>;
 };
 
 const DEFAULTS: SettingsBundle = {
@@ -16,6 +18,7 @@ const DEFAULTS: SettingsBundle = {
   institution: "—",
   academie: "—",
   direction: "—",
+  class_counts: {},
 };
 
 export async function getSettings(): Promise<SettingsBundle> {
@@ -23,10 +26,17 @@ export async function getSettings(): Promise<SettingsBundle> {
   const { data } = await supabase.from("settings").select("key, value");
   if (!data) return DEFAULTS;
   const map = Object.fromEntries(data.map((r) => [r.key, r.value]));
+  let class_counts: Record<string, number> = {};
+  try {
+    class_counts = JSON.parse(map.class_counts ?? "{}") as Record<string, number>;
+  } catch {
+    class_counts = {};
+  }
   return {
     teacher_name: map.teacher_name ?? DEFAULTS.teacher_name,
     institution: map.institution ?? DEFAULTS.institution,
     academie: map.academie ?? DEFAULTS.academie,
     direction: map.direction ?? DEFAULTS.direction,
+    class_counts,
   };
 }

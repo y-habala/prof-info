@@ -46,6 +46,5 @@ export const examVerifySchema = z.object({
   secretCode: z.string().regex(/^\d{4}$/),
   studentFirstName: z.string().trim().min(1).max(100),
   studentName: z.string().trim().min(1).max(100),
-  classNumber: z.coerce.number().int().positive().max(999),
-  studentNumber: z.string().trim().max(20).optional().or(z.literal("")),
+  studentClass: z.string().trim().min(1).max(30),
 });
