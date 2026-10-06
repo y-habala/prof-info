@@ -1,16 +1,50 @@
-import { Construction } from "lucide-react";
-import { Card } from "@/components/ui/card";
+import { Plus } from "lucide-react";
+import { createClient } from "@/lib/supabase/server";
+import { Button } from "@/components/ui/button";
+import { ExerciseDialog } from "@/components/admin/exercises/exercise-dialog";
+import { ExercisesTable, type ExerciseRow } from "@/components/admin/exercises/exercises-table";
 
-export default function AdminExercisesPage() {
+export default async function AdminExercisesPage() {
+  const supabase = await createClient();
+
+  const [{ data: exercises }, { data: levels }] = await Promise.all([
+    supabase
+      .from("exercises")
+      .select("id, title, level_id, order_index, is_published, exercise_questions(count)")
+      .order("created_at", { ascending: false }),
+    supabase.from("levels").select("id, name").eq("is_active", true).order("order_index"),
+  ]);
+
+  const rows: ExerciseRow[] = (exercises ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    level_id: e.level_id,
+    order_index: e.order_index,
+    is_published: e.is_published,
+    question_count: (e.exercise_questions as unknown as { count: number }[])?.[0]?.count ?? 0,
+  }));
+
   return (
-    <Card className="flex flex-col items-center gap-3 p-10 text-center">
-      <div className="flex size-12 items-center justify-center rounded-xl bg-accent text-accent-foreground">
-        <Construction className="size-5" />
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Exercices</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Entraînement libre — l&apos;élève voit la correction immédiatement, aucune note stockée.
+          </p>
+        </div>
+        <ExerciseDialog
+          mode="create"
+          levels={levels ?? []}
+          trigger={
+            <Button className="gap-2">
+              <Plus className="size-4" />
+              Nouvel exercice
+            </Button>
+          }
+        />
       </div>
-      <h1 className="text-xl font-bold">Exercices — en préparation</h1>
-      <p className="max-w-md text-sm text-muted-foreground">
-        La gestion des exercices autonomes sera disponible dans la prochaine mise à jour.
-      </p>
-    </Card>
+      <ExercisesTable exercises={rows} levels={levels ?? []} />
+    </div>
   );
 }

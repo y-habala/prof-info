@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Library, FileCheck2, GraduationCap, KeyRound, ArrowRight } from "lucide-react";
+import { Library, FileCheck2, GraduationCap, KeyRound, ArrowRight, Users, TrendingUp } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
+import { scoreOutOf20 } from "@/lib/grading";
 
 async function countRows(table: string): Promise<number> {
   const supabase = await createClient();
@@ -10,12 +11,25 @@ async function countRows(table: string): Promise<number> {
 }
 
 export default async function AdminDashboardPage() {
-  const [levels, sessions, exams, codes] = await Promise.all([
+  const supabase = await createClient();
+
+  const [levels, sessions, exams, exercises, codes, { data: attempts }] = await Promise.all([
     countRows("levels"),
     countRows("sessions"),
     countRows("exams"),
+    countRows("exercises"),
     countRows("access_codes"),
+    supabase.from("exam_attempts").select("score, max_score, submitted_at"),
   ]);
+
+  const submitted = (attempts ?? []).filter((a) => a.submitted_at);
+  const avg20 =
+    submitted.length > 0
+      ? submitted.reduce(
+          (acc, a) => acc + scoreOutOf20(Number(a.score ?? 0), Number(a.max_score ?? 0)),
+          0
+        ) / submitted.length
+      : null;
 
   return (
     <div className="space-y-8">
@@ -27,8 +41,24 @@ export default async function AdminDashboardPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Niveaux" value={levels} icon={GraduationCap} tint="bg-blue-50 text-blue-600" />
         <StatCard label="Séances" value={sessions} icon={Library} tint="bg-emerald-50 text-emerald-600" />
-        <StatCard label="Examens" value={exams} icon={FileCheck2} tint="bg-amber-50 text-amber-700" />
-        <StatCard label="Codes d'accès" value={codes} icon={KeyRound} tint="bg-fuchsia-50 text-fuchsia-600" />
+        <StatCard label="Exercices" value={exercises} icon={FileCheck2} tint="bg-amber-50 text-amber-700" />
+        <StatCard label="Examens" value={exams} icon={FileCheck2} tint="bg-fuchsia-50 text-fuchsia-600" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <StatCard
+          label="Tentatives soumises"
+          value={submitted.length}
+          icon={Users}
+          tint="bg-cyan-50 text-cyan-700"
+        />
+        <StatCard
+          label="Moyenne générale"
+          value={avg20 !== null ? `${avg20.toFixed(2)}/20` : "—"}
+          icon={TrendingUp}
+          tint="bg-violet-50 text-violet-700"
+        />
+        <StatCard label="Codes d'accès" value={codes} icon={KeyRound} tint="bg-rose-50 text-rose-600" />
       </div>
 
       <div>
@@ -36,6 +66,8 @@ export default async function AdminDashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <QuickLink href="/admin/curriculum" title="Gérer les cours" desc="Niveaux, unités, séquences, séances" />
           <QuickLink href="/admin/exams" title="Gérer les examens" desc="Créer un examen et ses modèles A/B/C/D" />
+          <QuickLink href="/admin/exercises" title="Gérer les exercices" desc="Entraînement libre pour les élèves" />
+          <QuickLink href="/admin/results" title="Voir les résultats" desc="Tentatives, moyennes, exports PDF/Excel" />
         </div>
       </div>
     </div>
@@ -49,7 +81,7 @@ function StatCard({
   tint,
 }: {
   label: string;
-  value: number;
+  value: number | string;
   icon: typeof GraduationCap;
   tint: string;
 }) {
