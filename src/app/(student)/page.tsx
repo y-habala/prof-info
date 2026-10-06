@@ -1,160 +1,146 @@
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, KeyRound } from "lucide-react";
+import { ArrowRight, GraduationCap, Sparkles } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
-import { getSettings } from "@/lib/settings";
 
-type SessionRow = { id: string; title: string; created_at: string; is_published: boolean };
-type SequenceRow = { id: string; is_published: boolean; sessions: SessionRow[] | null };
-type UnitRow = { id: string; is_published: boolean; sequences: SequenceRow[] | null };
-type LevelRow = { id: string; name: string; units: UnitRow[] | null };
+// Solid accents cycled across level cards — one saturated hue per level,
+// used as a top bar + icon tile (never as a pastel wash). order_index drives
+// the assignment so each level keeps its identity between visits.
+const LEVEL_ACCENTS = [
+  "bg-primary",
+  "bg-teal-600",
+  "bg-amber-500",
+  "bg-violet-600",
+];
 
-/** "2025/2026" — the school year rolls over in September. */
-function currentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const start = now.getMonth() >= 8 ? y : y - 1;
-  return `${start}/${start + 1}`;
-}
-
-const shortDate = new Intl.DateTimeFormat("fr-FR", { day: "2-digit", month: "short" });
+// Fine graph-paper grid behind the hero, faded out towards the bottom.
+// Inline because the mask + the border token can't be expressed as utilities.
+const GRID_STYLE: React.CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to right, var(--border) 1px, transparent 1px), linear-gradient(to bottom, var(--border) 1px, transparent 1px)",
+  backgroundSize: "64px 64px",
+  maskImage: "radial-gradient(ellipse 75% 70% at 50% 0%, #000 35%, transparent 100%)",
+  WebkitMaskImage: "radial-gradient(ellipse 75% 70% at 50% 0%, #000 35%, transparent 100%)",
+};
 
 export default async function HomePage() {
   const supabase = await createClient();
-
-  // One nested read covers both the per-level counts and the recent-sessions
-  // list — the student landing page is the only place that needs either.
-  const [settings, { data: levelsData }] = await Promise.all([
-    getSettings(),
-    supabase
-      .from("levels")
-      .select(
-        "id, name, order_index, units(id, is_published, sequences(id, is_published, sessions(id, title, created_at, is_published)))"
-      )
-      .eq("is_active", true)
-      .order("order_index"),
-  ]);
-
-  const rows = (levelsData as unknown as LevelRow[] | null) ?? [];
-
-  const levels = rows.map((lvl) => {
-    const units = (lvl.units ?? []).filter((u) => u.is_published);
-    let sessionCount = 0;
-    const sessions: { id: string; title: string; created_at: string; href: string }[] = [];
-    for (const unit of units) {
-      for (const seq of (unit.sequences ?? []).filter((s) => s.is_published)) {
-        for (const se of (seq.sessions ?? []).filter((s) => s.is_published)) {
-          sessionCount++;
-          sessions.push({
-            id: se.id,
-            title: se.title,
-            created_at: se.created_at,
-            href: `/courses/${lvl.id}/${unit.id}/${seq.id}/${se.id}`,
-          });
-        }
-      }
-    }
-    return { id: lvl.id, name: lvl.name, unitCount: units.length, sessionCount, sessions };
-  });
-
-  const recent = levels
-    .flatMap((lvl) => lvl.sessions.map((s) => ({ ...s, levelName: lvl.name })))
-    .sort((a, b) => b.created_at.localeCompare(a.created_at))
-    .slice(0, 5);
+  const { data: levels } = await supabase
+    .from("levels")
+    .select("id, name")
+    .order("order_index");
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 pb-24">
-      {/* En-tête */}
-      <header className="flex flex-col gap-4 border-b border-border pb-10 pt-14 sm:flex-row sm:items-end sm:justify-between sm:pt-20">
-        <div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">Informatique</h1>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Enseignement secondaire collégial — {settings.institution}
-          </p>
-        </div>
-        <p className="shrink-0 text-sm text-muted-foreground sm:text-right">
-          Année scolaire{" "}
-          <span className="font-semibold tabular-nums text-foreground">{currentSchoolYear()}</span>
-        </p>
-      </header>
+    <>
+      {/* ── Hero ─────────────────────────────────────────────────────── */}
+      <section className="relative isolate overflow-hidden border-b border-border">
+        <div aria-hidden className="absolute inset-0 -z-10 opacity-70" style={GRID_STYLE} />
 
-      {/* Niveaux */}
-      <section className="mt-14">
-        <SectionLabel>Niveaux</SectionLabel>
-        {levels.length > 0 ? (
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {levels.map((lvl) => (
-              <Link
-                key={lvl.id}
-                href={`/courses/${lvl.id}`}
-                className="group rounded-xl border border-border p-5 transition-colors hover:border-foreground/25 hover:bg-muted/40"
+        <div className="mx-auto w-full max-w-3xl px-4 py-20 text-center sm:py-28">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-card px-3 py-1 text-xs font-medium text-muted-foreground shadow-sm">
+            <Sparkles className="size-3.5 text-gold" />
+            Informatique — Enseignement secondaire collégial
+          </span>
+
+          <h1 className="mt-6 text-4xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
+            Apprendre l&apos;informatique,
+            <br />
+            <span className="relative inline-block">
+              <span className="relative z-10">pas à pas.</span>
+              {/* Hand-drawn underline — the one playful stroke on the page */}
+              <svg
+                aria-hidden
+                viewBox="0 0 240 14"
+                preserveAspectRatio="none"
+                className="absolute inset-x-0 -bottom-1 h-3 w-full text-gold"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-lg font-semibold tracking-tight">{lvl.name}</span>
-                  <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-foreground" />
-                </div>
-                <p className="mt-4 text-xs tabular-nums text-muted-foreground">
-                  {lvl.unitCount} {lvl.unitCount === 1 ? "unité" : "unités"} · {lvl.sessionCount}{" "}
-                  {lvl.sessionCount === 1 ? "séance" : "séances"}
-                </p>
-              </Link>
-            ))}
+                <path
+                  d="M3 9.5C45 4 92 3 122 5.5c30 2.5 76 4 115 1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="5"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+          </h1>
+
+          <p className="mx-auto mt-6 max-w-xl text-base leading-relaxed text-muted-foreground sm:text-lg">
+            Les cours de l&apos;année, organisés par niveau, unité et séance — et les
+            examens, au même endroit. Révise à ton rythme.
+          </p>
+
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href="/courses"
+              className="group inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              Voir les cours
+              <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/exam"
+              className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-6 py-3 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              J&apos;ai un code d&apos;examen
+            </Link>
           </div>
-        ) : (
-          <p className="mt-5 text-sm text-muted-foreground">Aucun niveau disponible.</p>
-        )}
+        </div>
       </section>
 
-      {/* Dernières séances — l'unique endroit où elles sont réunies tous
-       * niveaux confondus ; ailleurs on navigue niveau par niveau. */}
-      {recent.length > 0 ? (
-        <section className="mt-14">
-          <SectionLabel>Dernières séances</SectionLabel>
-          <ul className="mt-2 divide-y divide-border">
-            {recent.map((s) => (
-              <li key={s.id}>
+      {/* ── Niveaux ──────────────────────────────────────────────────── */}
+      <section className="mx-auto w-full max-w-5xl px-4 py-16 sm:py-20">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+          Niveaux
+        </p>
+        <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          Choisis ton niveau
+        </h2>
+        <p className="mt-2 max-w-md text-sm text-muted-foreground">
+          Chaque niveau regroupe l&apos;ensemble des séances publiées pour l&apos;année.
+        </p>
+
+        {levels && levels.length > 0 ? (
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {levels.map((lvl, i) => {
+              const accent = LEVEL_ACCENTS[i % LEVEL_ACCENTS.length];
+              return (
                 <Link
-                  href={s.href}
-                  className="group flex items-baseline gap-4 py-3.5 transition-colors hover:text-primary"
+                  key={lvl.id}
+                  href={`/courses/${lvl.id}`}
+                  className="group relative overflow-hidden rounded-2xl border border-border bg-card p-6 transition-all hover:-translate-y-1 hover:border-foreground/15 hover:shadow-lg"
                 >
-                  <span className="w-14 shrink-0 font-mono text-[11px] uppercase tracking-wider text-muted-foreground">
-                    {s.levelName}
-                  </span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium">{s.title}</span>
-                  <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
-                    {shortDate.format(new Date(s.created_at))}
+                  <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${accent}`} />
+                  <div className="flex items-start justify-between">
+                    <div
+                      className={`flex size-11 items-center justify-center rounded-xl text-white ${accent}`}
+                    >
+                      <GraduationCap className="size-5" strokeWidth={2.25} />
+                    </div>
+                    <span
+                      aria-hidden
+                      className="select-none text-4xl font-black leading-none tabular-nums text-foreground/[0.07]"
+                    >
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                  </div>
+                  <h3 className="mt-5 text-xl font-bold">{lvl.name}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Unités, séquences et séances.
+                  </p>
+                  <span className="mt-5 inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
+                    Commencer
+                    <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
                   </span>
                 </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
-
-      {/* Examen */}
-      <section className="mt-14">
-        <SectionLabel>Examen</SectionLabel>
-        <Link
-          href="/exam"
-          className="group mt-5 flex items-center gap-4 rounded-xl border border-border p-5 transition-colors hover:border-foreground/25 hover:bg-muted/40"
-        >
-          <KeyRound className="size-5 shrink-0 text-muted-foreground" />
-          <span className="min-w-0 flex-1 text-sm">
-            Saisis le code à 4 chiffres remis par ton enseignant.
-          </span>
-          <ArrowRight className="size-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
-        </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <p className="mt-8 rounded-2xl border border-dashed border-border bg-muted/20 p-10 text-center text-sm text-muted-foreground">
+            Les niveaux apparaîtront ici dès que ton enseignant les aura publiés.
+          </p>
+        )}
       </section>
-    </div>
-  );
-}
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-4">
-      <h2 className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-        {children}
-      </h2>
-      <span aria-hidden className="h-px flex-1 bg-border" />
-    </div>
+    </>
   );
 }
