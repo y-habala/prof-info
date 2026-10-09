@@ -144,9 +144,13 @@ export async function deleteSequence(id: string, levelId: string) {
 
 // ---- SESSIONS -------------------------------------------------------------
 
+// `sequenceId` is null for a session attached straight to its unit — some
+// units are taught as unité → séance, with no séquence in between. `unitId` is
+// always set, so a session's place in the tree never depends on the séquence.
 export async function upsertSession(
   id: string | null,
-  sequenceId: string,
+  unitId: string,
+  sequenceId: string | null,
   levelId: string,
   _prev: FormState,
   formData: FormData
@@ -174,6 +178,7 @@ export async function upsertSession(
     if (error) return { error: "Une erreur est survenue." };
   } else {
     const { error } = await supabase.from("sessions").insert({
+      unit_id: unitId,
       sequence_id: sequenceId,
       title: parsed.data.title,
       duration_minutes: duration,

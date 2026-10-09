@@ -119,14 +119,15 @@ export async function createInlineExercise(sessionId: string, title: string): Pr
   if (!title.trim()) return { error: "Titre requis." };
   const supabase = await createClient();
 
-  // Resolve the level_id through session → sequence → unit → level
+  // Resolve the level_id through session → unit → level. Not through the
+  // séquence: a séance may not have one.
   const { data: ses } = await supabase
     .from("sessions")
-    .select("sequences(units(level_id))")
+    .select("units(level_id)")
     .eq("id", sessionId)
     .maybeSingle();
   const levelId =
-    (ses?.sequences as unknown as { units: { level_id: string } | null } | null)?.units?.level_id ?? null;
+    (ses?.units as unknown as { level_id: string } | null)?.level_id ?? null;
 
   const { data, error } = await supabase
     .from("exercises")

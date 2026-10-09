@@ -15,21 +15,22 @@ export default async function AdminSessionBlocksPage({
 
   const { data: session } = await supabase
     .from("sessions")
-    .select("id, title, duration_minutes, sequences(title, units(title, levels(name, id)))")
+    .select("id, title, duration_minutes, unit_id, sequences(title)")
     .eq("id", sessionId)
     .maybeSingle();
   if (!session) notFound();
 
-  const seq = session.sequences as unknown as {
-    title: string;
-    units: { title: string; levels: { name: string; id: string } | null } | null;
-  } | null;
-  const breadcrumb = [
-    seq?.units?.levels?.name,
-    seq?.units?.title,
-    seq?.title,
-  ].filter(Boolean) as string[];
-  const levelId = seq?.units?.levels?.id ?? null;
+  // Walk up through the unit — the séquence is optional and may be missing
+  // from the breadcrumb entirely.
+  const { data: unit } = await supabase
+    .from("units")
+    .select("title, levels(name, id)")
+    .eq("id", session.unit_id)
+    .maybeSingle();
+  const level = (unit?.levels as unknown as { name: string; id: string } | null) ?? null;
+  const seq = session.sequences as unknown as { title: string } | null;
+  const breadcrumb = [level?.name, unit?.title, seq?.title].filter(Boolean) as string[];
+  const levelId = level?.id ?? null;
 
   const [{ data: blocks }, { data: exercisesList }] = await Promise.all([
     supabase

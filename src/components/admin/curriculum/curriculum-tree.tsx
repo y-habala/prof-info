@@ -40,6 +40,8 @@ export type UnitRow = {
   title: string;
   order_index: number;
   is_published: boolean;
+  /** Séances attached straight to the unit, with no séquence in between. */
+  sessions: SessionRow[];
   sequences: SequenceRow[];
 };
 export type LevelTreeRow = {
@@ -180,8 +182,48 @@ function UnitAccordion({ unit, levelId, defaultOpen }: { unit: UnitRow; levelId:
         </div>
       </div>
       {isOpen ? (
-        <div className="space-y-4 border-t border-border p-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-5 border-t border-border p-4">
+          {/* Séances held by the unit itself. A unit that needs no séquence
+            * stops here; the séquences below stay available for the ones that
+            * do. */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                Séances de l&apos;unité
+              </h4>
+              <SessionDialog
+                mode="create"
+                unitId={unit.id}
+                sequenceId={null}
+                levelId={levelId}
+                trigger={
+                  <Button size="sm" variant="outline" className="gap-1.5">
+                    <Plus className="size-3.5" />
+                    Ajouter
+                  </Button>
+                }
+              />
+            </div>
+            {unit.sessions.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                Aucune séance directe. Ajoute-les ici quand l&apos;unité n&apos;a pas besoin de séquences.
+              </p>
+            ) : (
+              <ul className="space-y-1.5">
+                {unit.sessions.map((s) => (
+                  <SessionRowItem
+                    key={s.id}
+                    session={s}
+                    unitId={unit.id}
+                    sequenceId={null}
+                    levelId={levelId}
+                  />
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="flex items-center justify-between border-t border-border pt-4">
             <h4 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Séquences
             </h4>
@@ -248,7 +290,14 @@ function SequenceBlock({ sequence, unitId, levelId }: { sequence: SequenceRow; u
             disabled={isPending}
             className="gap-1.5 text-destructive hover:bg-destructive/10 hover:text-destructive"
             onClick={() => {
-              if (confirm(`Supprimer la séquence "${sequence.title}" ?`)) {
+              if (
+                confirm(
+                  `Supprimer la séquence "${sequence.title}" ?
+
+` +
+                    `Ses séances ne sont pas supprimées : elles repassent directement sous l'unité.`
+                )
+              ) {
                 startTransition(() => deleteSequence(sequence.id, levelId));
               }
             }}
@@ -263,6 +312,7 @@ function SequenceBlock({ sequence, unitId, levelId }: { sequence: SequenceRow; u
           <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Séances</p>
           <SessionDialog
             mode="create"
+            unitId={unitId}
             sequenceId={sequence.id}
             levelId={levelId}
             trigger={
@@ -278,7 +328,7 @@ function SequenceBlock({ sequence, unitId, levelId }: { sequence: SequenceRow; u
         ) : (
           <ul className="space-y-1.5">
             {sequence.sessions.map((s) => (
-              <SessionRowItem key={s.id} session={s} sequenceId={sequence.id} levelId={levelId} />
+              <SessionRowItem key={s.id} session={s} unitId={unitId} sequenceId={sequence.id} levelId={levelId} />
             ))}
           </ul>
         )}
@@ -289,11 +339,13 @@ function SequenceBlock({ sequence, unitId, levelId }: { sequence: SequenceRow; u
 
 function SessionRowItem({
   session,
+  unitId,
   sequenceId,
   levelId,
 }: {
   session: SessionRow;
-  sequenceId: string;
+  unitId: string;
+  sequenceId: string | null;
   levelId: string;
 }) {
   const [isPending, startTransition] = useTransition();
@@ -321,6 +373,7 @@ function SessionRowItem({
       </Link>
       <SessionDialog
         mode="edit"
+        unitId={unitId}
         sequenceId={sequenceId}
         levelId={levelId}
         initialValues={{

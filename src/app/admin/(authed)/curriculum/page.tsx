@@ -2,7 +2,11 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
-import { CurriculumTree, type LevelTreeRow } from "@/components/admin/curriculum/curriculum-tree";
+import {
+  CurriculumTree,
+  type LevelTreeRow,
+  type SessionRow,
+} from "@/components/admin/curriculum/curriculum-tree";
 import { LevelDialog } from "@/components/admin/curriculum/level-dialog";
 import { cn } from "@/lib/utils";
 
@@ -30,14 +34,36 @@ export default async function AdminCurriculumPage({
       .eq("level_id", current.id)
       .order("order_index");
 
+    const rawUnits = (unitsData as unknown as LevelTreeRow["units"]) ?? [];
+
+    // Séances with no séquence are fetched on their own rather than embedded:
+    // sessions now reach units by two routes (directly, and through a
+    // séquence), and a separate query keeps which one is meant unambiguous.
+    const unitIds = rawUnits.map((u) => u.id);
+    const { data: looseSessions } = unitIds.length
+      ? await supabase
+          .from("sessions")
+          .select("id, title, duration_minutes, content_markdown, order_index, is_published, unit_id")
+          .in("unit_id", unitIds)
+          .is("sequence_id", null)
+      : { data: [] };
+
+    const byUnit = new Map<string, SessionRow[]>();
+    for (const row of (looseSessions ?? []) as (SessionRow & { unit_id: string })[]) {
+      const list = byUnit.get(row.unit_id) ?? [];
+      list.push(row);
+      byUnit.set(row.unit_id, list);
+    }
+
     tree = {
       id: current.id,
       name: current.name,
-      units: ((unitsData as unknown as LevelTreeRow["units"]) ?? [])
+      units: rawUnits
         .slice()
         .sort((a, b) => a.order_index - b.order_index)
         .map((u) => ({
           ...u,
+          sessions: (byUnit.get(u.id) ?? []).sort((a, b) => a.order_index - b.order_index),
           sequences: (u.sequences ?? [])
             .slice()
             .sort((a, b) => a.order_index - b.order_index)

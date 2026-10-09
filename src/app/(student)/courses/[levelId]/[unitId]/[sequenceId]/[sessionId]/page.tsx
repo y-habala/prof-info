@@ -212,9 +212,7 @@ export default async function SessionPage({
   const [{ data: session }, { data: blocksData }] = await Promise.all([
     supabase
       .from("sessions")
-      .select(
-        "id, title, duration_minutes, content_markdown, sequences(unit_id, units(level_id, levels(name)))"
-      )
+      .select("id, title, duration_minutes, content_markdown, unit_id")
       .eq("id", sessionId)
       .eq("is_published", true)
       .maybeSingle(),
@@ -228,11 +226,15 @@ export default async function SessionPage({
 
   if (!session) notFound();
 
-  const ancestry = session.sequences as unknown as {
-    unit_id: string;
-    units: { level_id: string; levels: { name: string } | null } | null;
-  } | null;
-  const levelName = ancestry?.units?.levels?.name ?? null;
+  // The level is read through the unit, not the séquence: a séance without a
+  // séquence still belongs to a unit, so this resolves either way.
+  const { data: unit } = await supabase
+    .from("units")
+    .select("levels(name)")
+    .eq("id", session.unit_id)
+    .maybeSingle();
+  const levelName =
+    (unit?.levels as unknown as { name: string } | null)?.name ?? null;
 
   const blocks: Block[] = (blocksData ?? []).map((b) => ({
     id: b.id,

@@ -10,7 +10,9 @@ import { upsertSession } from "@/actions/curriculum";
 type Props = {
   trigger: React.ReactElement<{ children?: React.ReactNode }>;
   mode: "create" | "edit";
-  sequenceId: string;
+  unitId: string;
+  /** null when the séance hangs straight off the unit, with no séquence. */
+  sequenceId: string | null;
   levelId: string;
   initialValues?: {
     id: string;
@@ -20,7 +22,7 @@ type Props = {
   };
 };
 
-export function SessionDialog({ trigger, mode, sequenceId, levelId, initialValues }: Props) {
+export function SessionDialog({ trigger, mode, unitId, sequenceId, levelId, initialValues }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -32,7 +34,7 @@ export function SessionDialog({ trigger, mode, sequenceId, levelId, initialValue
     // contentMarkdown is deprecated — content is now in lesson_blocks. Pass
     // empty string so the schema accepts it and the DB column stays empty.
     formData.set("contentMarkdown", "");
-    const result = await upsertSession(initialValues?.id ?? null, sequenceId, levelId, undefined, formData);
+    const result = await upsertSession(initialValues?.id ?? null, unitId, sequenceId, levelId, undefined, formData);
     setIsPending(false);
     if (result?.error) setError(result.error);
     else setOpen(false);
