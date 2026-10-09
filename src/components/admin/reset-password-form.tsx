@@ -1,6 +1,5 @@
 "use client";
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,21 +7,33 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-export function AdminLoginForm() {
+const MIN_LENGTH = 8;
+
+export function ResetPasswordForm() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (password.length < MIN_LENGTH) {
+      setError(`Le mot de passe doit contenir au moins ${MIN_LENGTH} caractères.`);
+      return;
+    }
+    if (password !== confirm) {
+      setError("Les deux mots de passe ne correspondent pas.");
+      return;
+    }
     startTransition(async () => {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      // The recovery link already opened a session, so updateUser applies to
+      // the account that asked for the reset.
+      const { error } = await supabase.auth.updateUser({ password });
       if (error) {
-        setError("Email ou mot de passe incorrect.");
+        setError("Le lien a expiré ou a déjà servi. Demande un nouveau lien.");
         return;
       }
       router.push("/admin");
@@ -33,33 +44,26 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
-        <Label htmlFor="email">Email</Label>
-        <Input
-          id="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-      </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor="password">Mot de passe</Label>
-          <Link
-            href="/admin/mot-de-passe-oublie"
-            className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Mot de passe oublié ?
-          </Link>
-        </div>
+        <Label htmlFor="password">Nouveau mot de passe</Label>
         <Input
           id="password"
           type="password"
-          autoComplete="current-password"
+          autoComplete="new-password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">{MIN_LENGTH} caractères au minimum.</p>
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="confirm">Confirmer le mot de passe</Label>
+        <Input
+          id="confirm"
+          type="password"
+          autoComplete="new-password"
+          required
+          value={confirm}
+          onChange={(e) => setConfirm(e.target.value)}
         />
       </div>
       {error ? (
@@ -71,10 +75,10 @@ export function AdminLoginForm() {
         {isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Connexion…
+            Enregistrement…
           </>
         ) : (
-          "Se connecter"
+          "Enregistrer le mot de passe"
         )}
       </Button>
     </form>

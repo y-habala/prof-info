@@ -1,17 +1,14 @@
 "use client";
 import { useState, useTransition } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { Loader2, MailCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/client";
 
-export function AdminLoginForm() {
-  const router = useRouter();
+export function ForgotPasswordForm() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -20,14 +17,34 @@ export function AdminLoginForm() {
     setError(null);
     startTransition(async () => {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/callback`,
+      });
+      // Supabase answers the same way for an unknown address, so nothing here
+      // reveals whether an account exists. An error at this point is
+      // operational — the send quota, or SMTP — and gets a generic message
+      // rather than Supabase's English one.
       if (error) {
-        setError("Email ou mot de passe incorrect.");
+        setError("Envoi impossible pour le moment. Réessaie dans quelques minutes.");
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      setSent(true);
     });
+  }
+
+  if (sent) {
+    return (
+      <div className="flex flex-col items-center gap-3 text-center">
+        <div className="flex size-10 items-center justify-center rounded-full bg-success/10 text-success">
+          <MailCheck className="size-5" />
+        </div>
+        <p className="text-sm leading-relaxed text-muted-foreground">
+          Si un compte existe pour <span className="font-semibold text-foreground">{email}</span>,
+          un lien de réinitialisation vient d&apos;être envoyé. Pense à regarder les
+          courriers indésirables — le lien est valable une seule fois.
+        </p>
+      </div>
+    );
   }
 
   return (
@@ -43,25 +60,6 @@ export function AdminLoginForm() {
           onChange={(e) => setEmail(e.target.value)}
         />
       </div>
-      <div className="space-y-2">
-        <div className="flex items-center justify-between gap-3">
-          <Label htmlFor="password">Mot de passe</Label>
-          <Link
-            href="/admin/mot-de-passe-oublie"
-            className="text-xs font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Mot de passe oublié ?
-          </Link>
-        </div>
-        <Input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          required
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-      </div>
       {error ? (
         <div role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           {error}
@@ -71,10 +69,10 @@ export function AdminLoginForm() {
         {isPending ? (
           <>
             <Loader2 className="size-4 animate-spin" />
-            Connexion…
+            Envoi…
           </>
         ) : (
-          "Se connecter"
+          "Envoyer le lien"
         )}
       </Button>
     </form>

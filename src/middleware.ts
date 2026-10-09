@@ -7,6 +7,18 @@ import { SUPABASE_ANON_KEY, SUPABASE_URL } from "@/lib/env";
 // code gate. The access page itself and the verify API must stay reachable.
 const STUDENT_PROTECTED_PREFIXES = ["/courses", "/exercises", "/exam"];
 
+// Admin paths that must stay reachable without a session: the login screen
+// and the whole password-recovery path. /admin/nouveau-mot-de-passe is in the
+// list too — it renders its own "lien invalide" message when the recovery
+// code never produced a session, which is clearer than a silent bounce to
+// the login screen.
+const ADMIN_PUBLIC_PATHS = new Set([
+  "/admin/login",
+  "/admin/mot-de-passe-oublie",
+  "/admin/nouveau-mot-de-passe",
+  "/admin/callback",
+]);
+
 function isStudentProtectedPath(pathname: string) {
   // PDF download of an attempt (admin-only, via Supabase Auth, no platform
   // session) is handled in Session 3 — kept out of the student gate here.
@@ -19,7 +31,7 @@ export async function middleware(req: NextRequest) {
 
   // Admin routes — Supabase Auth session.
   if (pathname.startsWith("/admin") || pathname.startsWith("/api/admin")) {
-    if (pathname === "/admin/login") return NextResponse.next();
+    if (ADMIN_PUBLIC_PATHS.has(pathname)) return NextResponse.next();
     const res = NextResponse.next();
     const supabase = createServerClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       cookies: {
