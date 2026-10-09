@@ -1,9 +1,9 @@
 "use client";
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { Maximize2, Minimize2 } from "lucide-react";
 
 // Interactive activity isolated in a sandboxed iframe.
-// The iframe reports its scroll height via postMessage so the parent can
-// size it to fit — no scrollbar, no fixed cap, reads like a normal page.
+// Auto-sizes to content height (via postMessage) and supports fullscreen.
 export function SandboxedActivity({
   html,
   css,
@@ -13,9 +13,12 @@ export function SandboxedActivity({
   css: string;
   js: string;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(300);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
+  // Listen for height reports from inside the iframe.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.source !== iframeRef.current?.contentWindow) return;
@@ -32,6 +35,25 @@ export function SandboxedActivity({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
+  // Track the browser fullscreen state so the button icon stays in sync
+  // even when the user exits with Escape.
+  useEffect(() => {
+    function onFsChange() {
+      setIsFullscreen(document.fullscreenElement === containerRef.current);
+    }
+    document.addEventListener("fullscreenchange", onFsChange);
+    return () => document.removeEventListener("fullscreenchange", onFsChange);
+  }, []);
+
+  const toggleFullscreen = useCallback(async () => {
+    if (!containerRef.current) return;
+    if (!document.fullscreenElement) {
+      await containerRef.current.requestFullscreen();
+    } else {
+      await document.exitFullscreen();
+    }
+  }, []);
+
   const srcDoc = useMemo(
     () => `<!doctype html>
 <html lang="fr">
@@ -40,7 +62,7 @@ export function SandboxedActivity({
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <style>
       html, body { margin: 0; padding: 0; }
-      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; background: transparent; }
+      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; background: #fff; }
       ${css}
     </style>
   </head>
@@ -70,13 +92,46 @@ export function SandboxedActivity({
   );
 
   return (
-    <iframe
-      ref={iframeRef}
-      sandbox="allow-scripts"
-      srcDoc={srcDoc}
-      style={{ height, width: "100%", border: 0, display: "block", overflow: "hidden" }}
-      title="Activité interactive"
-      scrolling="no"
-    />
+    <div ref={containerRef} style={{ position: "relative" }}>
+      <iframe
+        ref={iframeRef}
+        sandbox="allow-scripts"
+        srcDoc={srcDoc}
+        style={{
+          height: isFullscreen ? "100vh" : height,
+          width: "100%",
+          border: 0,
+          display: "block",
+          overflow: isFullscreen ? "auto" : "hidden",
+          background: "#fff",
+        }}
+        title="Activité interactive"
+        scrolling={isFullscreen ? "yes" : "no"}
+      />
+      <button
+        type="button"
+        onClick={toggleFullscreen}
+        aria-label={isFullscreen ? "Quitter le plein écran" : "Plein écran"}
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 32,
+          height: 32,
+          borderRadius: 6,
+          border: "1px solid rgba(0,0,0,0.12)",
+          background: "rgba(255,255,255,0.85)",
+          backdropFilter: "blur(4px)",
+          cursor: "pointer",
+          zIndex: 10,
+          color: "#333",
+        }}
+      >
+        {isFullscreen ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
+      </button>
+    </div>
   );
 }

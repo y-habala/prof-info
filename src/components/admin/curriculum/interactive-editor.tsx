@@ -77,7 +77,7 @@ export function InteractiveEditor({
           <p className="mb-2 text-xs font-medium text-muted-foreground">
             Aperçu — sandboxé, ne peut rien lire des cookies ou du reste du site.
           </p>
-          <SandboxedActivity html={html} css={css} js={js} height={400} />
+          <SandboxedActivity html={html} css={css} js={js} />
         </div>
       )}
 
