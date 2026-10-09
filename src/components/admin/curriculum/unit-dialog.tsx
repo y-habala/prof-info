@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,15 @@ export function UnitDialog({ trigger, mode, levelId, initialValues }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [formKey, setFormKey] = useState(0);
+  const submitting = useRef(false);
 
   async function handleAction(formData: FormData) {
+    if (submitting.current) return;
+    submitting.current = true;
     setIsPending(true);
     setError(null);
     const result = await upsertUnit(initialValues?.id ?? null, levelId, undefined, formData);
+    submitting.current = false;
     setIsPending(false);
     if (result?.error) setError(result.error);
     else setOpen(false);
