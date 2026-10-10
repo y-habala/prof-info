@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Select } from "@/components/ui/select";
 import { createBlock, updateBlock, createInlineExercise } from "@/actions/lesson-blocks";
 import { BLOCK_TYPE_LABELS, type BlockType } from "@/schemas/lesson-blocks";
 import type { BlockRow, ExerciseOption } from "./session-blocks-editor";
-import { InteractiveEditor } from "./interactive-editor";
+import { InteractiveEditor, type InteractiveEditorHandle } from "./interactive-editor";
 import Link from "next/link";
 
 type Props = {
@@ -27,6 +27,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [formKey, setFormKey] = useState(0);
+  const submitting = useRef(false);
 
   const type: BlockType = (initialBlock?.type ?? initialType ?? "text") as BlockType;
   const [title, setTitle] = useState(initialBlock?.title ?? "");
@@ -40,9 +41,11 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
   const [fileUrl, setFileUrl] = useState(String(initialBlock?.content.url ?? ""));
   const [fileName, setFileName] = useState(String(initialBlock?.content.file_name ?? ""));
   const [exerciseId, setExerciseId] = useState(String(initialBlock?.content.exercise_id ?? ""));
-  const [html, setHtml] = useState(String(initialBlock?.content.html ?? ""));
-  const [css, setCss] = useState(String(initialBlock?.content.css ?? ""));
-  const [js, setJs] = useState(String(initialBlock?.content.js ?? ""));
+  // html/css/js are initial values only — current values are read via interactiveRef
+  const initialHtml = String(initialBlock?.content.html ?? "");
+  const initialCss = String(initialBlock?.content.css ?? "");
+  const initialJs = String(initialBlock?.content.js ?? "");
+  const interactiveRef = useRef<InteractiveEditorHandle>(null);
 
   // Inline exercise creation
   const [newExerciseTitle, setNewExerciseTitle] = useState("");
@@ -60,7 +63,9 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
       case "exercise":
         return { exercise_id: exerciseId };
       case "interactive":
-        return { html, css, js };
+        // Read from the editor's own state via ref — avoids stale closure over
+        // the initial html/css/js values.
+        return interactiveRef.current?.getValues() ?? { html: initialHtml, css: initialCss, js: initialJs };
     }
   }
 
@@ -79,6 +84,8 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
   }
 
   async function handleSave() {
+    if (submitting.current) return;
+    submitting.current = true;
     setIsPending(true);
     setError(null);
     const content = buildContent();
@@ -86,6 +93,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
       mode === "edit" && initialBlock
         ? await updateBlock(initialBlock.id, sessionId, type, title, content)
         : await createBlock(sessionId, type, title, content);
+    submitting.current = false;
     setIsPending(false);
     if (result?.error) setError(result.error);
     else setOpen(false);
@@ -234,7 +242,12 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
           ) : null}
 
           {type === "interactive" ? (
-            <InteractiveEditor html={html} css={css} js={js} onChange={(v) => { setHtml(v.html); setCss(v.css); setJs(v.js); }} />
+            <InteractiveEditor
+              ref={interactiveRef}
+              initialHtml={initialHtml}
+              initialCss={initialCss}
+              initialJs={initialJs}
+            />
           ) : null}
 
           {error ? (
