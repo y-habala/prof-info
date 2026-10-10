@@ -41,10 +41,8 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
   const [fileUrl, setFileUrl] = useState(String(initialBlock?.content.url ?? ""));
   const [fileName, setFileName] = useState(String(initialBlock?.content.file_name ?? ""));
   const [exerciseId, setExerciseId] = useState(String(initialBlock?.content.exercise_id ?? ""));
-  // html/css/js are initial values only — current values are read via interactiveRef
+  // html is the initial value only — current value is read via interactiveRef
   const initialHtml = String(initialBlock?.content.html ?? "");
-  const initialCss = String(initialBlock?.content.css ?? "");
-  const initialJs = String(initialBlock?.content.js ?? "");
   const interactiveRef = useRef<InteractiveEditorHandle>(null);
 
   // Inline exercise creation
@@ -63,9 +61,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
       case "exercise":
         return { exercise_id: exerciseId };
       case "interactive":
-        // Read from the editor's own state via ref — avoids stale closure over
-        // the initial html/css/js values.
-        return interactiveRef.current?.getValues() ?? { html: initialHtml, css: initialCss, js: initialJs };
+        return interactiveRef.current?.getValues() ?? { html: initialHtml };
     }
   }
 
@@ -242,12 +238,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
           ) : null}
 
           {type === "interactive" ? (
-            <InteractiveEditor
-              ref={interactiveRef}
-              initialHtml={initialHtml}
-              initialCss={initialCss}
-              initialJs={initialJs}
-            />
+            <InteractiveEditor ref={interactiveRef} initialHtml={initialHtml} />
           ) : null}
 
           {error ? (

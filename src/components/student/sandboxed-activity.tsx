@@ -2,23 +2,38 @@
 import { useMemo, useRef, useState, useEffect, useCallback } from "react";
 import { Maximize2, Minimize2 } from "lucide-react";
 
+const RESIZE_SCRIPT = `<script>(function(){
+  function send(){window.parent.postMessage({type:'iframe-resize',height:document.documentElement.scrollHeight},'*');}
+  if(typeof ResizeObserver!=='undefined'){new ResizeObserver(send).observe(document.documentElement);}
+  window.addEventListener('load',send);send();
+})();</script>`;
+
+// Build a safe srcDoc:
+// - If html is a complete document (starts with <!doctype or <html), inject the
+//   resize script before </body> (or at the end as fallback).
+// - Otherwise wrap it in a minimal shell.
+function buildSrcDoc(html: string): string {
+  const isFullDoc = /^\s*<!doctype/i.test(html) || /^\s*<html/i.test(html);
+  if (isFullDoc) {
+    if (html.includes("</body>")) return html.replace("</body>", RESIZE_SCRIPT + "</body>");
+    if (html.includes("</html>")) return html.replace("</html>", RESIZE_SCRIPT + "</html>");
+    return html + RESIZE_SCRIPT;
+  }
+  return `<!doctype html>
+<html lang="fr"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>html,body{margin:0;padding:0}body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;color:#111;background:#fff}</style>
+</head><body>${html}${RESIZE_SCRIPT}</body></html>`;
+}
+
 // Interactive activity isolated in a sandboxed iframe.
 // Auto-sizes to content height (via postMessage) and supports fullscreen.
-export function SandboxedActivity({
-  html,
-  css,
-  js,
-}: {
-  html: string;
-  css: string;
-  js: string;
-}) {
+export function SandboxedActivity({ html }: { html: string }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [height, setHeight] = useState(300);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Listen for height reports from inside the iframe.
   useEffect(() => {
     function onMessage(e: MessageEvent) {
       if (e.source !== iframeRef.current?.contentWindow) return;
@@ -35,8 +50,6 @@ export function SandboxedActivity({
     return () => window.removeEventListener("message", onMessage);
   }, []);
 
-  // Track the browser fullscreen state so the button icon stays in sync
-  // even when the user exits with Escape.
   useEffect(() => {
     function onFsChange() {
       setIsFullscreen(document.fullscreenElement === containerRef.current);
@@ -47,49 +60,11 @@ export function SandboxedActivity({
 
   const toggleFullscreen = useCallback(async () => {
     if (!containerRef.current) return;
-    if (!document.fullscreenElement) {
-      await containerRef.current.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
-    }
+    if (!document.fullscreenElement) await containerRef.current.requestFullscreen();
+    else await document.exitFullscreen();
   }, []);
 
-  const srcDoc = useMemo(
-    () => `<!doctype html>
-<html lang="fr">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <style>
-      html, body { margin: 0; padding: 0; }
-      body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: #111; background: #fff; }
-      ${css}
-    </style>
-  </head>
-  <body>
-    ${html}
-    <script>
-      (function(){
-        try { ${js} } catch(e) {
-          var err = document.createElement('pre');
-          err.style.cssText = 'color:#c00;background:#fef2f2;padding:.5rem;border:1px solid #fee;border-radius:.25rem;white-space:pre-wrap;';
-          err.textContent = 'JS error: ' + (e && e.message ? e.message : e);
-          document.body.appendChild(err);
-        }
-        function send() {
-          window.parent.postMessage({ type: 'iframe-resize', height: document.documentElement.scrollHeight }, '*');
-        }
-        if (typeof ResizeObserver !== 'undefined') {
-          new ResizeObserver(send).observe(document.documentElement);
-        }
-        window.addEventListener('load', send);
-        send();
-      })();
-    </script>
-  </body>
-</html>`,
-    [html, css, js]
-  );
+  const srcDoc = useMemo(() => buildSrcDoc(html), [html]);
 
   return (
     <div ref={containerRef} style={{ position: "relative" }}>

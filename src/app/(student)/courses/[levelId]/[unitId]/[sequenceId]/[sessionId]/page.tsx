@@ -189,9 +189,14 @@ function BlockContent({ block }: { block: Block }) {
 
     case "interactive": {
       const html = String(block.content.html ?? "");
+      // Backward compat: old blocks stored css/js as separate fields.
       const css = String(block.content.css ?? "");
       const js = String(block.content.js ?? "");
-      return <SandboxedActivity html={html} css={css} js={js} />;
+      const source =
+        css || js
+          ? `<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>${css}</style></head><body>${html}<script>try{${js}}catch(e){}</script></body></html>`
+          : html;
+      return <SandboxedActivity html={source} />;
     }
   }
 }

@@ -41,9 +41,7 @@ export const exerciseContentSchema = z.object({
 });
 
 export const interactiveContentSchema = z.object({
-  html: z.string().max(100_000).default(""),
-  css: z.string().max(50_000).default(""),
-  js: z.string().max(50_000).default(""),
+  html: z.string().max(200_000).default(""),
 });
 
 export const blockFormSchema = z.object({
