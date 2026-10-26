@@ -1,22 +1,25 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Folder, ListOrdered, PlayCircle, Clock, ChevronDown } from "lucide-react";
+import { ArrowLeft, PlayCircle, Clock, ChevronDown, BookOpen } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
+// Each unit gets its own solid color — visible at a glance so a student
+// always knows which unit they're reading without re-reading the title.
 const UNIT_ACCENTS = [
-  { iconBg: "bg-primary",     topBar: "before:bg-primary"     },
-  { iconBg: "bg-teal-600",    topBar: "before:bg-teal-600"    },
-  { iconBg: "bg-violet-600",  topBar: "before:bg-violet-600"  },
-  { iconBg: "bg-rose-600",    topBar: "before:bg-rose-600"    },
-  { iconBg: "bg-amber-500",   topBar: "before:bg-amber-500"   },
+  { header: "bg-primary",    headerText: "text-white",         num: "bg-white/20 text-white" },
+  { header: "bg-teal-600",   headerText: "text-white",         num: "bg-white/20 text-white" },
+  { header: "bg-violet-600", headerText: "text-white",         num: "bg-white/20 text-white" },
+  { header: "bg-rose-600",   headerText: "text-white",         num: "bg-white/20 text-white" },
+  { header: "bg-amber-500",  headerText: "text-white",         num: "bg-white/20 text-white" },
 ];
 
+// Each sequence inside a unit gets its own left-border accent.
 const SEQ_ACCENTS = [
-  { border: "border-l-primary",    bg: "bg-primary/5",    title: "text-primary",    icon: "text-primary"    },
-  { border: "border-l-teal-500",   bg: "bg-teal-500/5",   title: "text-teal-700",   icon: "text-teal-500"   },
-  { border: "border-l-amber-500",  bg: "bg-amber-500/5",  title: "text-amber-700",  icon: "text-amber-500"  },
-  { border: "border-l-violet-500", bg: "bg-violet-500/5", title: "text-violet-700", icon: "text-violet-500" },
-  { border: "border-l-rose-500",   bg: "bg-rose-500/5",   title: "text-rose-700",   icon: "text-rose-500"   },
+  { bar: "bg-primary",    bg: "bg-primary/6",    badge: "bg-primary text-white",        title: "text-foreground" },
+  { bar: "bg-teal-500",   bg: "bg-teal-500/6",   badge: "bg-teal-600 text-white",       title: "text-foreground" },
+  { bar: "bg-amber-500",  bg: "bg-amber-500/6",  badge: "bg-amber-500 text-white",      title: "text-foreground" },
+  { bar: "bg-violet-500", bg: "bg-violet-500/6", badge: "bg-violet-600 text-white",     title: "text-foreground" },
+  { bar: "bg-rose-500",   bg: "bg-rose-500/6",   badge: "bg-rose-600 text-white",       title: "text-foreground" },
 ];
 
 type SessionRow = { id: string; title: string; duration_minutes: number | null; order_index: number; is_published: boolean };
@@ -37,8 +40,6 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
 
   if (!level) notFound();
 
-  // One nested fetch for the whole tree. Published filtering + ordering done
-  // in JS afterward — matches v1's approved pattern.
   const { data: unitsData } = await supabase
     .from("units")
     .select("id, title, order_index, is_published, sequences(id, title, order_index, is_published, sessions(id, title, duration_minutes, order_index, is_published))")
@@ -48,9 +49,6 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
 
   const rawUnits = (unitsData as unknown as UnitRow[] | null) ?? [];
 
-  // Séances that belong to the unit itself, with no séquence. Fetched apart
-  // from the tree above: sessions now reach a unit both directly and through
-  // a séquence, and a separate query keeps which one is meant unambiguous.
   const unitIds = rawUnits.map((u) => u.id);
   const { data: looseData } = unitIds.length
     ? await supabase
@@ -86,7 +84,7 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
     .filter((u) => u.sessions.length > 0 || u.sequences.length > 0);
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 px-4 py-10">
+    <div className="mx-auto w-full max-w-4xl space-y-5 px-4 py-10">
       <div>
         <Link
           href="/courses"
@@ -106,61 +104,76 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
           Aucun contenu publié pour ce niveau pour le moment.
         </p>
       ) : (
-        <div className="space-y-3">
-          {units.map((unit, index) => {
-            const ua = UNIT_ACCENTS[index % UNIT_ACCENTS.length];
+        <div className="space-y-4">
+          {units.map((unit, ui) => {
+            const ua = UNIT_ACCENTS[ui % UNIT_ACCENTS.length];
             return (
-            <details
-              key={unit.id}
-              open={index === 0}
-              className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-shadow open:shadow-sm"
-            >
-              {/* Coloured top bar */}
-              <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${ua.iconBg}`} />
-              <summary className="flex cursor-pointer list-none items-center gap-3 p-4 pt-5 select-none hover:bg-muted/30">
-                <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${ua.iconBg} text-white`}>
-                  <Folder className="size-5" />
-                </span>
-                <h2 className="min-w-0 flex-1 truncate font-semibold">{unit.title}</h2>
-                <ChevronDown className="size-5 shrink-0 text-muted-foreground transition-transform group-open:rotate-180" />
-              </summary>
-              <div className="space-y-5 border-t border-border p-5">
-                {unit.sessions.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {unit.sessions.map((session) => (
-                      <SessionLink
-                        key={session.id}
-                        href={`/courses/${level.id}/${unit.id}/-/${session.id}`}
-                        session={session}
-                      />
-                    ))}
+              <details
+                key={unit.id}
+                open={ui === 0}
+                className="group overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-shadow open:shadow-md"
+              >
+                {/* ── Unit header — full coloured band ── */}
+                <summary className={`flex cursor-pointer list-none items-center gap-4 px-5 py-4 select-none ${ua.header} transition-opacity hover:opacity-90`}>
+                  {/* Number badge */}
+                  <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl text-lg font-extrabold ${ua.num}`}>
+                    {ui + 1}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-[10px] font-semibold uppercase tracking-[0.18em] ${ua.headerText} opacity-75`}>
+                      Unité {ui + 1}
+                    </p>
+                    <h2 className={`truncate text-base font-bold ${ua.headerText}`}>{unit.title}</h2>
                   </div>
-                ) : null}
-                {unit.sequences.map((seq, si) => {
-                  const a = SEQ_ACCENTS[si % SEQ_ACCENTS.length];
-                  return (
-                    <div
-                      key={seq.id}
-                      className={`space-y-2.5 rounded-xl border-l-4 ${a.border} ${a.bg} p-4`}
-                    >
-                      <h3 className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${a.title}`}>
-                        <ListOrdered className={`size-3.5 ${a.icon}`} />
-                        {seq.title}
-                      </h3>
-                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                        {seq.sessions.map((session) => (
-                          <SessionLink
-                            key={session.id}
-                            href={`/courses/${level.id}/${unit.id}/${seq.id}/${session.id}`}
-                            session={session}
-                          />
-                        ))}
-                      </div>
+                  <ChevronDown className={`size-5 shrink-0 ${ua.headerText} opacity-80 transition-transform group-open:rotate-180`} />
+                </summary>
+
+                {/* ── Content ── */}
+                <div className="space-y-4 p-5">
+                  {/* Sessions directly on the unit (no sequence) */}
+                  {unit.sessions.length > 0 && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      {unit.sessions.map((session) => (
+                        <SessionLink
+                          key={session.id}
+                          href={`/courses/${level.id}/${unit.id}/-/${session.id}`}
+                          session={session}
+                        />
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </details>
+                  )}
+
+                  {/* Sequences */}
+                  {unit.sequences.map((seq, si) => {
+                    const a = SEQ_ACCENTS[si % SEQ_ACCENTS.length];
+                    return (
+                      <div key={seq.id} className={`overflow-hidden rounded-xl ${a.bg}`}>
+                        {/* Sequence header row */}
+                        <div className="flex items-center gap-3 px-4 py-3">
+                          <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ${a.badge}`}>
+                            Séquence {si + 1}
+                          </span>
+                          <span className={`min-w-0 flex-1 truncate text-sm font-semibold ${a.title}`}>
+                            {seq.title}
+                          </span>
+                        </div>
+                        {/* Coloured bottom border to visually close the header */}
+                        <div className={`mx-4 mb-3 h-px ${a.bar} opacity-20`} />
+                        {/* Session links */}
+                        <div className="grid grid-cols-1 gap-2 px-4 pb-4 sm:grid-cols-2">
+                          {seq.sessions.map((session) => (
+                            <SessionLink
+                              key={session.id}
+                              href={`/courses/${level.id}/${unit.id}/${seq.id}/${session.id}`}
+                              session={session}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </details>
             );
           })}
         </div>
@@ -173,9 +186,9 @@ function SessionLink({ href, session }: { href: string; session: SessionRow }) {
   return (
     <Link
       href={href}
-      className="flex items-center gap-2.5 rounded-xl border border-border bg-background px-3 py-2.5 text-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-primary/5"
+      className="group flex items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 text-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-sm"
     >
-      <PlayCircle className="size-4 shrink-0 text-primary" />
+      <BookOpen className="size-4 shrink-0 text-muted-foreground transition-colors group-hover:text-primary" />
       <span className="min-w-0 flex-1 truncate font-medium">{session.title}</span>
       {session.duration_minutes ? (
         <span className="flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
