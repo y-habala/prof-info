@@ -3,6 +3,14 @@ import Link from "next/link";
 import { ArrowLeft, Folder, ListOrdered, PlayCircle, Clock, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
+const SEQ_ACCENTS = [
+  { border: "border-l-primary",    bg: "bg-primary/5",    title: "text-primary",    icon: "text-primary"    },
+  { border: "border-l-teal-500",   bg: "bg-teal-500/5",   title: "text-teal-700",   icon: "text-teal-500"   },
+  { border: "border-l-amber-500",  bg: "bg-amber-500/5",  title: "text-amber-700",  icon: "text-amber-500"  },
+  { border: "border-l-violet-500", bg: "bg-violet-500/5", title: "text-violet-700", icon: "text-violet-500" },
+  { border: "border-l-rose-500",   bg: "bg-rose-500/5",   title: "text-rose-700",   icon: "text-rose-500"   },
+];
+
 type SessionRow = { id: string; title: string; duration_minutes: number | null; order_index: number; is_published: boolean };
 type SequenceRow = { id: string; title: string; order_index: number; is_published: boolean; sessions: SessionRow[] | null };
 type UnitRow = { id: string; title: string; order_index: number; is_published: boolean; sequences: SequenceRow[] | null };
@@ -116,23 +124,29 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
                     ))}
                   </div>
                 ) : null}
-                {unit.sequences.map((seq) => (
-                  <div key={seq.id} className="space-y-2.5">
-                    <h3 className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                      <ListOrdered className="size-3.5" />
-                      {seq.title}
-                    </h3>
-                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                      {seq.sessions.map((session) => (
-                        <SessionLink
-                          key={session.id}
-                          href={`/courses/${level.id}/${unit.id}/${seq.id}/${session.id}`}
-                          session={session}
-                        />
-                      ))}
+                {unit.sequences.map((seq, si) => {
+                  const a = SEQ_ACCENTS[si % SEQ_ACCENTS.length];
+                  return (
+                    <div
+                      key={seq.id}
+                      className={`space-y-2.5 rounded-xl border-l-4 ${a.border} ${a.bg} p-4`}
+                    >
+                      <h3 className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wide ${a.title}`}>
+                        <ListOrdered className={`size-3.5 ${a.icon}`} />
+                        {seq.title}
+                      </h3>
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        {seq.sessions.map((session) => (
+                          <SessionLink
+                            key={session.id}
+                            href={`/courses/${level.id}/${unit.id}/${seq.id}/${session.id}`}
+                            session={session}
+                          />
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </details>
           ))}
