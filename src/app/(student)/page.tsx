@@ -75,8 +75,9 @@ export default async function HomePage() {
               </Link>
               <Link
                 href="/exam"
-                className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-7 py-3.5 text-sm font-semibold transition-colors duration-200 hover:bg-muted"
+                className="group inline-flex items-center gap-2 rounded-full border border-amber-400/50 bg-amber-50 px-7 py-3.5 text-sm font-semibold text-amber-900 transition-all duration-200 hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-sm dark:bg-amber-950/20 dark:text-amber-200 dark:border-amber-400/30"
               >
+                <KeyRound className="size-4 text-amber-500" />
                 J&apos;ai un code d&apos;examen
               </Link>
             </div>
