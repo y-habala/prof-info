@@ -7,6 +7,7 @@ import {
   FileIcon,
   FileCheck2,
   Code2,
+  FileCode2,
   Plus,
   Pencil,
   Trash2,
@@ -48,6 +49,10 @@ const ICON: Record<BlockType, LucideIcon> = {
   exercise: FileCheck2,
   interactive: Code2,
 };
+// "exercise" is no longer offered: exercises are now authored as HTML.
+// Existing exercise blocks still list, edit and render as before.
+const ADDABLE_TYPES: BlockType[] = ["text", "image", "video", "file", "interactive"];
+
 const TINT: Record<BlockType, string> = {
   text: "bg-slate-50 text-slate-700",
   image: "bg-emerald-50 text-emerald-700",
@@ -169,7 +174,7 @@ export function SessionBlocksEditor({
           Ajouter un bloc
         </p>
         <div className="flex flex-wrap gap-2">
-          {(Object.keys(BLOCK_TYPE_LABELS) as BlockType[]).map((t) => {
+          {ADDABLE_TYPES.map((t) => {
             const Icon = ICON[t];
             return (
               <BlockDialog
@@ -190,6 +195,22 @@ export function SessionBlocksEditor({
               />
             );
           })}
+          <BlockDialog
+            mode="create"
+            initialType="interactive"
+            htmlPage
+            sessionId={sessionId}
+            exercises={exercises}
+            trigger={
+              <Button variant="outline" className="gap-2">
+                <div className="flex size-6 items-center justify-center rounded-md bg-indigo-50 text-indigo-700">
+                  <FileCode2 className="size-3.5" />
+                </div>
+                Page HTML
+                <Plus className="size-3.5" />
+              </Button>
+            }
+          />
         </div>
       </div>
     </div>

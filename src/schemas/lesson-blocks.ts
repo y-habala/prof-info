@@ -41,7 +41,7 @@ export const exerciseContentSchema = z.object({
 });
 
 export const interactiveContentSchema = z.object({
-  html: z.string().max(200_000).default(""),
+  html: z.string().max(2_500_000, "Page HTML trop lourde (2 Mo maximum).").default(""),
 });
 
 export const blockFormSchema = z.object({

@@ -20,9 +20,11 @@ type Props = {
   exercises: ExerciseOption[];
   initialType?: BlockType;
   initialBlock?: BlockRow;
+  /** Opens the HTML block with the .html file import zone up front. */
+  htmlPage?: boolean;
 };
 
-export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, initialBlock }: Props) {
+export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, initialBlock, htmlPage = false }: Props) {
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -113,7 +115,9 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
         <DialogHeader>
           <DialogTitle>
             {mode === "create" ? "Nouveau bloc" : "Modifier le bloc"} —{" "}
-            <span className="font-normal text-muted-foreground">{BLOCK_TYPE_LABELS[type]}</span>
+            <span className="font-normal text-muted-foreground">
+              {htmlPage ? "Page HTML" : BLOCK_TYPE_LABELS[type]}
+            </span>
           </DialogTitle>
         </DialogHeader>
         <div key={formKey} className="max-h-[70vh] space-y-4 overflow-y-auto pr-1">
@@ -238,7 +242,7 @@ export function BlockDialog({ trigger, mode, sessionId, exercises, initialType, 
           ) : null}
 
           {type === "interactive" ? (
-            <InteractiveEditor ref={interactiveRef} initialHtml={initialHtml} />
+            <InteractiveEditor ref={interactiveRef} initialHtml={initialHtml} preferImport={htmlPage} />
           ) : null}
 
           {error ? (
