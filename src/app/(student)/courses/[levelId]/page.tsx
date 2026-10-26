@@ -3,6 +3,14 @@ import Link from "next/link";
 import { ArrowLeft, Folder, ListOrdered, PlayCircle, Clock, ChevronDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
+const UNIT_ACCENTS = [
+  { iconBg: "bg-primary",     topBar: "before:bg-primary"     },
+  { iconBg: "bg-teal-600",    topBar: "before:bg-teal-600"    },
+  { iconBg: "bg-violet-600",  topBar: "before:bg-violet-600"  },
+  { iconBg: "bg-rose-600",    topBar: "before:bg-rose-600"    },
+  { iconBg: "bg-amber-500",   topBar: "before:bg-amber-500"   },
+];
+
 const SEQ_ACCENTS = [
   { border: "border-l-primary",    bg: "bg-primary/5",    title: "text-primary",    icon: "text-primary"    },
   { border: "border-l-teal-500",   bg: "bg-teal-500/5",   title: "text-teal-700",   icon: "text-teal-500"   },
@@ -99,14 +107,18 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
         </p>
       ) : (
         <div className="space-y-3">
-          {units.map((unit, index) => (
+          {units.map((unit, index) => {
+            const ua = UNIT_ACCENTS[index % UNIT_ACCENTS.length];
+            return (
             <details
               key={unit.id}
               open={index === 0}
-              className="group overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-shadow open:shadow-sm"
+              className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-xs transition-shadow open:shadow-sm"
             >
-              <summary className="flex cursor-pointer list-none items-center gap-3 p-4 select-none hover:bg-muted/30">
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
+              {/* Coloured top bar */}
+              <span aria-hidden className={`absolute inset-x-0 top-0 h-1 ${ua.iconBg}`} />
+              <summary className="flex cursor-pointer list-none items-center gap-3 p-4 pt-5 select-none hover:bg-muted/30">
+                <span className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${ua.iconBg} text-white`}>
                   <Folder className="size-5" />
                 </span>
                 <h2 className="min-w-0 flex-1 truncate font-semibold">{unit.title}</h2>
@@ -149,7 +161,8 @@ export default async function LevelPage({ params }: { params: Promise<{ levelId:
                 })}
               </div>
             </details>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
