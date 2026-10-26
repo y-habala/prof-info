@@ -49,27 +49,26 @@ export function ExamReloadWarning() {
             <AlertTriangle className="size-7" strokeWidth={2.5} />
           </div>
           <DialogTitle className="text-xl font-bold text-destructive">
-            {kind === "reloaded" ? "Tu as rechargé la page" : "Attention : rechargement interdit"}
+            {kind === "reloaded" ? "Tentative de triche détectée" : "Attention : tentative de triche"}
           </DialogTitle>
 
-          <div className="space-y-2 text-sm leading-relaxed">
-            {kind === "reloaded" ? (
-              <p>
-                Recharger la page <strong>ne recommence pas l&apos;examen</strong> : c&apos;est
-                toujours la même copie, le chrono a continué et les réponses non validées ont
-                été effacées.
-              </p>
-            ) : (
-              <p>
-                Recharger la page pendant l&apos;examen est considéré comme une{" "}
-                <strong>tentative de triche</strong>. L&apos;examen ne recommence pas : le chrono
-                continue et tes réponses non validées seront perdues.
-              </p>
-            )}
-            <p dir="rtl" lang="ar" className="font-semibold text-muted-foreground">
+          <div className="space-y-3 text-sm leading-relaxed">
+            <p className="text-base">
+              Ton examen a <strong>déjà été envoyé à ton enseignant</strong>. Il est donc{" "}
+              <strong>impossible de le recommencer</strong> en rechargeant la page.
+            </p>
+            <p>
               {kind === "reloaded"
-                ? "إعادة تحميل الصفحة لا تعيد الامتحان: الوقت مستمر والأجوبة غير المرسلة ضاعت."
-                : "إعادة تحميل الصفحة أثناء الامتحان تعتبر محاولة غش. الامتحان لن يبدأ من جديد والوقت مستمر."}
+                ? "Le chrono a continué et tes réponses non validées sont perdues. Termine ton examen sans quitter cette page."
+                : "Le chrono continue. Si tu recharges la page, tes réponses non validées seront perdues."}
+            </p>
+            <p
+              dir="rtl"
+              lang="ar"
+              className="rounded-xl bg-destructive/10 px-3 py-2.5 text-base font-bold text-destructive"
+            >
+              امتحانك أُرسل بالفعل إلى الأستاذ، لهذا لا يمكنك إعادته. أي محاولة لإعادة تحميل
+              الصفحة تعتبر محاولة غش.
             </p>
           </div>
 
