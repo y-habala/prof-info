@@ -7,7 +7,6 @@ import {
   FileIcon,
   FileCheck2,
   Code2,
-  FileCode2,
   Plus,
   Pencil,
   Trash2,
@@ -195,22 +194,6 @@ export function SessionBlocksEditor({
               />
             );
           })}
-          <BlockDialog
-            mode="create"
-            initialType="interactive"
-            htmlPage
-            sessionId={sessionId}
-            exercises={exercises}
-            trigger={
-              <Button variant="outline" className="gap-2">
-                <div className="flex size-6 items-center justify-center rounded-md bg-indigo-50 text-indigo-700">
-                  <FileCode2 className="size-3.5" />
-                </div>
-                Page HTML
-                <Plus className="size-3.5" />
-              </Button>
-            }
-          />
         </div>
       </div>
     </div>
