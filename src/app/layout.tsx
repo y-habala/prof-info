@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fredoka, Nunito } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +14,22 @@ const geistMono = Geist_Mono({
   display: "swap",
 });
 
+// Student-facing type: rounded, friendly faces for 11-15 year olds.
+// Applied only under `.student-theme`; the admin keeps Geist.
+const fredoka = Fredoka({
+  variable: "--font-fredoka",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  display: "swap",
+});
+
+const nunito = Nunito({
+  variable: "--font-nunito",
+  subsets: ["latin"],
+  weight: ["400", "600", "700", "800"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "Plateforme Informatique",
   description: "Plateforme d'apprentissage de l'informatique pour le cycle collégial",
@@ -23,7 +39,11 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="fr">
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>{children}</body>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} ${fredoka.variable} ${nunito.variable}`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

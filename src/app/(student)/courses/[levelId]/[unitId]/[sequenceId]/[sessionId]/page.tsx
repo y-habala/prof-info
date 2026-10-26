@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import Link from "next/link";
-import { ArrowLeft, Clock, Download, ExternalLink } from "lucide-react";
+import { BookOpen, Clock, Download, ExternalLink } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { PageBanner } from "@/components/student/page-banner";
 import { MarkdownRenderer } from "@/components/student/markdown-renderer";
+
+const BLOCK_ACCENTS = ["bg-primary", "bg-teal-600", "bg-amber-500", "bg-violet-600", "bg-rose-600"];
 import { SandboxedActivity } from "@/components/student/sandboxed-activity";
 import { InlineExerciseRunner } from "@/components/student/inline-exercise-runner";
 import type { BlockType } from "@/schemas/lesson-blocks";
@@ -157,11 +159,11 @@ function BlockContent({ block }: { block: Block }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:bg-primary/10"
+          className="btn-chunky inline-flex max-w-full items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-extrabold text-white"
         >
-          <Download className="size-4 shrink-0" />
-          {fileName}
-          <ExternalLink className="size-3.5 shrink-0 text-muted-foreground" />
+          <Download className="size-4 shrink-0" strokeWidth={2.5} />
+          <span className="truncate">{fileName}</span>
+          <ExternalLink className="size-3.5 shrink-0 opacity-80" />
         </a>
       );
     }
@@ -252,44 +254,61 @@ export default async function SessionPage({
   const legacyMarkdown = session.content_markdown?.trim() ?? "";
 
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10">
-      <div>
-        <Link
-          href={`/courses/${levelId}`}
-          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="size-3.5" />
-          Retour {levelName ? `à ${levelName}` : "au niveau"}
-        </Link>
-        <h1 className="mt-3 text-3xl font-bold tracking-tight">{session.title}</h1>
-        {session.duration_minutes ? (
-          <p className="mt-2 inline-flex items-center gap-1.5 text-sm text-muted-foreground">
-            <Clock className="size-3.5" />
-            Durée indicative : {session.duration_minutes} min
-          </p>
-        ) : null}
-      </div>
+    <>
+      <PageBanner
+        title={session.title}
+        icon={BookOpen}
+        back={{ href: `/courses/${levelId}`, label: levelName ? `Retour à ${levelName}` : "Retour au niveau" }}
+        subtitle={
+          session.duration_minutes ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-sm font-bold">
+              <Clock className="size-4" strokeWidth={2.5} />
+              Durée indicative : {session.duration_minutes} min
+            </span>
+          ) : undefined
+        }
+      />
 
-      {hasBlocks ? (
-        <div className="space-y-8">
-          {blocks.map((block) => (
-            <section key={block.id}>
-              {block.title ? (
-                <h2 className="mb-3 text-lg font-semibold">{block.title}</h2>
-              ) : null}
-              <BlockContent block={block} />
-            </section>
-          ))}
-        </div>
-      ) : legacyMarkdown ? (
-        <article className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-          <MarkdownRenderer source={legacyMarkdown} />
-        </article>
-      ) : (
-        <article className="rounded-2xl border border-border bg-card p-6 sm:p-8">
-          <p className="text-muted-foreground">Contenu bientôt disponible.</p>
-        </article>
-      )}
-    </div>
+      <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-10">
+        {hasBlocks ? (
+          blocks.map((block, i) => {
+            const a = BLOCK_ACCENTS[i % BLOCK_ACCENTS.length];
+            // Interactive activities read as a page of their own, so no card frame.
+            const framed = block.type !== "interactive";
+            return (
+              <section
+                key={block.id}
+                className={
+                  framed
+                    ? "anim-pop rounded-3xl border-2 border-border bg-card p-5 shadow-[0_5px_0_0_var(--border)] sm:p-7"
+                    : "anim-pop"
+                }
+                style={{ "--i": Math.min(i, 6) } as React.CSSProperties}
+              >
+                {block.title ? (
+                  <h2 className="mb-4 flex items-center gap-3 font-heading text-xl font-bold">
+                    <span
+                      className={`flex size-9 shrink-0 -rotate-6 items-center justify-center rounded-xl ${a} text-base text-white`}
+                    >
+                      {i + 1}
+                    </span>
+                    {block.title}
+                  </h2>
+                ) : null}
+                <BlockContent block={block} />
+              </section>
+            );
+          })
+        ) : legacyMarkdown ? (
+          <article className="rounded-3xl border-2 border-border bg-card p-6 shadow-[0_5px_0_0_var(--border)] sm:p-8">
+            <MarkdownRenderer source={legacyMarkdown} />
+          </article>
+        ) : (
+          <article className="rounded-3xl border-2 border-dashed border-border p-10 text-center">
+            <p className="font-semibold text-muted-foreground">Contenu bientôt disponible.</p>
+          </article>
+        )}
+      </div>
+    </>
   );
 }
