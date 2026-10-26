@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
+import { ExamReloadWarning } from "./exam-reload-warning";
 import type { ExamQuestionType } from "@/schemas/exams";
 
 type Question = {
@@ -345,6 +346,7 @@ export function ExamRunner({
 
   return (
     <div className="min-h-screen bg-muted/20">
+      <ExamReloadWarning />
       <header className="sticky top-0 z-20 bg-primary text-primary-foreground shadow-md">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
