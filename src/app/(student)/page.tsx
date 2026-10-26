@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight, GraduationCap, Sparkles, BookOpen } from "lucide-react";
+import { ArrowRight, GraduationCap, Sparkles, BookOpen, KeyRound } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 
 const LEVEL_ACCENTS = [
@@ -131,10 +131,16 @@ export default async function HomePage() {
             <div className="mt-4 border-t border-border pt-4">
               <Link
                 href="/exam"
-                className="group flex items-center justify-between rounded-xl border border-border bg-background px-4 py-3 text-sm font-medium transition-colors hover:bg-muted"
+                className="group flex items-center gap-3 rounded-xl border border-amber-400/40 bg-amber-50 px-4 py-3.5 transition-all duration-200 hover:-translate-y-px hover:border-amber-400/60 hover:shadow-sm dark:bg-amber-950/20 dark:border-amber-400/20"
               >
-                <span>J&apos;ai un code d&apos;examen</span>
-                <ArrowRight className="size-4 text-muted-foreground transition-transform duration-200 group-hover:translate-x-0.5" />
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-amber-500 text-white">
+                  <KeyRound className="size-4" strokeWidth={2.25} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-bold text-amber-900 dark:text-amber-200">Code d&apos;examen</p>
+                  <p className="text-xs text-amber-700/70 dark:text-amber-400/70">J&apos;ai un code secret</p>
+                </div>
+                <ArrowRight className="size-4 shrink-0 text-amber-600 transition-transform duration-200 group-hover:translate-x-0.5" />
               </Link>
             </div>
           </div>
