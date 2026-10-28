@@ -215,9 +215,163 @@ function QuestionCard({
   );
 }
 
+type Layout = "tf" | "match" | "qcm" | "block";
+const layoutOf = (q: Question): Layout =>
+  q.type === "true_false"
+    ? "tf"
+    : q.type === "matching"
+      ? "match"
+      : q.type === "qcm_single" || q.type === "qcm_multiple"
+        ? "qcm"
+        : "block";
+
+// Questions of the same kind are shown together, in the order the kinds
+// first appear, so a shuffled section still reads like a paper exercise.
+function groupByLayout(questions: Question[]) {
+  const groups: { layout: Layout; items: { q: Question; n: number }[] }[] = [];
+  for (const q of questions) {
+    const layout = layoutOf(q);
+    let g = groups.find((x) => x.layout === layout);
+    if (!g) {
+      g = { layout, items: [] };
+      groups.push(g);
+    }
+    g.items.push({ q, n: 0 });
+  }
+  let n = 1;
+  for (const g of groups) for (const it of g.items) it.n = n++;
+  return groups;
+}
+
+function TfRow({
+  q,
+  n,
+  answer,
+  disabled,
+  onPick,
+}: {
+  q: Question;
+  n: number;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-sm leading-snug">
+        <span className="font-semibold">{n}.</span> {q.text}
+      </p>
+      <div className="shrink-0">
+        <TrueFalsePills options={q.options} name={q.id} answer={answer} disabled={disabled} onChange={onPick} />
+      </div>
+    </div>
+  );
+}
+
+function MatchBox({
+  q,
+  answer,
+  disabled,
+  onPick,
+}: {
+  q: Question;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onPick: (id: string) => void;
+}) {
+  const value = Array.isArray(answer) ? (answer[0] ?? "") : "";
+  // A bare number is a label on a diagram: shown as a numbered badge.
+  const numbered = /^\s*\d{1,3}\s*$/.test(q.text);
+  return (
+    <label className={cn("flex gap-2.5 rounded-xl bg-muted/50 p-3", numbered ? "items-center" : "flex-col")}>
+      {numbered ? (
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+          {q.text.trim()}
+        </span>
+      ) : (
+        <span className="text-sm font-semibold leading-snug">{q.text}</span>
+      )}
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onPick(e.target.value)}
+        className={cn(
+          "h-10 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-sm",
+          value ? "font-medium text-foreground" : "text-muted-foreground"
+        )}
+      >
+        <option value="">…</option>
+        {q.options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.text}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+function QcmCard({
+  q,
+  n,
+  answer,
+  disabled,
+  onSetSingle,
+  onToggleMulti,
+}: {
+  q: Question;
+  n: number;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onSetSingle: (id: string) => void;
+  onToggleMulti: (id: string) => void;
+}) {
+  const multi = q.type === "qcm_multiple";
+  const chosen = Array.isArray(answer) ? answer : [];
+  return (
+    <fieldset className="rounded-xl border border-border bg-card p-3.5">
+      <legend className="sr-only">Question {n}</legend>
+      <p className="mb-2 text-sm font-semibold leading-snug text-primary">
+        {n}) {q.text}
+        {multi ? <span className="ml-1 text-xs font-normal text-muted-foreground">(plusieurs réponses)</span> : null}
+      </p>
+      <div className="space-y-1">
+        {q.options.map((o, i) => (
+          <label
+            key={o.id}
+            className={cn(
+              "flex cursor-pointer items-start gap-2 rounded-md px-1.5 py-1 text-sm transition-colors hover:bg-muted/60",
+              chosen.includes(o.id) && "bg-primary/10 font-medium",
+              disabled && "pointer-events-none opacity-60"
+            )}
+          >
+            <input
+              type={multi ? "checkbox" : "radio"}
+              name={q.id}
+              checked={chosen.includes(o.id)}
+              disabled={disabled}
+              onChange={() => (multi ? onToggleMulti(o.id) : onSetSingle(o.id))}
+              className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
+            />
+            <span>
+              {LETTERS[i] ?? i + 1}) {o.text}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
+  );
+}
+
+function sectionHeading(title: string | null, index: number): [string, string] {
+  const t = title ?? "Questions";
+  const m = t.match(/^(exercice\s*\d+)\s*[:\-–]\s*(.*)$/i);
+  return m ? [m[1], m[2]] : [`Exercice ${index}`, t];
+}
+
 function SectionCard({
   section,
-  startIndex,
+  index,
   answers,
   disabled,
   onSetSingle,
@@ -225,7 +379,7 @@ function SectionCard({
   onSetText,
 }: {
   section: SectionGroup;
-  startIndex: number;
+  index: number;
   answers: Record<string, string[] | string>;
   disabled: boolean;
   onSetSingle: (qId: string, optionId: string) => void;
@@ -233,47 +387,95 @@ function SectionCard({
   onSetText: (qId: string, text: string) => void;
 }) {
   const totalPoints = section.questions.reduce((s, q) => s + q.points, 0);
+  const groups = groupByLayout(section.questions);
+  const [label, rest] = sectionHeading(section.title, index);
+
   return (
-    <div className="overflow-hidden rounded-2xl border border-border border-t-4 border-t-primary bg-card shadow-xs">
-      {section.title ? (
-        <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3">
-          <h2 className="font-bold">{section.title}</h2>
-          <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
-            {totalPoints} {totalPoints > 1 ? "pts" : "pt"}
-          </span>
+    <section className="overflow-hidden rounded-2xl border border-border border-t-[3px] border-t-primary bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-3">
+        <h2 className="text-[15px] leading-snug">
+          <span className="font-bold">{label} :</span> <span className="font-semibold">{rest}</span>
+        </h2>
+        <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+          {totalPoints} {totalPoints > 1 ? "Pts" : "Pt"}
+        </span>
+      </div>
+
+      {section.imageUrl ? (
+        <div className="border-b border-border p-4">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={section.imageUrl} alt="" className="mx-auto max-h-[480px] w-full rounded-lg object-contain" />
         </div>
       ) : null}
-      {section.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={section.imageUrl} alt="" className="max-h-80 w-full border-b border-border object-contain p-3" />
-      ) : null}
-      <div className="divide-y divide-border">
-        {section.questions.map((q, i) => (
-          <QuestionCard
-            key={q.id}
-            question={q}
-            index={startIndex + i}
-            answer={answers[q.id]}
-            disabled={disabled}
-            onSetSingle={(oid) => onSetSingle(q.id, oid)}
-            onToggleMulti={(oid) => onToggleMulti(q.id, oid)}
-            onSetText={(t) => onSetText(q.id, t)}
-          />
-        ))}
-      </div>
-    </div>
+
+      {groups.map((g) => {
+        if (g.layout === "tf") {
+          return (
+            <div key="tf" className="divide-y divide-border">
+              {g.items.map(({ q, n }) => (
+                <TfRow key={q.id} q={q} n={n} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
+              ))}
+            </div>
+          );
+        }
+        if (g.layout === "match") {
+          return (
+            <div key="match" className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+              {g.items.map(({ q }) => (
+                <MatchBox key={q.id} q={q} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
+              ))}
+            </div>
+          );
+        }
+        if (g.layout === "qcm") {
+          return (
+            <div key="qcm" className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+              {g.items.map(({ q, n }) => (
+                <QcmCard
+                  key={q.id}
+                  q={q}
+                  n={n}
+                  answer={answers[q.id]}
+                  disabled={disabled}
+                  onSetSingle={(id) => onSetSingle(q.id, id)}
+                  onToggleMulti={(id) => onToggleMulti(q.id, id)}
+                />
+              ))}
+            </div>
+          );
+        }
+        return (
+          <div key="block" className="divide-y divide-border">
+            {g.items.map(({ q, n }) => (
+              <QuestionCard
+                key={q.id}
+                question={q}
+                index={n}
+                answer={answers[q.id]}
+                disabled={disabled}
+                onSetSingle={(oid) => onSetSingle(q.id, oid)}
+                onToggleMulti={(oid) => onToggleMulti(q.id, oid)}
+                onSetText={(text) => onSetText(q.id, text)}
+              />
+            ))}
+          </div>
+        );
+      })}
+    </section>
   );
 }
 
 export function ExamRunner({
   attemptId,
   examTitle,
+  levelName,
   modelLabel,
   deadline,
   sections,
 }: {
   attemptId: string;
   examTitle: string;
+  levelName: string | null;
   modelLabel: string;
   deadline: number;
   sections: SectionGroup[];
@@ -355,22 +557,18 @@ export function ExamRunner({
     }
   }
 
-  // Compute continuous question numbering across sections
-  const sectionStartIndexes: number[] = [];
-  let cursor = 1;
-  for (const s of sections) {
-    sectionStartIndexes.push(cursor);
-    cursor += s.questions.length;
-  }
-
   return (
     <div className="min-h-screen bg-muted/20">
       <ExamReloadWarning />
       <header className="sticky top-0 z-20 bg-primary text-primary-foreground shadow-md">
         <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate text-lg font-bold">{examTitle}</h1>
-            <p className="text-xs text-primary-foreground/80">Modèle {modelLabel.toUpperCase()}</p>
+            <h1 className="truncate font-heading text-lg font-bold sm:text-xl">
+              {examTitle} (Modèle {modelLabel.toUpperCase()})
+            </h1>
+            <p className="text-xs text-primary-foreground/80">
+              {levelName ? `${levelName} | ` : ""}Informatique
+            </p>
           </div>
           <div className="flex shrink-0 items-center gap-3">
             <span className="hidden text-xs font-medium text-primary-foreground/80 sm:inline">
@@ -395,12 +593,12 @@ export function ExamRunner({
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-5 px-4 py-6 sm:py-8">
+      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:py-8">
         {sections.map((s, i) => (
           <SectionCard
             key={s.id ?? "unsectioned"}
             section={s}
-            startIndex={sectionStartIndexes[i]}
+            index={i + 1}
             answers={answers}
             disabled={isSubmitting}
             onSetSingle={setSingle}

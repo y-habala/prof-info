@@ -16,7 +16,7 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
   const admin = createAdminClient();
   const { data: attempt } = await admin
     .from("exam_attempts")
-    .select("id, exam_model_id, started_at, submitted_at, exam_models(exam_id, label, exams(title, duration_minutes))")
+    .select("id, exam_model_id, started_at, submitted_at, exam_models(exam_id, label, exams(title, duration_minutes, levels(name)))")
     .eq("id", attemptId)
     .maybeSingle();
   if (!attempt || attempt.exam_model_id !== session.modelId) notFound();
@@ -27,7 +27,7 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
   const modelRow = attempt.exam_models as unknown as {
     exam_id: string;
     label: string;
-    exams: { title: string; duration_minutes: number } | null;
+    exams: { title: string; duration_minutes: number; levels: { name: string } | null } | null;
   } | null;
   if (!modelRow || !modelRow.exams) notFound();
 
@@ -113,6 +113,7 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
     <ExamRunner
       attemptId={attemptId}
       examTitle={examTitle}
+      levelName={modelRow.exams.levels?.name ?? null}
       modelLabel={modelRow.label}
       deadline={deadline}
       sections={sections}
