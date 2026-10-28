@@ -21,7 +21,19 @@ type Current = { annee?: string; niveau?: string; classe?: string; session?: str
 
 const uniq = <T,>(xs: T[]) => [...new Set(xs)];
 
-export function CcFilters({ sheets, current }: { sheets: SheetOption[]; current: Current }) {
+export function CcFilters({
+  sheets,
+  current,
+  basePath = "/admin/controle-continu",
+  title = "Saisie des notes",
+  showEmptyToggle = true,
+}: {
+  sheets: SheetOption[];
+  current: Current;
+  basePath?: string;
+  title?: string;
+  showEmptyToggle?: boolean;
+}) {
   const router = useRouter();
   const years = uniq(sheets.map((s) => s.schoolYear));
   const [annee, setAnnee] = useState(current.annee ?? years[0] ?? "");
@@ -42,20 +54,20 @@ export function CcFilters({ sheets, current }: { sheets: SheetOption[]; current:
   function search() {
     const p = new URLSearchParams({ annee, niveau, classe, session, controle });
     if (vide) p.set("vide", "1");
-    router.push(`/admin/controle-continu?${p.toString()}`);
+    router.push(`${basePath}?${p.toString()}`);
   }
 
   if (sheets.length === 0) {
     return (
       <Card className="p-5 text-sm text-muted-foreground">
-        Aucune classe importée pour le moment. Commence par importer un fichier Massar ci-dessus.
+        Aucune classe importée pour le moment. Commence par importer un fichier Massar dans « Contrôle continu ».
       </Card>
     );
   }
 
   return (
     <Card className="space-y-4 p-5">
-      <h2 className="font-semibold">Saisie des notes</h2>
+      <h2 className="font-semibold">{title}</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <Field label="Année scolaire">
           <Select
@@ -129,10 +141,14 @@ export function CcFilters({ sheets, current }: { sheets: SheetOption[]; current:
         </Field>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" checked={vide} onChange={(e) => setVide(e.target.checked)} className="size-4" />
-          N&apos;afficher que les élèves sans notes
-        </label>
+        {showEmptyToggle ? (
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" checked={vide} onChange={(e) => setVide(e.target.checked)} className="size-4" />
+            N&apos;afficher que les élèves sans notes
+          </label>
+        ) : (
+          <span />
+        )}
         <Button type="button" onClick={search} disabled={!classe || !session} className="gap-2">
           <Search className="size-4" />
           Chercher

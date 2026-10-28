@@ -3,7 +3,7 @@ import { Card } from "@/components/ui/card";
 import { CONTROL_LABELS } from "@/lib/massar/cc-constants";
 import { CcImport } from "@/components/admin/controle-continu/cc-import";
 import { CcFilters, type SheetOption } from "@/components/admin/controle-continu/cc-filters";
-import { CcGradeTable, type GradeRow } from "@/components/admin/controle-continu/cc-grade-table";
+import { CcGradeTable, type GradeRow, type ExamOption } from "@/components/admin/controle-continu/cc-grade-table";
 import { CcExport } from "@/components/admin/controle-continu/cc-export";
 import { CcSheetList, type SheetSummary } from "@/components/admin/controle-continu/cc-sheet-list";
 
@@ -100,6 +100,16 @@ export default async function ControleContinuPage({ searchParams }: { searchPara
     };
   });
 
+  const { data: examsData } = await supabase
+    .from("exams")
+    .select("id, title, levels(name)")
+    .order("created_at", { ascending: false });
+  const exams: ExamOption[] = (examsData ?? []).map((e) => ({
+    id: e.id,
+    title: e.title,
+    levelName: (e.levels as unknown as { name: string } | null)?.name ?? null,
+  }));
+
   const control = Number(sp.controle);
   const selected = sheets.find(
     (s) => s.schoolYear === sp.annee && s.className === sp.classe && s.sessionCode === sp.session
@@ -149,6 +159,7 @@ export default async function ControleContinuPage({ searchParams }: { searchPara
             sheetId={selected.id}
             control={control}
             rows={rows}
+            exams={exams}
           />
         </Card>
       ) : sp.classe ? (

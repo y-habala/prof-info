@@ -4,19 +4,9 @@ import { getAppreciation } from "@/lib/grading";
 import { NAVY, NAVY_DARK, GOLD, INK_MUTED, TINT, RULE } from "./theme";
 import { OfficialHeader } from "./official-header";
 import type { PdfLogo } from "./logo";
+import { MENTIONS, mentionOf } from "@/lib/mentions";
 
 const SUBJECT = "Informatique";
-
-type Mention = { label: string; color: string; test: (s: number) => boolean };
-
-const MENTIONS: Mention[] = [
-  { label: "Excellent", color: "#15803d", test: (s) => s >= 18 },
-  { label: "Très bien", color: "#16a34a", test: (s) => s >= 16 && s < 18 },
-  { label: "Bien", color: "#2563eb", test: (s) => s >= 14 && s < 16 },
-  { label: "Moyen", color: "#9333ea", test: (s) => s >= 10 && s < 14 },
-  { label: "Insuffisant", color: "#dc2626", test: (s) => s < 10 },
-];
-const mentionOf = (s: number) => MENTIONS.find((m) => m.test(s)) ?? MENTIONS[MENTIONS.length - 1];
 
 const MEDALS = ["#c8a03c", "#9aa3b2", "#b0753f"];
 
@@ -108,16 +98,17 @@ const s = StyleSheet.create({
   signatureLine: { width: "100%", borderBottomWidth: 0.8, borderBottomColor: INK_MUTED, marginTop: 14 },
 });
 
-export type ClassReportStudent = { name: string; score: number };
+/** score null = no grade for this contrôle (absent); absence = Massar mark. */
+export type ClassReportStudent = { name: string; score: number | null; absence: string | null };
 
 export type ClassReportData = {
-  examTitle: string;
   className: string;
+  /** Full Massar class list, in Massar order. */
   students: ClassReportStudent[];
-  absentCount: number;
   schoolYear: string;
-  semester: string;
-  devoir: string | null;
+  sessionLabel: string;
+  controlLabel: string;
+  controlNumber: string;
   logo: PdfLogo;
   settings: {
     teacherName: string;
@@ -148,17 +139,19 @@ function StudentTable({ rows }: { rows: (ClassReportStudent & { rank: number })[
         <Text style={[s.thText, s.cMention, { textAlign: "center" }]}>Mention</Text>
       </View>
       {rows.map((st, i) => {
-        const m = mentionOf(st.score);
+        const m = st.score == null ? null : mentionOf(st.score);
         return (
           <View key={st.rank} style={i % 2 === 1 ? [s.tr, s.trAlt] : s.tr} wrap={false}>
             <Text style={[s.num, s.cNum]}>{st.rank}</Text>
             <Text style={[s.name, s.cName]}>{st.name}</Text>
-            <Text style={[s.score, s.cScore, { color: st.score >= 10 ? NAVY : "#dc2626" }]}>
-              {st.score.toFixed(2)}
+            <Text
+              style={[s.score, s.cScore, { color: st.score == null ? INK_MUTED : st.score >= 10 ? NAVY : "#dc2626" }]}
+            >
+              {st.score == null ? "—" : st.score.toFixed(2)}
             </Text>
             <View style={s.cMention}>
-              <View style={[s.badge, { backgroundColor: m.color }]}>
-                <Text style={s.badgeText}>{m.label}</Text>
+              <View style={[s.badge, { backgroundColor: m ? m.color : "#9aa3b2" }]}>
+                <Text style={s.badgeText}>{m ? m.label : st.absence ? "Abs. justifiée" : "Absent"}</Text>
               </View>
             </View>
           </View>
@@ -169,8 +162,10 @@ function StudentTable({ rows }: { rows: (ClassReportStudent & { rank: number })[
 }
 
 export function ClassReportDocument({ data }: { data: ClassReportData }) {
-  const scores = data.students.map((st) => st.score);
-  const total = data.students.length;
+  const present = data.students.filter((st): st is ClassReportStudent & { score: number } => st.score != null);
+  const scores = present.map((st) => st.score);
+  const total = present.length;
+  const absentCount = data.students.length - total;
   const passing = scores.filter((sc) => sc >= 10).length;
   const failing = total - passing;
   const average = total > 0 ? scores.reduce((a, b) => a + b, 0) / total : 0;
@@ -178,11 +173,11 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
   const minScore = total > 0 ? Math.min(...scores) : 0;
   const successRate = total > 0 ? (passing / total) * 100 : 0;
 
-  const sorted = [...data.students].sort((a, b) => a.name.localeCompare(b.name, "fr"));
-  const half = Math.ceil(sorted.length / 2);
-  const colA = sorted.slice(0, half).map((st, i) => ({ ...st, rank: i + 1 }));
-  const colB = sorted.slice(half).map((st, i) => ({ ...st, rank: half + i + 1 }));
-  const podium = [...data.students].sort((a, b) => b.score - a.score).slice(0, 3);
+  const roster = data.students;
+  const half = Math.ceil(roster.length / 2);
+  const colA = roster.slice(0, half).map((st, i) => ({ ...st, rank: i + 1 }));
+  const colB = roster.slice(half).map((st, i) => ({ ...st, rank: half + i + 1 }));
+  const podium = [...present].sort((a, b) => b.score - a.score).slice(0, 3);
   const distribution = MENTIONS.map((m) => ({ ...m, count: scores.filter(m.test).length }));
   const printedOn = new Date().toLocaleDateString("fr-FR");
 
@@ -191,7 +186,7 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
       <Page size="A4" style={s.page}>
         <View style={s.footer} fixed>
           <Text style={s.footerText}>
-            {data.className} · {data.examTitle} · édité le {printedOn}
+            {data.className} · {data.sessionLabel} · {data.controlLabel} · édité le {printedOn}
           </Text>
           <Text
             style={s.footerText}
@@ -211,8 +206,8 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
             ]}
             right={[
               { label: "Classe", value: data.className },
-              { label: "Session", value: `Semestre ${data.semester}` },
-              { label: "Contrôle N°", value: data.devoir },
+              { label: "Session", value: data.sessionLabel },
+              { label: "Contrôle N°", value: data.controlNumber },
             ]}
           >
             <View style={s.titleBlock}>
@@ -241,7 +236,7 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
               <View style={[s.fill, { width: `${Math.min(100, successRate)}%` }]} />
             </View>
             <Text style={s.cardSub}>
-              {passing} élève{passing > 1 ? "s" : ""} sur {total} avec une note de 10 ou plus
+              {passing} élève{passing > 1 ? "s" : ""} sur {total} présent{total > 1 ? "s" : ""} avec 10 ou plus
             </Text>
           </View>
 
@@ -253,8 +248,8 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
                 <Text style={s.splitSub}>Présents</Text>
               </View>
               <View style={s.splitItem}>
-                <Text style={[s.splitValue, { color: data.absentCount > 0 ? "#dc2626" : INK_MUTED }]}>
-                  {data.absentCount}
+                <Text style={[s.splitValue, { color: absentCount > 0 ? "#dc2626" : INK_MUTED }]}>
+                  {absentCount}
                 </Text>
                 <Text style={s.splitSub}>Absents</Text>
               </View>

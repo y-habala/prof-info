@@ -163,6 +163,87 @@ export async function saveCcGrades(
   return { saved: updates.length };
 }
 
+const nameTokens = (s: string) =>
+  s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toUpperCase()
+    .replace(/[^A-Z]+/g, " ")
+    .trim()
+    .split(" ")
+    .filter(Boolean);
+const sameClass = (a: string | null, b: string) =>
+  !!a && a.replace(/\s+/g, "").toUpperCase() === b.replace(/\s+/g, "").toUpperCase();
+
+export type ExamFillResult = {
+  error?: string;
+  matches?: { studentId: string; note: string }[];
+  unmatched?: string[];
+  attemptCount?: number;
+};
+
+// Proposes contrôle continu grades from an exam's submitted attempts in the
+// same class, matched by name. Nothing is saved: the UI fills the table and
+// the teacher reviews before "Enregistrer".
+export async function gradesFromExam(sheetId: string, examId: string): Promise<ExamFillResult> {
+  const supabase = await authed();
+  if (!supabase) return { error: "Non autorisé." };
+
+  const [{ data: sheet }, { data: students }, { data: models }] = await Promise.all([
+    supabase.from("cc_sheets").select("class_name").eq("id", sheetId).maybeSingle(),
+    supabase.from("cc_students").select("id, full_name").eq("sheet_id", sheetId),
+    supabase.from("exam_models").select("id").eq("exam_id", examId),
+  ]);
+  if (!sheet) return { error: "Classe introuvable." };
+  const modelIds = (models ?? []).map((m) => m.id);
+  if (modelIds.length === 0) return { error: "Cet examen n'a aucun modèle." };
+
+  const { data: attempts } = await supabase
+    .from("exam_attempts")
+    .select("student_name, student_first_name, student_class, score, max_score, submitted_at")
+    .in("exam_model_id", modelIds)
+    .not("submitted_at", "is", null);
+
+  // One attempt per student: the most recently submitted.
+  const latest = new Map<string, NonNullable<typeof attempts>[number]>();
+  for (const a of (attempts ?? []).filter((a) => sameClass(a.student_class, sheet.class_name))) {
+    const key = nameTokens(`${a.student_name} ${a.student_first_name}`).sort().join(" ");
+    const prev = latest.get(key);
+    if (!prev || (a.submitted_at ?? "") > (prev.submitted_at ?? "")) latest.set(key, a);
+  }
+
+  const roster = (students ?? []).map((s) => ({ id: s.id, tokens: nameTokens(s.full_name) }));
+  const used = new Set<string>();
+  const matches: { studentId: string; note: string }[] = [];
+  const unmatched: string[] = [];
+
+  for (const a of latest.values()) {
+    const tokens = nameTokens(`${a.student_name} ${a.student_first_name}`);
+    const key = [...tokens].sort().join(" ");
+    let candidates = roster.filter((s) => !used.has(s.id) && [...s.tokens].sort().join(" ") === key);
+    if (candidates.length !== 1) {
+      // Partial names (a missing second first name, a compound surname…).
+      candidates = roster.filter(
+        (s) =>
+          !used.has(s.id) &&
+          tokens.length > 0 &&
+          (tokens.every((t) => s.tokens.includes(t)) || s.tokens.every((t) => tokens.includes(t)))
+      );
+    }
+    const label = `${a.student_name} ${a.student_first_name}`.trim();
+    const max = Number(a.max_score ?? 0);
+    if (candidates.length === 1 && max > 0) {
+      used.add(candidates[0].id);
+      const note = Math.round(Math.min(20, (Number(a.score ?? 0) / max) * 20) * 100) / 100;
+      matches.push({ studentId: candidates[0].id, note: String(note) });
+    } else {
+      unmatched.push(label);
+    }
+  }
+
+  return { matches, unmatched, attemptCount: latest.size };
+}
+
 export async function deleteCcSheet(sheetId: string): Promise<{ error?: string }> {
   const supabase = await authed();
   if (!supabase) return { error: "Non autorisé." };

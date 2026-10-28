@@ -25,13 +25,3 @@ export function schoolYearOf(date: Date): string {
   return `${start}/${start + 1}`;
 }
 
-// "Contrôle N1 -Semestre II" → { devoir: "1", semester: "II" }. When the
-// title has no semester, it follows the date (Sept–Jan: I, Feb–Aug: II).
-export function examMetaFromTitle(title: string, date: Date) {
-  const devoir = title.match(/\b(?:N|n)\s*°?\s*(\d+)/)?.[1] ?? title.match(/(?:contr[oô]le|devoir)\s*(\d+)/i)?.[1] ?? null;
-  const roman = title.match(/semestre\s*(II|I|2|1)\b/i)?.[1]?.toUpperCase() ?? null;
-  const fromTitle = roman === "2" ? "II" : roman === "1" ? "I" : roman;
-  const m = date.getMonth();
-  const fromDate = m >= 8 || m === 0 ? "I" : "II";
-  return { devoir, semester: fromTitle ?? fromDate };
-}

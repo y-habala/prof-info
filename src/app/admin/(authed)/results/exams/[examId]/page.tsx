@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, FileText } from "lucide-react";
+import { ArrowLeft, Download } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -110,16 +110,6 @@ export default async function AdminExamResultsPage({
                 <a href={`/api/admin/exams/${exam.id}/export?class=${encodeURIComponent(classFilter)}`}>
                   <Download className="size-4" />
                   Excel {classFilter}
-                </a>
-              </Button>
-              <Button asChild className="gap-2">
-                <a
-                  href={`/api/admin/exams/${exam.id}/class-report?class=${encodeURIComponent(classFilter)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <FileText className="size-4" />
-                  Rapport PDF — {classFilter}
                 </a>
               </Button>
             </>
