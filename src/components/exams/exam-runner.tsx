@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Send, Loader2, CircleCheck, CircleDashed } from "lucide-react";
+import { Check, Send, Loader2, CircleCheck, CircleDashed, ArrowDownToLine, Lightbulb } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -60,6 +60,14 @@ function isAnswered(q: Question, a: string[] | string | undefined): boolean {
   return Array.isArray(a) && a.length > 0;
 }
 
+// Every question carries its state so the student never loses one:
+// orange frame = still to answer, green frame = answered.
+const stateFrame = (done: boolean) =>
+  cn(
+    "border-l-4 transition-colors data-[flash=true]:ring-4 data-[flash=true]:ring-amber-300",
+    done ? "border-l-emerald-500" : "border-l-amber-400 bg-amber-50/60"
+  );
+
 /* ── Vrai / Faux ── */
 function TrueFalsePills({
   options,
@@ -75,16 +83,18 @@ function TrueFalsePills({
   onChange: (id: string) => void;
 }) {
   const selected = Array.isArray(answer) ? answer[0] : undefined;
+  // "Vrai" always first, then "Faux", whatever order the options come in.
+  const ordered = [...options].sort((a, b) => Number(isFauxOption(a.text)) - Number(isFauxOption(b.text)));
   return (
     <div className="flex gap-2">
-      {options.map((o, i) => {
+      {ordered.map((o, i) => {
         const isVrai = isVraiOption(o.text) || (!isFauxOption(o.text) && i === 0);
         const checked = selected === o.id;
         return (
           <label
             key={o.id}
             className={cn(
-              "min-w-20 cursor-pointer rounded-full border-2 px-4 py-1.5 text-center text-sm font-bold transition-all",
+              "min-w-24 cursor-pointer rounded-full border-2 px-5 py-2.5 text-center text-[15px] font-bold transition-all active:scale-95",
               "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
               disabled && "pointer-events-none opacity-60",
               checked
@@ -103,10 +113,15 @@ function TrueFalsePills({
   );
 }
 
-function Num({ n }: { n: number }) {
+function Num({ n, done }: { n: number; done: boolean }) {
   return (
-    <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">
-      {n}
+    <span
+      className={cn(
+        "mt-px flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+        done ? "bg-emerald-500 text-white" : "bg-amber-400 text-amber-950"
+      )}
+    >
+      {done ? <Check className="size-4" strokeWidth={3} /> : n}
     </span>
   );
 }
@@ -124,10 +139,15 @@ function TfRow({
   disabled: boolean;
   onPick: (id: string) => void;
 }) {
+  const done = isAnswered(q, answer);
   return (
-    <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+    <div
+      data-q={q.id}
+      data-done={done}
+      className={cn("flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6", stateFrame(done))}
+    >
       <p className="flex gap-3 text-[15px] leading-relaxed">
-        <Num n={n} />
+        <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
       <div className="shrink-0 pl-9 sm:pl-0">
@@ -154,9 +174,12 @@ function MatchBox({
   const numbered = /^\s*\d{1,3}\s*$/.test(q.text);
   return (
     <label
+      data-q={q.id}
+      data-done={!!value}
       className={cn(
-        "flex gap-3 rounded-xl border p-3 transition-colors",
-        value ? "border-primary/40 bg-[var(--ex-soft)]" : "border-border bg-card",
+        "flex gap-3 rounded-xl border p-3",
+        stateFrame(!!value),
+        value ? "border-emerald-200 bg-[var(--ex-soft)]" : "border-amber-200",
         numbered ? "items-center" : "flex-col"
       )}
     >
@@ -208,14 +231,17 @@ function QcmCard({
   const chosen = Array.isArray(answer) ? answer : [];
   return (
     <fieldset
+      data-q={q.id}
+      data-done={chosen.length > 0}
       className={cn(
-        "rounded-xl border bg-card p-4 transition-colors",
-        chosen.length > 0 ? "border-primary/40" : "border-border"
+        "rounded-xl border p-4",
+        stateFrame(chosen.length > 0),
+        chosen.length > 0 ? "border-emerald-200 bg-card" : "border-amber-200"
       )}
     >
       <legend className="sr-only">Question {n}</legend>
       <p className="mb-3 flex gap-2.5 text-[15px] font-semibold leading-snug">
-        <Num n={n} />
+        <Num n={n} done={chosen.length > 0} />
         <span>
           {q.text}
           {multi ? <span className="ml-1 text-xs font-medium text-muted-foreground">(plusieurs réponses possibles)</span> : null}
@@ -228,7 +254,7 @@ function QcmCard({
             <label
               key={o.id}
               className={cn(
-                "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors",
+                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors active:scale-[0.99]",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                 on ? "border-primary bg-[var(--ex-soft)] font-semibold" : "border-transparent hover:bg-muted/60",
                 disabled && "pointer-events-none opacity-60"
@@ -276,10 +302,11 @@ function BlockQuestion({
   onSetText: (text: string) => void;
 }) {
   const text = typeof answer === "string" ? answer : undefined;
+  const done = isAnswered(q, answer);
   return (
-    <div className="space-y-3 px-5 py-5">
+    <div data-q={q.id} data-done={done} className={cn("space-y-3 px-5 py-5", stateFrame(done))}>
       <p className="flex gap-3 text-[15px] font-semibold leading-relaxed">
-        <Num n={n} />
+        <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
       <div className="sm:pl-9">
@@ -549,14 +576,39 @@ export function ExamRunner({
     }
   }
 
-  // The student confirms before handing in with unanswered questions; the
-  // timer hands in without asking.
+  // Scrolls to the next question still to answer (after the one in view)
+  // and makes it pulse briefly so the eye lands on it.
+  function goToNextUnanswered() {
+    const todo = [...document.querySelectorAll<HTMLElement>('[data-q][data-done="false"]')];
+    if (todo.length === 0) return;
+    const viewTop = 140;
+    const next = todo.find((el) => el.getBoundingClientRect().top > viewTop + 10) ?? todo[0];
+    next.scrollIntoView({ behavior: "smooth", block: "center" });
+    next.dataset.flash = "true";
+    setTimeout(() => {
+      next.dataset.flash = "false";
+    }, 1600);
+  }
+
+  // The student confirms before handing in with unanswered questions (and
+  // is taken to the first one if they go back); the timer hands in without
+  // asking.
   function submitByStudent() {
     if (remaining > 0) {
       const ok = confirm(
-        `Il reste ${remaining} question${remaining > 1 ? "s" : ""} sans réponse.\nVeux-tu vraiment terminer l'examen ?`
+        `Attention : il te reste ${remaining} question${remaining > 1 ? "s" : ""} sans réponse (en orange).\n\nOK = terminer quand même\nAnnuler = revenir aux questions oubliées`
       );
-      if (!ok) return;
+      if (!ok) {
+        const first = document.querySelector<HTMLElement>('[data-q][data-done="false"]');
+        first?.scrollIntoView({ behavior: "smooth", block: "center" });
+        if (first) {
+          first.dataset.flash = "true";
+          setTimeout(() => {
+            first.dataset.flash = "false";
+          }, 1600);
+        }
+        return;
+      }
     }
     submit();
   }
@@ -578,7 +630,19 @@ export function ExamRunner({
               <span className="sm:hidden"> · Modèle {modelLabel.toUpperCase()}</span>
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-2">
+            {remaining > 0 ? (
+              <button
+                type="button"
+                onClick={goToNextUnanswered}
+                title="Aller à la prochaine question sans réponse"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-amber-400 px-3 text-sm font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300"
+              >
+                <ArrowDownToLine className="size-4" />
+                <span className="hidden md:inline">Question suivante</span>
+                <span className="rounded-full bg-amber-950/15 px-1.5 text-xs tabular-nums">{remaining}</span>
+              </button>
+            ) : null}
             <ExamTimer deadline={deadline} onExpire={submit} />
             <button
               type="button"
@@ -622,6 +686,20 @@ export function ExamRunner({
       </header>
 
       <main className="mx-auto max-w-5xl space-y-7 px-4 py-7 sm:px-6 sm:py-9">
+        <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-relaxed text-sky-950">
+          <Lightbulb className="mt-0.5 size-5 shrink-0 text-sky-600" />
+          <div>
+            <p className="font-heading text-base font-semibold">Bon courage !</p>
+            <p>
+              Lis bien chaque question. Les questions{" "}
+              <span className="rounded bg-amber-200 px-1 font-semibold text-amber-950">en orange</span> attendent ta
+              réponse, celles{" "}
+              <span className="rounded bg-emerald-200 px-1 font-semibold text-emerald-950">en vert</span> sont faites.
+              Le bouton <strong>Question suivante</strong> en haut t&apos;emmène à celle que tu as oubliée.
+            </p>
+          </div>
+        </div>
+
         {sections.map((s, i) => (
           <SectionCard
             key={s.id ?? "unsectioned"}
@@ -639,14 +717,24 @@ export function ExamRunner({
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="font-heading text-lg font-semibold">
-                {remaining === 0 ? "Tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} sans réponse`}
+                {remaining === 0 ? "Bravo, tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} à faire`}
               </p>
               <p className="text-sm text-muted-foreground">
                 {remaining === 0
                   ? "Relis tes réponses, puis valide ton examen."
-                  : "Tu peux revenir sur un exercice avec les boutons en haut de la page."}
+                  : "Elles sont encadrées en orange. Clique sur « Question suivante » pour les retrouver."}
               </p>
             </div>
+            {remaining > 0 ? (
+              <button
+                type="button"
+                onClick={goToNextUnanswered}
+                className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-amber-400 bg-amber-50 px-5 text-base font-bold text-amber-900 transition-colors hover:bg-amber-100"
+              >
+                <ArrowDownToLine className="size-5" />
+                Voir les questions oubliées
+              </button>
+            ) : null}
             <button
               type="button"
               disabled={isSubmitting}
