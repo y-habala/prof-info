@@ -1,7 +1,25 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Send, Loader2, CircleCheck, CircleDashed, ArrowDownToLine, Lightbulb } from "lucide-react";
+import {
+  Check,
+  X,
+  Send,
+  Loader2,
+  CircleCheck,
+  CircleDashed,
+  ArrowDownToLine,
+  Lightbulb,
+  ToggleRight,
+  ListChecks,
+  Link2,
+  Table2,
+  PencilLine,
+  Shuffle,
+  PartyPopper,
+  ClipboardList,
+  type LucideIcon,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -64,8 +82,8 @@ function isAnswered(q: Question, a: string[] | string | undefined): boolean {
 // orange frame = still to answer, green frame = answered.
 const stateFrame = (done: boolean) =>
   cn(
-    "border-l-4 transition-colors data-[flash=true]:ring-4 data-[flash=true]:ring-amber-300",
-    done ? "border-l-emerald-500" : "border-l-amber-400 bg-amber-50/60"
+    "border-l-[3px] transition-[border-color,box-shadow] duration-300 data-[flash=true]:ring-4 data-[flash=true]:ring-amber-300/70",
+    done ? "border-l-emerald-400" : "border-l-amber-300"
   );
 
 /* ── Vrai / Faux ── */
@@ -94,17 +112,20 @@ function TrueFalsePills({
           <label
             key={o.id}
             className={cn(
-              "min-w-24 cursor-pointer rounded-full border-2 px-5 py-2.5 text-center text-[15px] font-bold transition-all active:scale-95",
+              "inline-flex min-w-24 cursor-pointer items-center justify-center gap-1.5 rounded-full border-2 px-4 py-2.5 text-[15px] font-bold transition-all duration-200 active:scale-95",
               "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
               disabled && "pointer-events-none opacity-60",
               checked
                 ? isVrai
-                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                  : "border-rose-600 bg-rose-600 text-white shadow-sm"
-                : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
+                  ? "border-emerald-500 bg-emerald-500 text-white shadow-[0_2px_8px_rgb(16_185_129/0.35)]"
+                  : "border-rose-500 bg-rose-500 text-white shadow-[0_2px_8px_rgb(244_63_94/0.35)]"
+                : isVrai
+                  ? "border-emerald-200 bg-card text-emerald-700 hover:border-emerald-400 hover:bg-emerald-50"
+                  : "border-rose-200 bg-card text-rose-700 hover:border-rose-400 hover:bg-rose-50"
             )}
           >
             <input type="radio" name={name} checked={checked} disabled={disabled} onChange={() => onChange(o.id)} className="sr-only" />
+            {isVrai ? <Check className="size-4" strokeWidth={3} /> : <X className="size-4" strokeWidth={3} />}
             {o.text}
           </label>
         );
@@ -117,8 +138,8 @@ function Num({ n, done }: { n: number; done: boolean }) {
   return (
     <span
       className={cn(
-        "mt-px flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
-        done ? "bg-emerald-500 text-white" : "bg-amber-400 text-amber-950"
+        "mt-px flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-all duration-300",
+        done ? "scale-105 bg-emerald-500 text-white" : "bg-amber-100 text-amber-800 ring-1 ring-amber-300"
       )}
     >
       {done ? <Check className="size-4" strokeWidth={3} /> : n}
@@ -367,6 +388,21 @@ function sectionHeading(title: string | null): string {
   return t.replace(/^exercice\s*\d+\s*[:\-–]\s*/i, "") || "Questions";
 }
 
+const KIND: Record<Layout, { icon: LucideIcon; label: string }> = {
+  tf: { icon: ToggleRight, label: "Vrai ou Faux" },
+  qcm: { icon: ListChecks, label: "Choix multiple" },
+  match: { icon: Link2, label: "Associer" },
+  block: { icon: PencilLine, label: "Répondre" },
+};
+function kindOf(questions: Question[]) {
+  const q = questions[0];
+  if (!q) return KIND.block;
+  if (questions.every((x) => x.type === "table")) return { icon: Table2, label: "Tableau à cocher" };
+  if (questions.every((x) => x.type === "association")) return { icon: Shuffle, label: "Relier" };
+  const layouts = new Set(questions.map(layoutOf));
+  return layouts.size === 1 ? KIND[layoutOf(q)] : { icon: ClipboardList, label: "Questions variées" };
+}
+
 const fmtPoints = (p: number) => `${Number.isInteger(p) ? p : p.toFixed(2).replace(/0$/, "")} pt${p > 1 ? "s" : ""}`;
 
 function SectionCard({
@@ -390,19 +426,27 @@ function SectionCard({
   const done = section.questions.filter((q) => isAnswered(q, answers[q.id])).length;
   const complete = done === section.questions.length;
   const groups = groupByLayout(section.questions);
+  const kind = kindOf(section.questions);
+  const KindIcon = kind.icon;
 
   return (
     <section
       id={`exercice-${index}`}
-      style={themeVars(index - 1)}
-      className="scroll-mt-32 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.04)]"
+      style={{ ...themeVars(index - 1), "--i": index } as React.CSSProperties}
+      className="anim-pop scroll-mt-32 overflow-hidden rounded-2xl border border-border/80 bg-card shadow-[0_1px_2px_rgb(15_23_42/0.04),0_8px_24px_-12px_rgb(15_23_42/0.12)]"
     >
       <div className="flex items-center gap-4 border-b border-border bg-[var(--ex-soft)] px-5 py-4">
         <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-xl font-bold text-primary-foreground">
           {index}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Exercice {index}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Exercice {index}</p>
+            <span className="inline-flex items-center gap-1 rounded-full bg-card px-2 py-0.5 text-[11px] font-semibold text-primary ring-1 ring-primary/20">
+              <KindIcon className="size-3" strokeWidth={2.5} />
+              {kind.label}
+            </span>
+          </div>
           <h2 className="font-heading text-lg font-semibold leading-snug text-foreground">{sectionHeading(section.title)}</h2>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1">
@@ -412,7 +456,7 @@ function SectionCard({
           <span
             className={cn(
               "inline-flex items-center gap-1 text-xs font-semibold",
-              complete ? "text-emerald-700" : "text-muted-foreground"
+              complete ? "text-emerald-600" : "text-amber-700"
             )}
           >
             {complete ? <CircleCheck className="size-3.5" /> : <CircleDashed className="size-3.5" />}
@@ -715,15 +759,25 @@ export function ExamRunner({
 
         <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_1px_3px_rgb(0_0_0/0.04)] sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-heading text-lg font-semibold">
-                {remaining === 0 ? "Bravo, tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} à faire`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {remaining === 0
-                  ? "Relis tes réponses, puis valide ton examen."
-                  : "Elles sont encadrées en orange. Clique sur « Question suivante » pour les retrouver."}
-              </p>
+            <div className="flex items-start gap-3">
+              <span
+                className={cn(
+                  "flex size-11 shrink-0 items-center justify-center rounded-2xl",
+                  remaining === 0 ? "bg-emerald-100 text-emerald-600" : "bg-amber-100 text-amber-700"
+                )}
+              >
+                {remaining === 0 ? <PartyPopper className="size-5" /> : <ClipboardList className="size-5" />}
+              </span>
+              <div>
+                <p className="font-heading text-lg font-semibold">
+                  {remaining === 0 ? "Bravo, tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} à faire`}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {remaining === 0
+                    ? "Relis tes réponses, puis valide ton examen."
+                    : "Elles sont encadrées en orange. Clique sur « Question suivante » pour les retrouver."}
+                </p>
+              </div>
             </div>
             {remaining > 0 ? (
               <button
