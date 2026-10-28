@@ -2,7 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { LESSON_FILES_BUCKET, ensureLessonFilesBucket, publicFileUrl } from "@/lib/storage";
+import { LESSON_IMAGES_BUCKET, publicFileUrl } from "@/lib/storage";
 
 export type FormState = { error?: string; success?: boolean } | undefined;
 
@@ -59,14 +59,16 @@ export async function uploadExamLogo(
   if (!ext) return { error: "Format non pris en charge : utilise une image PNG ou JPG." };
   if (file.size > LOGO_MAX_BYTES) return { error: "Image trop lourde (2 Mo maximum)." };
 
-  await ensureLessonFilesBucket();
   const path = `branding/exam-logo-${Date.now()}.${ext}`;
   const { error: uploadError } = await createAdminClient()
-    .storage.from(LESSON_FILES_BUCKET)
+    .storage.from(LESSON_IMAGES_BUCKET)
     .upload(path, await file.arrayBuffer(), { contentType: file.type, upsert: false });
-  if (uploadError) return { error: "Échec de l'envoi de l'image." };
+  if (uploadError) {
+    console.error("[uploadExamLogo]", uploadError.message);
+    return { error: `Échec de l'envoi de l'image : ${uploadError.message}` };
+  }
 
-  const url = publicFileUrl(path);
+  const url = publicFileUrl(path, LESSON_IMAGES_BUCKET);
   const { error } = await supabase
     .from("settings")
     .upsert({ key: "exam_logo_url", value: url }, { onConflict: "key" });

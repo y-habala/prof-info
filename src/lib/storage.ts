@@ -27,8 +27,11 @@ export async function ensureLessonFilesBucket() {
   }
 }
 
-export function publicFileUrl(path: string) {
-  return `${SUPABASE_URL}/storage/v1/object/public/${LESSON_FILES_BUCKET}/${path
+// Already exists in the project and accepts PNG/JPEG (lesson-files does not).
+export const LESSON_IMAGES_BUCKET = "lesson-images";
+
+export function publicFileUrl(path: string, bucket: string = LESSON_FILES_BUCKET) {
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path
     .split("/")
     .map(encodeURIComponent)
     .join("/")}`;
