@@ -1,169 +1,113 @@
-import { Document, Page, View, Text, StyleSheet, Svg, Path } from "@react-pdf/renderer";
-import { NAVY, GOLD, INK_MUTED, TINT, RULE } from "./theme";
+import { Document, Page, View, Text, StyleSheet } from "@react-pdf/renderer";
+import "./fonts";
+import { getAppreciation } from "@/lib/grading";
+import { NAVY, NAVY_DARK, GOLD, INK_MUTED, TINT, RULE } from "./theme";
+import { OfficialHeader } from "./official-header";
+import type { PdfLogo } from "./logo";
 
 const SUBJECT = "Informatique";
 
-function currentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? y : y - 1;
-  return `${startYear}/${startYear + 1}`;
-}
+type Mention = { label: string; color: string; test: (s: number) => boolean };
 
-type Mention = { label: string; color: string };
-
-function getMention(score20: number): Mention {
-  if (score20 < 10) return { label: "Insuffisant", color: "#dc2626" };
-  if (score20 < 14) return { label: "Moyen", color: "#9333ea" };
-  if (score20 < 16) return { label: "Bien", color: "#2563eb" };
-  if (score20 < 18) return { label: "Très Bien", color: "#16a34a" };
-  return { label: "Excellent", color: "#15803d" };
-}
-
-const MENTION_ORDER: { label: string; color: string; test: (s: number) => boolean }[] = [
+const MENTIONS: Mention[] = [
+  { label: "Excellent", color: "#15803d", test: (s) => s >= 18 },
+  { label: "Très bien", color: "#16a34a", test: (s) => s >= 16 && s < 18 },
+  { label: "Bien", color: "#2563eb", test: (s) => s >= 14 && s < 16 },
+  { label: "Moyen", color: "#9333ea", test: (s) => s >= 10 && s < 14 },
   { label: "Insuffisant", color: "#dc2626", test: (s) => s < 10 },
-  { label: "Moyen",       color: "#9333ea", test: (s) => s >= 10 && s < 14 },
-  { label: "Bien",        color: "#2563eb", test: (s) => s >= 14 && s < 16 },
-  { label: "Très Bien",   color: "#16a34a", test: (s) => s >= 16 && s < 18 },
-  { label: "Excellent",   color: "#15803d", test: (s) => s >= 18 },
 ];
+const mentionOf = (s: number) => MENTIONS.find((m) => m.test(s)) ?? MENTIONS[MENTIONS.length - 1];
 
-function polarToCartesian(cx: number, cy: number, r: number, deg: number) {
-  const rad = ((deg - 90) * Math.PI) / 180;
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function describeSlice(cx: number, cy: number, r: number, startAngle: number, endAngle: number): string {
-  if (endAngle - startAngle >= 359.999) {
-    const mid = startAngle + 180;
-    return `${describeSlice(cx, cy, r, startAngle, mid)} ${describeSlice(cx, cy, r, mid, endAngle)}`;
-  }
-  const start = polarToCartesian(cx, cy, r, endAngle);
-  const end   = polarToCartesian(cx, cy, r, startAngle);
-  const largeArc = endAngle - startAngle <= 180 ? "0" : "1";
-  return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${largeArc} 0 ${end.x} ${end.y} Z`;
-}
+const MEDALS = ["#c8a03c", "#9aa3b2", "#b0753f"];
 
 const s = StyleSheet.create({
-  page: { padding: 28, fontFamily: "Helvetica", fontSize: 9 },
+  page: { paddingTop: 24, paddingBottom: 40, paddingHorizontal: 26, fontFamily: "Cairo", fontSize: 8.5, color: "#1f2937", lineHeight: 1.25 },
 
-  /* ── Letterhead ── */
-  frame: { borderWidth: 1.2, borderColor: NAVY, borderRadius: 6, marginBottom: 10 },
-  accentBar: { height: 4, backgroundColor: NAVY, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
-  accentGold: { height: 1.5, backgroundColor: GOLD },
-  letterhead: { flexDirection: "row", alignItems: "stretch" },
-  col30: { width: "30%", paddingVertical: 8, paddingHorizontal: 9, justifyContent: "center" },
-  col40: {
-    width: "40%",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 8,
-    paddingHorizontal: 6,
-    borderLeftWidth: 0.8,
-    borderRightWidth: 0.8,
-    borderColor: RULE,
-  },
-  kingdom: { fontFamily: "Helvetica-Bold", fontSize: 8.5, color: NAVY, letterSpacing: 0.6, marginBottom: 3 },
-  ministry: { fontSize: 7.5, color: INK_MUTED, marginBottom: 1.5 },
-  rightRow: { flexDirection: "row", justifyContent: "flex-end", marginBottom: 2.5 },
-  rightLabel: { fontSize: 7, color: INK_MUTED },
-  rightValue: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: NAVY, maxWidth: 120, textAlign: "right" },
-  kicker: { fontFamily: "Helvetica-Bold", fontSize: 7, color: GOLD, letterSpacing: 1.6, marginBottom: 3 },
-  reportTitle: { fontFamily: "Helvetica-Bold", fontSize: 14, color: NAVY, textAlign: "center" },
-  titleRule: { width: 60, height: 1.2, backgroundColor: GOLD, marginVertical: 4 },
-  reportSub: { fontSize: 8, textAlign: "center", color: INK_MUTED },
+  header: { marginBottom: 12 },
+  titleBlock: { alignItems: "center", paddingVertical: 5 },
+  kicker: { fontWeight: 700, fontSize: 7.5, color: GOLD, letterSpacing: 2 },
+  title: { fontWeight: 700, fontSize: 18, color: NAVY, textAlign: "center", lineHeight: 1.2 },
 
-  /* ── Meta boxes ── */
-  metaRow: { flexDirection: "row", marginBottom: 10 },
-  metaBox: {
-    flex: 1,
-    backgroundColor: TINT,
-    borderWidth: 0.8,
-    borderColor: RULE,
-    borderRadius: 5,
-    paddingVertical: 6,
-    paddingHorizontal: 4,
-    marginHorizontal: 3,
-    alignItems: "center",
-  },
-  metaLabel: { fontSize: 6.5, color: INK_MUTED, letterSpacing: 0.8, marginBottom: 2.5 },
-  metaValue: { fontFamily: "Helvetica-Bold", fontSize: 11, color: NAVY },
+  /* Overview */
+  overview: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  hero: { width: "34%", backgroundColor: NAVY, borderRadius: 8, padding: 10, alignItems: "center" },
+  heroLabel: { fontSize: 7.5, color: "#c9d4ec", letterSpacing: 1 },
+  heroValueRow: { flexDirection: "row", alignItems: "baseline" },
+  heroValue: { fontWeight: 700, fontSize: 30, color: "#ffffff", lineHeight: 1.45 },
+  heroMax: { fontSize: 11, color: "#c9d4ec", marginLeft: 3 },
+  heroPill: { marginTop: 12, backgroundColor: GOLD, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 1 },
+  heroPillText: { fontWeight: 700, fontSize: 8, color: NAVY_DARK },
 
-  /* ── KPI grid ── */
-  kpiGrid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
-  kpiCard: {
-    width: "25%",
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    padding: 6,
-    alignItems: "center",
-  },
-  kpiLabel: { fontSize: 7.5, color: "#555", marginBottom: 2, textAlign: "center" },
-  kpiValue: { fontFamily: "Helvetica-Bold", fontSize: 13 },
+  card: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, padding: 10, justifyContent: "center" },
+  cardLabel: { fontSize: 7.5, color: INK_MUTED, letterSpacing: 1 },
+  cardValue: { fontWeight: 700, fontSize: 20, color: NAVY, lineHeight: 1.45 },
+  cardSub: { fontSize: 7.5, color: INK_MUTED },
+  track: { height: 6, borderRadius: 3, backgroundColor: "#e5e9f2", marginTop: 11, marginBottom: 4 },
+  fill: { height: 6, borderRadius: 3, backgroundColor: GOLD },
+  splitRow: { flexDirection: "row", gap: 10, marginTop: 2 },
+  splitItem: { flex: 1 },
+  splitSub: { fontSize: 7.5, color: INK_MUTED, marginTop: 7 },
+  splitValue: { fontWeight: 700, fontSize: 16, lineHeight: 1.45 },
 
-  /* ── Panels ── */
-  panelsRow: { flexDirection: "row", marginBottom: 10 },
-  panel: {
-    flex: 1,
-    borderWidth: 1,
-    borderColor: "#e2e8f0",
-    borderRadius: 4,
-    padding: 8,
-    marginHorizontal: 3,
-  },
-  panelTitle: { fontFamily: "Helvetica-Bold", fontSize: 9, marginBottom: 6, textAlign: "center" },
-  topRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 4 },
-  topName:  { fontSize: 8.5 },
-  topScore: { fontFamily: "Helvetica-Bold", fontSize: 8.5 },
+  /* Stat tiles */
+  tiles: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  tile: { flex: 1, flexDirection: "row", borderWidth: 0.8, borderColor: RULE, borderRadius: 6 },
+  tileBar: { width: 4, borderTopLeftRadius: 5, borderBottomLeftRadius: 5 },
+  tileBody: { paddingVertical: 5, paddingHorizontal: 8 },
+  tileLabel: { fontSize: 7, color: INK_MUTED },
+  tileValue: { fontWeight: 700, fontSize: 13, color: NAVY, lineHeight: 1.35 },
 
-  legendRow: { flexDirection: "row", alignItems: "center", marginBottom: 3 },
-  legendDot: { width: 7, height: 7, borderRadius: 3.5, marginRight: 4 },
-  legendLabel: { fontSize: 7.5 },
+  /* Panels */
+  panels: { flexDirection: "row", gap: 8, marginBottom: 12 },
+  panel: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, padding: 10 },
+  panelTitle: { fontWeight: 700, fontSize: 10, color: NAVY, marginBottom: 6 },
+  podiumRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  medal: { width: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center", marginRight: 6 },
+  medalText: { fontWeight: 700, fontSize: 8, color: "#ffffff" },
+  podiumName: { flex: 1, fontSize: 8.5 },
+  podiumScore: { fontWeight: 700, fontSize: 9.5, color: NAVY },
+  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
+  barLabel: { width: 52, fontSize: 7.5 },
+  barTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "#eef1f6", marginHorizontal: 5 },
+  barFill: { height: 8, borderRadius: 4 },
+  barCount: { width: 42, fontSize: 7.5, textAlign: "right", color: INK_MUTED },
+  empty: { fontSize: 8, color: INK_MUTED },
 
-  /* ── Student list ── */
-  listTitle: { fontFamily: "Helvetica-Bold", fontSize: 10, marginBottom: 6, textAlign: "center" },
-  columns: { flexDirection: "row" },
-  col: { flex: 1, marginHorizontal: 3 },
-  row: {
+  /* Student list */
+  listTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
+  listTitle: { fontWeight: 700, fontSize: 11, color: NAVY },
+  listRule: { flex: 1, height: 1, backgroundColor: GOLD, marginLeft: 8, marginTop: 5 },
+  tables: { flexDirection: "row", gap: 10 },
+  table: { flex: 1 },
+  th: { flexDirection: "row", backgroundColor: NAVY, borderTopLeftRadius: 4, borderTopRightRadius: 4, paddingVertical: 3 },
+  thText: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#ffffff" },
+  tr: { flexDirection: "row", alignItems: "center", paddingVertical: 2.5, borderBottomWidth: 0.5, borderBottomColor: "#e5e9f2" },
+  trAlt: { backgroundColor: TINT },
+  cNum: { width: 20, textAlign: "center" },
+  cName: { flex: 1, paddingRight: 4 },
+  cScore: { width: 32, textAlign: "center" },
+  cMention: { width: 58, alignItems: "center" },
+  num: { fontFamily: "Helvetica", fontSize: 7.5, color: INK_MUTED },
+  name: { fontFamily: "Helvetica", fontSize: 8.5 },
+  score: { fontFamily: "Helvetica-Bold", fontSize: 8.5 },
+  badge: { borderRadius: 3, paddingTop: 1.8, paddingBottom: 0.8, paddingHorizontal: 4 },
+  badgeText: { fontFamily: "Helvetica-Bold", fontSize: 6.5, color: "#ffffff" },
+
+  footer: {
+    position: "absolute",
+    top: 812,
+    left: 26,
+    right: 26,
     flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 2.5,
-    borderBottomWidth: 0.5,
-    borderBottomColor: "#e2e8f0",
+    justifyContent: "space-between",
+    borderTopWidth: 0.6,
+    borderTopColor: RULE,
+    paddingTop: 4,
   },
-  rank:  { fontFamily: "Helvetica-Bold", fontSize: 8, width: 16, textAlign: "center" },
-  name:  { flex: 1, fontSize: 8.5 },
-  badge: { borderRadius: 3, paddingVertical: 1.5, paddingHorizontal: 4, marginHorizontal: 3 },
-  badgeText: { fontFamily: "Helvetica-Bold", fontSize: 6.5, color: "#fff" },
-  score: { fontFamily: "Helvetica-Bold", fontSize: 8.5, width: 30, textAlign: "center" },
+  footerText: { fontSize: 7, color: INK_MUTED, lineHeight: 1 },
+  signature: { marginTop: 10, alignSelf: "flex-end", width: 180, alignItems: "center" },
+  signatureLine: { width: "100%", borderBottomWidth: 0.8, borderBottomColor: INK_MUTED, marginTop: 16 },
 });
-
-function MetaBox({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={s.metaBox}>
-      <Text style={s.metaLabel}>{label.toUpperCase()}</Text>
-      <Text style={s.metaValue}>{value}</Text>
-    </View>
-  );
-}
-
-function RightLine({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={s.rightRow}>
-      <Text style={s.rightLabel}>{label} : </Text>
-      <Text style={s.rightValue}>{value}</Text>
-    </View>
-  );
-}
-
-function KpiCard({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={s.kpiCard}>
-      <Text style={s.kpiLabel}>{label}</Text>
-      <Text style={s.kpiValue}>{value}</Text>
-    </View>
-  );
-}
 
 export type ClassReportStudent = { name: string; score: number };
 
@@ -172,17 +116,62 @@ export type ClassReportData = {
   className: string;
   students: ClassReportStudent[];
   absentCount: number;
+  schoolYear: string;
+  semester: string;
+  devoir: string | null;
+  logo: PdfLogo;
   settings: {
     teacherName: string;
-    institution: string;
-    academie: string;
-    direction: string;
+    academieAr: string;
+    directionAr: string;
   };
 };
 
+function Tile({ label, value, color }: { label: string; value: string; color: string }) {
+  return (
+    <View style={s.tile}>
+      <View style={[s.tileBar, { backgroundColor: color }]} />
+      <View style={s.tileBody}>
+        <Text style={s.tileLabel}>{label}</Text>
+        <Text style={s.tileValue}>{value}</Text>
+      </View>
+    </View>
+  );
+}
+
+function StudentTable({ rows }: { rows: (ClassReportStudent & { rank: number })[] }) {
+  return (
+    <View style={s.table}>
+      <View style={s.th}>
+        <Text style={[s.thText, s.cNum]}>N°</Text>
+        <Text style={[s.thText, s.cName]}>Nom et prénom</Text>
+        <Text style={[s.thText, s.cScore]}>/20</Text>
+        <Text style={[s.thText, s.cMention, { textAlign: "center" }]}>Mention</Text>
+      </View>
+      {rows.map((st, i) => {
+        const m = mentionOf(st.score);
+        return (
+          <View key={st.rank} style={i % 2 === 1 ? [s.tr, s.trAlt] : s.tr} wrap={false}>
+            <Text style={[s.num, s.cNum]}>{st.rank}</Text>
+            <Text style={[s.name, s.cName]}>{st.name}</Text>
+            <Text style={[s.score, s.cScore, { color: st.score >= 10 ? NAVY : "#dc2626" }]}>
+              {st.score.toFixed(2)}
+            </Text>
+            <View style={s.cMention}>
+              <View style={[s.badge, { backgroundColor: m.color }]}>
+                <Text style={s.badgeText}>{m.label}</Text>
+              </View>
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 export function ClassReportDocument({ data }: { data: ClassReportData }) {
-  const scores  = data.students.map((st) => st.score);
-  const total   = data.students.length;
+  const scores = data.students.map((st) => st.score);
+  const total = data.students.length;
   const passing = scores.filter((sc) => sc >= 10).length;
   const failing = total - passing;
   const average = total > 0 ? scores.reduce((a, b) => a + b, 0) / total : 0;
@@ -191,135 +180,148 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
   const successRate = total > 0 ? (passing / total) * 100 : 0;
 
   const sorted = [...data.students].sort((a, b) => a.name.localeCompare(b.name, "fr"));
-  const half   = Math.ceil(sorted.length / 2);
-  const colA   = sorted.slice(0, half).map((st, i) => ({ ...st, rank: i + 1 }));
-  const colB   = sorted.slice(half).map((st, i) => ({ ...st, rank: half + i + 1 }));
-
-  const top = [...data.students].sort((a, b) => b.score - a.score).slice(0, 4);
-
-  const distribution = MENTION_ORDER.map((m) => ({
-    ...m,
-    count: scores.filter(m.test).length,
-  })).filter((m) => m.count > 0);
-
-  const sweeps = distribution.map((d) => (total > 0 ? (d.count / total) * 360 : 0));
-  const starts = sweeps.reduce<number[]>((acc, sw, i) => {
-    acc.push(i === 0 ? 0 : acc[i - 1] + sweeps[i - 1]);
-    return acc;
-  }, []);
-  const slices = distribution.map((d, i) => ({
-    ...d,
-    path: describeSlice(50, 50, 40, starts[i], starts[i] + sweeps[i]),
-  }));
+  const half = Math.ceil(sorted.length / 2);
+  const colA = sorted.slice(0, half).map((st, i) => ({ ...st, rank: i + 1 }));
+  const colB = sorted.slice(half).map((st, i) => ({ ...st, rank: half + i + 1 }));
+  const podium = [...data.students].sort((a, b) => b.score - a.score).slice(0, 3);
+  const distribution = MENTIONS.map((m) => ({ ...m, count: scores.filter(m.test).length }));
+  const printedOn = new Date().toLocaleDateString("fr-FR");
 
   return (
     <Document>
       <Page size="A4" style={s.page}>
+        <View style={s.footer} fixed>
+          <Text style={s.footerText}>
+            {data.className} · {data.examTitle} · édité le {printedOn}
+          </Text>
+          <Text
+            style={s.footerText}
+            render={({ pageNumber, totalPages }) => `Page ${pageNumber} / ${totalPages}`}
+          />
+        </View>
 
-        {/* ── Letterhead ── */}
-        <View style={s.frame}>
-          <View style={s.accentBar} />
-          <View style={s.accentGold} />
-          <View style={s.letterhead}>
-            <View style={s.col30}>
-              <Text style={s.kingdom}>ROYAUME DU MAROC</Text>
-              <Text style={s.ministry}>Ministère de l&apos;Éducation Nationale,</Text>
-              <Text style={s.ministry}>du Préscolaire et des Sports</Text>
-            </View>
-            <View style={s.col40}>
+        <View style={s.header}>
+          <OfficialHeader
+            logo={data.logo}
+            academieAr={data.settings.academieAr}
+            directionAr={data.settings.directionAr}
+            left={[
+              { label: "Matière", value: SUBJECT },
+              { label: "Année scolaire", value: data.schoolYear },
+              { label: "Enseignant(e)", value: data.settings.teacherName },
+            ]}
+            right={[
+              { label: "Classe", value: data.className },
+              { label: "Session", value: `Semestre ${data.semester}` },
+              { label: "Devoir N°", value: data.devoir },
+            ]}
+          >
+            <View style={s.titleBlock}>
               <Text style={s.kicker}>RAPPORT D&apos;ÉVALUATION</Text>
-              <Text style={s.reportTitle}>{data.examTitle}</Text>
-              <View style={s.titleRule} />
-              <Text style={s.reportSub}>
-                Matière : {SUBJECT} — Année scolaire : {currentSchoolYear()}
-              </Text>
+              <Text style={s.title}>{data.examTitle}</Text>
             </View>
-            <View style={s.col30}>
-              <RightLine label="Académie" value={data.settings.academie} />
-              <RightLine label="Direction" value={data.settings.direction} />
-              <RightLine label="Établissement" value={data.settings.institution} />
-              <RightLine label="Enseignant(e)" value={data.settings.teacherName} />
+          </OfficialHeader>
+        </View>
+
+        {/* Overview */}
+        <View style={s.overview}>
+          <View style={s.hero}>
+            <Text style={s.heroLabel}>MOYENNE DE LA CLASSE</Text>
+            <View style={s.heroValueRow}>
+              <Text style={s.heroValue}>{average.toFixed(2)}</Text>
+              <Text style={s.heroMax}>/ 20</Text>
+            </View>
+            <View style={s.heroPill}>
+              <Text style={s.heroPillText}>{total > 0 ? getAppreciation(average) : "—"}</Text>
+            </View>
+          </View>
+
+          <View style={s.card}>
+            <Text style={s.cardLabel}>TAUX DE RÉUSSITE</Text>
+            <Text style={s.cardValue}>{successRate.toFixed(1)} %</Text>
+            <View style={s.track}>
+              <View style={[s.fill, { width: `${Math.min(100, successRate)}%` }]} />
+            </View>
+            <Text style={s.cardSub}>
+              {passing} élève{passing > 1 ? "s" : ""} sur {total} avec une note de 10 ou plus
+            </Text>
+          </View>
+
+          <View style={s.card}>
+            <Text style={s.cardLabel}>PARTICIPATION</Text>
+            <View style={s.splitRow}>
+              <View style={s.splitItem}>
+                <Text style={[s.splitValue, { color: NAVY }]}>{total}</Text>
+                <Text style={s.splitSub}>Présents</Text>
+              </View>
+              <View style={s.splitItem}>
+                <Text style={[s.splitValue, { color: data.absentCount > 0 ? "#dc2626" : INK_MUTED }]}>
+                  {data.absentCount}
+                </Text>
+                <Text style={s.splitSub}>Absents</Text>
+              </View>
             </View>
           </View>
         </View>
 
-        {/* ── Meta ── */}
-        <View style={s.metaRow}>
-          <MetaBox label="Classe"         value={data.className} />
-          <MetaBox label="Matière"        value={SUBJECT} />
-          <MetaBox label="Année scolaire" value={currentSchoolYear()} />
-          <MetaBox label="Enseignant(e)"  value={data.settings.teacherName} />
+        <View style={s.tiles}>
+          <Tile label="Note la plus haute" value={maxScore.toFixed(2)} color="#16a34a" />
+          <Tile label="Note la plus basse" value={minScore.toFixed(2)} color="#dc2626" />
+          <Tile label="Reçus (10 et +)" value={String(passing)} color={NAVY} />
+          <Tile label="Non reçus" value={String(failing)} color={GOLD} />
         </View>
 
-        {/* ── KPIs ── */}
-        <View style={s.kpiGrid}>
-          <KpiCard label="Nb. élèves"     value={String(total)} />
-          <KpiCard label="Absents"        value={String(data.absentCount)} />
-          <KpiCard label="Reçus (10 et +)"    value={String(passing)} />
-          <KpiCard label="Échoués"        value={String(failing)} />
-          <KpiCard label="Moyenne"        value={`${average.toFixed(2)} / 20`} />
-          <KpiCard label="Note max."      value={maxScore.toFixed(2)} />
-          <KpiCard label="Note min."      value={minScore.toFixed(2)} />
-          <KpiCard label="Taux réussite"  value={`${successRate.toFixed(1)} %`} />
-        </View>
-
-        {/* ── Panels ── */}
-        <View style={s.panelsRow}>
+        {/* Podium + distribution */}
+        <View style={s.panels}>
           <View style={s.panel}>
             <Text style={s.panelTitle}>Meilleurs élèves</Text>
-            {top.length === 0 ? (
-              <Text style={{ fontSize: 8, textAlign: "center", color: "#888" }}>—</Text>
+            {podium.length === 0 ? (
+              <Text style={s.empty}>Aucune copie.</Text>
             ) : (
-              top.map((st, i) => (
-                <View key={i} style={s.topRow}>
-                  <Text style={s.topName}>{st.name}</Text>
-                  <Text style={s.topScore}>{st.score.toFixed(2)}</Text>
+              podium.map((st, i) => (
+                <View key={i} style={s.podiumRow}>
+                  <View style={[s.medal, { backgroundColor: MEDALS[i] }]}>
+                    <Text style={s.medalText}>{i + 1}</Text>
+                  </View>
+                  <Text style={s.podiumName}>{st.name}</Text>
+                  <Text style={s.podiumScore}>{st.score.toFixed(2)}</Text>
                 </View>
               ))
             )}
           </View>
           <View style={s.panel}>
             <Text style={s.panelTitle}>Répartition des notes</Text>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Svg width={70} height={70} viewBox="0 0 100 100">
-                {slices.map((sl, i) => (
-                  <Path key={i} d={sl.path} fill={sl.color} />
-                ))}
-              </Svg>
-              <View style={{ flex: 1, marginLeft: 6 }}>
-                {distribution.map((d, i) => (
-                  <View key={i} style={s.legendRow}>
-                    <View style={[s.legendDot, { backgroundColor: d.color }]} />
-                    <Text style={s.legendLabel}>
-                      {d.label} ({d.count})
-                    </Text>
-                  </View>
-                ))}
+            {distribution.map((d) => (
+              <View key={d.label} style={s.barRow}>
+                <Text style={s.barLabel}>{d.label}</Text>
+                <View style={s.barTrack}>
+                  {d.count > 0 ? (
+                    <View
+                      style={[s.barFill, { backgroundColor: d.color, width: `${(d.count / Math.max(1, total)) * 100}%` }]}
+                    />
+                  ) : null}
+                </View>
+                <Text style={s.barCount}>
+                  {d.count} · {total > 0 ? Math.round((d.count / total) * 100) : 0} %
+                </Text>
               </View>
-            </View>
+            ))}
           </View>
         </View>
 
-        {/* ── Student list ── */}
-        <Text style={s.listTitle}>Liste des élèves</Text>
-        <View style={s.columns}>
-          {[colA, colB].map((col, ci) => (
-            <View key={ci} style={s.col}>
-              {col.map((st) => {
-                const m = getMention(st.score);
-                return (
-                  <View key={st.rank} style={s.row}>
-                    <Text style={s.rank}>{st.rank}</Text>
-                    <Text style={s.name}>{st.name}</Text>
-                    <View style={[s.badge, { backgroundColor: m.color }]}>
-                      <Text style={s.badgeText}>{m.label}</Text>
-                    </View>
-                    <Text style={s.score}>{st.score.toFixed(2)}</Text>
-                  </View>
-                );
-              })}
-            </View>
-          ))}
+        {/* Student list */}
+        <View style={s.listTitleRow}>
+          <Text style={s.listTitle}>Liste des élèves</Text>
+          <View style={s.listRule} />
+        </View>
+        <View style={s.tables}>
+          <StudentTable rows={colA} />
+          {colB.length > 0 ? <StudentTable rows={colB} /> : <View style={s.table} />}
+        </View>
+
+        <View style={s.signature} wrap={false}>
+          <Text style={s.footerText}>Signature de l&apos;enseignant(e)</Text>
+          <View style={s.signatureLine} />
         </View>
 
       </Page>

@@ -3,24 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { AnswerSheetDocument, type AnswerSheetData, type AnswerSheetSection } from "@/lib/pdf/answer-sheet";
 import { getSettings } from "@/lib/settings";
+import { loadPdfLogo } from "@/lib/pdf/logo";
 
 export const runtime = "nodejs";
-
-// Fetched here rather than by react-pdf so an unreachable logo just drops out
-// of the header instead of failing the whole PDF.
-async function loadLogo(url: string): Promise<AnswerSheetData["logo"]> {
-  if (!url) return null;
-  try {
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return null;
-    const type = res.headers.get("content-type") ?? "";
-    const format = type.includes("png") ? "png" : type.includes("jpeg") || type.includes("jpg") ? "jpg" : null;
-    if (!format) return null;
-    return { data: Buffer.from(await res.arrayBuffer()), format };
-  } catch {
-    return null;
-  }
-}
 
 export async function GET(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   // Admin-only — same reasoning as v1: the answer sheet shows full
@@ -109,7 +94,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   ].filter((s) => s.questions.length > 0);
 
   const settings = await getSettings();
-  const logo = await loadLogo(settings.exam_logo_url);
+  const logo = await loadPdfLogo(settings.exam_logo_url);
 
   const data: AnswerSheetData = {
     examTitle: modelRow.exams.title,

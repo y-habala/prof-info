@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { ClassReportDocument, type ClassReportData } from "@/lib/pdf/class-report";
 import { getSettings } from "@/lib/settings";
 import { scoreOutOf20 } from "@/lib/grading";
+import { examMetaFromTitle, loadPdfLogo, schoolYearOf } from "@/lib/pdf/logo";
 
 export const runtime = "nodejs";
 
@@ -40,6 +41,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ exam
   const absentCount = (attempts ?? []).length - submitted.length;
 
   const settings = await getSettings();
+  // Dated by the sitting itself, not by the day the report is printed.
+  const sittingDates = submitted.map((a) => new Date(a.submitted_at as string).getTime());
+  const sittingDate = sittingDates.length > 0 ? new Date(Math.min(...sittingDates)) : new Date();
+  const { devoir, semester } = examMetaFromTitle(exam.title, sittingDate);
+
   const data: ClassReportData = {
     examTitle: exam.title,
     className,
@@ -48,11 +54,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ exam
       score: scoreOutOf20(Number(a.score ?? 0), Number(a.max_score ?? 0)),
     })),
     absentCount,
+    schoolYear: schoolYearOf(sittingDate),
+    semester,
+    devoir,
+    logo: await loadPdfLogo(settings.exam_logo_url),
     settings: {
       teacherName: settings.teacher_name,
-      institution: settings.institution,
-      academie: settings.academie,
-      direction: settings.direction,
+      academieAr: settings.academie_ar,
+      directionAr: settings.direction_ar,
     },
   };
 
