@@ -85,12 +85,16 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
             interactive: buildInteractivePayload(type, opts, `${attemptId}:${q.id}`),
           };
         }
+        // QCM choices are shuffled per student so "the answer is b" can't be
+        // passed along; other types keep their (alphabetical) order.
+        const isQcm = type === "qcm_single" || type === "qcm_multiple";
+        const shown = isQcm ? shuffleSeeded(opts, `${attemptId}:${q.id}:options`) : opts;
         return {
           id: q.id,
           text: q.question_text,
           type,
           points: Number(q.points),
-          options: opts.map(({ id, text }) => ({ id, text })),
+          options: shown.map(({ id, text }) => ({ id, text })),
         };
       });
     // Per-attempt shuffle, seeded by attemptId + sectionId so two sections
