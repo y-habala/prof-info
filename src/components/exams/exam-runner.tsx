@@ -9,7 +9,7 @@ import { ExamTimer } from "./exam-timer";
 import { ExamReloadWarning } from "./exam-reload-warning";
 import type { ExamQuestionType } from "@/schemas/exams";
 import { isInteractive, type InteractivePayload } from "@/lib/exam-interactive";
-import { AssociationInput, CategorizeInput, OrderingInput, interactiveAnswered } from "./interactive-inputs";
+import { AssociationInput, OrderingInput, TableInput, interactiveAnswered } from "./interactive-inputs";
 
 type Question = {
   id: string;
@@ -198,8 +198,8 @@ function QuestionCard({
       {q.interactive && q.type === "ordering" && (
         <OrderingInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
       )}
-      {q.interactive && q.type === "categorize" && (
-        <CategorizeInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
+      {q.interactive && q.type === "table" && (
+        <TableInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
       )}
 
       {q.type === "fill_blank" && (

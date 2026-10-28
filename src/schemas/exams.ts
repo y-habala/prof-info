@@ -8,7 +8,7 @@ export const EXAM_QUESTION_TYPES = [
   "matching",
   "association",
   "ordering",
-  "categorize",
+  "table",
 ] as const;
 export type ExamQuestionType = (typeof EXAM_QUESTION_TYPES)[number];
 
@@ -20,8 +20,12 @@ export const EXAM_QUESTION_TYPE_LABELS: Record<ExamQuestionType, string> = {
   matching: "Appariement",
   association: "Association (relier deux colonnes)",
   ordering: "Remettre dans l'ordre",
-  categorize: "Classer par catégorie",
+  table: "Tableau (cocher la bonne case)",
 };
+
+// Types offered when creating a question. "ordering" stays valid for the
+// questions that already use it but is no longer proposed.
+export const SELECTABLE_QUESTION_TYPES: ExamQuestionType[] = EXAM_QUESTION_TYPES.filter((t) => t !== "ordering");
 
 // Parent exam (the test itself — one per level, N models hang off it)
 export const examFormSchema = z.object({

@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { ArrowDown, ArrowUp, GripVertical, X } from "lucide-react";
+import { ArrowDown, ArrowUp, Check, GripVertical, X } from "lucide-react";
 import {
   DndContext,
   KeyboardSensor,
@@ -239,55 +239,69 @@ export function OrderingInput({ payload, value, disabled, onChange }: Props) {
   );
 }
 
-/* ── Categorize: pick a category for each item ── */
-const CATEGORY_COLORS = [
-  "border-sky-500 bg-sky-500 text-white",
-  "border-amber-500 bg-amber-500 text-white",
-  "border-emerald-600 bg-emerald-600 text-white",
-  "border-violet-600 bg-violet-600 text-white",
-  "border-rose-500 bg-rose-500 text-white",
-  "border-teal-600 bg-teal-600 text-white",
-];
-
-export function CategorizeInput({ payload, value, disabled, onChange }: Props) {
+/* ── Table: tick the right column on each row ── */
+export function TableInput({ payload, value, disabled, onChange }: Props) {
   const chosen = parse<Record<string, string>>(value, {});
-  const categories = payload.categories ?? [];
+  const columns = payload.categories ?? [];
 
-  function pick(itemId: string, category: string) {
+  function pick(rowId: string, column: string) {
     const next = { ...chosen };
-    if (next[itemId] === category) delete next[itemId];
-    else next[itemId] = category;
+    if (next[rowId] === column) delete next[rowId];
+    else next[rowId] = column;
     onChange(JSON.stringify(next));
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">Choisis la catégorie de chaque élément.</p>
-      <div className="space-y-2">
-        {payload.items.map((it) => (
-          <div key={it.id} className="rounded-xl border-2 border-border bg-card p-2.5">
-            <p className="mb-2 text-sm font-medium">{it.text}</p>
-            <div className="flex flex-wrap gap-1.5">
-              {categories.map((c, ci) => {
-                const on = chosen[it.id] === c;
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    disabled={disabled}
-                    onClick={() => pick(it.id, c)}
-                    className={cn(
-                      "rounded-full border-2 px-3 py-1 text-xs font-semibold transition-colors",
-                      on ? CATEGORY_COLORS[ci % CATEGORY_COLORS.length] : "border-border bg-background hover:border-foreground/40"
-                    )}
-                  >
-                    {c}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ))}
+      <p className="text-xs text-muted-foreground">Coche la bonne case sur chaque ligne.</p>
+      <div className="overflow-x-auto rounded-xl border border-border">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-muted/60">
+              <th className="border-b border-border px-3 py-2" />
+              {columns.map((c) => (
+                <th key={c} className="border-b border-l border-border px-3 py-2 text-center font-semibold">
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {payload.items.map((row) => (
+              <tr key={row.id} className="border-t border-border">
+                <th scope="row" className="bg-muted/30 px-3 py-2 text-left font-semibold">
+                  {row.text}
+                </th>
+                {columns.map((c) => {
+                  const on = chosen[row.id] === c;
+                  return (
+                    <td key={c} className="border-l border-border p-0 text-center">
+                      <button
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => pick(row.id, c)}
+                        aria-pressed={on}
+                        aria-label={`${row.text} : ${c}`}
+                        className={cn(
+                          "flex h-11 w-full items-center justify-center transition-colors",
+                          on ? "bg-primary/10" : "hover:bg-muted/60"
+                        )}
+                      >
+                        {on ? (
+                          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                            <Check className="size-4" strokeWidth={3} />
+                          </span>
+                        ) : (
+                          <span className="size-5 rounded-md border-2 border-muted-foreground/30" />
+                        )}
+                      </button>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { createExamQuestion, updateExamQuestion } from "@/actions/exams";
-import { EXAM_QUESTION_TYPES, EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exams";
+import { SELECTABLE_QUESTION_TYPES, EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exams";
 
 type Props = {
   trigger: React.ReactElement<{ children?: React.ReactNode }>;
@@ -67,7 +67,10 @@ export function QuestionDialog({ trigger, mode, modelId, examId, sectionId, init
             <div className="space-y-2">
               <Label htmlFor="questionType">Type</Label>
               <Select id="questionType" name="questionType" defaultValue={initialValues?.type ?? "qcm_single"}>
-                {EXAM_QUESTION_TYPES.map((t) => (
+                {(initialValues && !SELECTABLE_QUESTION_TYPES.includes(initialValues.type)
+                  ? [...SELECTABLE_QUESTION_TYPES, initialValues.type]
+                  : SELECTABLE_QUESTION_TYPES
+                ).map((t) => (
                   <option key={t} value={t}>
                     {EXAM_QUESTION_TYPE_LABELS[t]}
                   </option>

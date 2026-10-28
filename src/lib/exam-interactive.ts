@@ -5,9 +5,11 @@ import { shuffleSeeded } from "@/lib/shuffle";
 // row order (order_index) as the correct order for "ordering".
 //   association: "left||right"   — link each left item to its right item
 //   ordering:    "item"          — put the items back in order
-//   categorize:  "item||category" — drop each item into its category
+//   table:       "row||column"    — tick the right column on each row
+// "ordering" is no longer offered for new questions but still renders and
+// grades for the ones that exist.
 
-export const INTERACTIVE_TYPES = ["association", "ordering", "categorize"] as const;
+export const INTERACTIVE_TYPES = ["association", "ordering", "table"] as const;
 export type InteractiveType = (typeof INTERACTIVE_TYPES)[number];
 export const isInteractive = (t: string): t is InteractiveType =>
   (INTERACTIVE_TYPES as readonly string[]).includes(t);
@@ -56,10 +58,11 @@ export function buildInteractivePayload(type: InteractiveType, options: StoredOp
     if (items.length > 1 && items.every((o, i) => o.id === ordered[i].id)) items = [...items.slice(1), items[0]];
     return { items: items.map((o) => ({ id: o.id, text: o.text.trim() })) };
   }
-  const categories = [...new Set(ordered.map((o) => splitPair(o.text)[1]).filter(Boolean))];
+  // Table: rows and columns keep the teacher's order, like the paper sheet.
+  // Columns carry no hint of which row they belong to.
   return {
-    items: shuffleSeeded(ordered, `${seed}:items`).map((o) => ({ id: o.id, text: splitPair(o.text)[0] })),
-    categories: shuffleSeeded(categories, `${seed}:cats`),
+    items: ordered.map((o) => ({ id: o.id, text: splitPair(o.text)[0] })),
+    categories: [...new Set(ordered.map((o) => splitPair(o.text)[1]).filter(Boolean))],
   };
 }
 
