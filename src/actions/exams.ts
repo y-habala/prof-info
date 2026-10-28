@@ -322,6 +322,12 @@ function defaultOptionsFor(type: string) {
       { option_text: "", is_correct: false, order_index: 1 },
     ];
   }
+  if (type === "association" || type === "categorize") {
+    return [0, 1, 2].map((i) => ({ option_text: "||", is_correct: true, order_index: i }));
+  }
+  if (type === "ordering") {
+    return [0, 1, 2].map((i) => ({ option_text: "", is_correct: true, order_index: i }));
+  }
   return []; // fill_blank: the "correct" answer sits as an option with is_correct=true, admin adds it manually
 }
 

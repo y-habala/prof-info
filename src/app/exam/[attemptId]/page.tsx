@@ -5,6 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { shuffleSeeded } from "@/lib/shuffle";
 import { ExamRunner, type SectionGroup } from "@/components/exams/exam-runner";
 import type { ExamQuestionType } from "@/schemas/exams";
+import { buildInteractivePayload, isInteractive } from "@/lib/exam-interactive";
 
 export default async function ExamTakePage({ params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
@@ -57,10 +58,10 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
   ]);
 
   // Build sections list (plus a synthetic section for section_id=null)
-  const optionsByQuestion = new Map<string, { id: string; text: string }[]>();
+  const optionsByQuestion = new Map<string, { id: string; text: string; orderIndex: number }[]>();
   for (const o of optionsRaw ?? []) {
     const arr = optionsByQuestion.get(o.question_id) ?? [];
-    arr.push({ id: o.id, text: o.option_text });
+    arr.push({ id: o.id, text: o.option_text, orderIndex: o.order_index });
     optionsByQuestion.set(o.question_id, arr);
   }
   for (const [, arr] of optionsByQuestion) arr.sort((a, b) => a.text.localeCompare(b.text, "fr"));
@@ -69,13 +70,29 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
     const list = (questionsRaw ?? [])
       .filter((q) => q.section_id === sectionId)
       .sort((a, b) => a.order_index - b.order_index)
-      .map((q) => ({
-        id: q.id,
-        text: q.question_text,
-        type: q.question_type as ExamQuestionType,
-        points: Number(q.points),
-        options: optionsByQuestion.get(q.id) ?? [],
-      }));
+      .map((q) => {
+        const type = q.question_type as ExamQuestionType;
+        const opts = optionsByQuestion.get(q.id) ?? [];
+        // Interactive types never ship option texts as-is: they carry the
+        // pairing / order / category, which is the answer.
+        if (isInteractive(type)) {
+          return {
+            id: q.id,
+            text: q.question_text,
+            type,
+            points: Number(q.points),
+            options: [],
+            interactive: buildInteractivePayload(type, opts, `${attemptId}:${q.id}`),
+          };
+        }
+        return {
+          id: q.id,
+          text: q.question_text,
+          type,
+          points: Number(q.points),
+          options: opts.map(({ id, text }) => ({ id, text })),
+        };
+      });
     // Per-attempt shuffle, seeded by attemptId + sectionId so two sections
     // of the same length don't share a permutation.
     const seed = `${attemptId}:${sectionId ?? "none"}`;

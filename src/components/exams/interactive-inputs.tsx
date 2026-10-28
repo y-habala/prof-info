@@ -1,0 +1,302 @@
+"use client";
+import { useState } from "react";
+import { ArrowDown, ArrowUp, GripVertical, X } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { cn } from "@/lib/utils";
+import type { InteractivePayload } from "@/lib/exam-interactive";
+
+type Props = {
+  payload: InteractivePayload;
+  value: string | undefined;
+  disabled: boolean;
+  onChange: (json: string) => void;
+};
+
+function parse<T>(value: string | undefined, fallback: T): T {
+  if (!value) return fallback;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+// Distinct, print-safe colours to show which left item went with which right.
+const PAIR_COLORS = [
+  "bg-sky-100 border-sky-500 text-sky-900",
+  "bg-amber-100 border-amber-500 text-amber-900",
+  "bg-emerald-100 border-emerald-500 text-emerald-900",
+  "bg-violet-100 border-violet-500 text-violet-900",
+  "bg-rose-100 border-rose-500 text-rose-900",
+  "bg-lime-100 border-lime-600 text-lime-900",
+  "bg-orange-100 border-orange-500 text-orange-900",
+  "bg-cyan-100 border-cyan-600 text-cyan-900",
+  "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-900",
+  "bg-teal-100 border-teal-600 text-teal-900",
+];
+
+/* ── Association: click a left item, then its match on the right ── */
+export function AssociationInput({ payload, value, disabled, onChange }: Props) {
+  const links = parse<Record<string, string>>(value, {});
+  const [active, setActive] = useState<string | null>(null);
+  const rights = payload.rights ?? [];
+  const colorOf = (leftId: string) => PAIR_COLORS[payload.items.findIndex((i) => i.id === leftId) % PAIR_COLORS.length];
+  const leftOfRight = (rightId: string) => Object.keys(links).find((l) => links[l] === rightId);
+
+  function link(rightId: string) {
+    if (!active) return;
+    const next = { ...links };
+    for (const l of Object.keys(next)) if (next[l] === rightId) delete next[l];
+    next[active] = rightId;
+    onChange(JSON.stringify(next));
+    setActive(null);
+  }
+  function unlink(leftId: string) {
+    const next = { ...links };
+    delete next[leftId];
+    onChange(JSON.stringify(next));
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">
+        Clique sur un élément de gauche, puis sur sa correspondance à droite.
+      </p>
+      <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-2">
+          {payload.items.map((it) => {
+            const linked = links[it.id] != null;
+            return (
+              <div key={it.id} className="flex items-center gap-1">
+                <button
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => setActive(active === it.id ? null : it.id)}
+                  className={cn(
+                    "min-h-11 flex-1 rounded-xl border-2 px-3 py-2 text-left text-sm font-medium transition-all",
+                    linked ? colorOf(it.id) : "border-border bg-card hover:border-primary/50",
+                    active === it.id && "ring-2 ring-primary ring-offset-2"
+                  )}
+                >
+                  {it.text}
+                </button>
+                {linked && !disabled ? (
+                  <button
+                    type="button"
+                    onClick={() => unlink(it.id)}
+                    aria-label={`Délier ${it.text}`}
+                    className="rounded-md p-1 text-muted-foreground hover:text-destructive"
+                  >
+                    <X className="size-4" />
+                  </button>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+        <div className="space-y-2">
+          {rights.map((r) => {
+            const left = leftOfRight(r.id);
+            return (
+              <button
+                key={r.id}
+                type="button"
+                disabled={disabled || !active}
+                onClick={() => link(r.id)}
+                className={cn(
+                  "min-h-11 w-full rounded-xl border-2 px-3 py-2 text-left text-sm transition-all",
+                  left ? colorOf(left) : "border-dashed border-border bg-card",
+                  active && !disabled && "hover:border-primary hover:bg-primary/5 cursor-pointer",
+                  !active && "cursor-default"
+                )}
+              >
+                {r.text}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Ordering: drag (or arrows) into the right order ── */
+function SortableRow({
+  id,
+  text,
+  index,
+  count,
+  disabled,
+  onMove,
+}: {
+  id: string;
+  text: string;
+  index: number;
+  count: number;
+  disabled: boolean;
+  onMove: (from: number, to: number) => void;
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id, disabled });
+  return (
+    <li
+      ref={setNodeRef}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn(
+        "flex items-center gap-2 rounded-xl border-2 border-border bg-card px-2 py-2 text-sm",
+        isDragging && "z-10 border-primary shadow-lg"
+      )}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        disabled={disabled}
+        aria-label="Déplacer"
+        className="cursor-grab touch-none rounded-md p-1 text-muted-foreground active:cursor-grabbing"
+      >
+        <GripVertical className="size-4" />
+      </button>
+      <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+        {index + 1}
+      </span>
+      <span className="flex-1 font-medium">{text}</span>
+      <button
+        type="button"
+        disabled={disabled || index === 0}
+        onClick={() => onMove(index, index - 1)}
+        aria-label="Monter"
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+      >
+        <ArrowUp className="size-4" />
+      </button>
+      <button
+        type="button"
+        disabled={disabled || index === count - 1}
+        onClick={() => onMove(index, index + 1)}
+        aria-label="Descendre"
+        className="rounded-md p-1 text-muted-foreground hover:bg-muted disabled:opacity-30"
+      >
+        <ArrowDown className="size-4" />
+      </button>
+    </li>
+  );
+}
+
+export function OrderingInput({ payload, value, disabled, onChange }: Props) {
+  const byId = new Map(payload.items.map((i) => [i.id, i]));
+  const saved = parse<string[]>(value, []).filter((id) => byId.has(id));
+  const order = saved.length === payload.items.length ? saved : payload.items.map((i) => i.id);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 4 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 120, tolerance: 6 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const move = (from: number, to: number) => onChange(JSON.stringify(arrayMove(order, from, to)));
+  function onDragEnd(e: DragEndEvent) {
+    if (!e.over || e.active.id === e.over.id) return;
+    move(order.indexOf(String(e.active.id)), order.indexOf(String(e.over.id)));
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Fais glisser les éléments (ou utilise les flèches) pour les remettre dans l&apos;ordre.</p>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+        <SortableContext items={order} strategy={verticalListSortingStrategy}>
+          <ol className="space-y-2">
+            {order.map((id, i) => (
+              <SortableRow
+                key={id}
+                id={id}
+                text={byId.get(id)?.text ?? ""}
+                index={i}
+                count={order.length}
+                disabled={disabled}
+                onMove={move}
+              />
+            ))}
+          </ol>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
+}
+
+/* ── Categorize: pick a category for each item ── */
+const CATEGORY_COLORS = [
+  "border-sky-500 bg-sky-500 text-white",
+  "border-amber-500 bg-amber-500 text-white",
+  "border-emerald-600 bg-emerald-600 text-white",
+  "border-violet-600 bg-violet-600 text-white",
+  "border-rose-500 bg-rose-500 text-white",
+  "border-teal-600 bg-teal-600 text-white",
+];
+
+export function CategorizeInput({ payload, value, disabled, onChange }: Props) {
+  const chosen = parse<Record<string, string>>(value, {});
+  const categories = payload.categories ?? [];
+
+  function pick(itemId: string, category: string) {
+    const next = { ...chosen };
+    if (next[itemId] === category) delete next[itemId];
+    else next[itemId] = category;
+    onChange(JSON.stringify(next));
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-xs text-muted-foreground">Choisis la catégorie de chaque élément.</p>
+      <div className="space-y-2">
+        {payload.items.map((it) => (
+          <div key={it.id} className="rounded-xl border-2 border-border bg-card p-2.5">
+            <p className="mb-2 text-sm font-medium">{it.text}</p>
+            <div className="flex flex-wrap gap-1.5">
+              {categories.map((c, ci) => {
+                const on = chosen[it.id] === c;
+                return (
+                  <button
+                    key={c}
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => pick(it.id, c)}
+                    className={cn(
+                      "rounded-full border-2 px-3 py-1 text-xs font-semibold transition-colors",
+                      on ? CATEGORY_COLORS[ci % CATEGORY_COLORS.length] : "border-border bg-background hover:border-foreground/40"
+                    )}
+                  >
+                    {c}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** Whether the student has given at least part of an answer. */
+export function interactiveAnswered(type: string, value: string | undefined): boolean {
+  if (!value) return false;
+  const v = parse<unknown>(value, null);
+  if (type === "ordering") return Array.isArray(v) && v.length > 0;
+  return !!v && typeof v === "object" && Object.keys(v as object).length > 0;
+}

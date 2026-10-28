@@ -10,6 +10,8 @@ import { QuestionDialog } from "./question-dialog";
 import { deleteExamSection, deleteExamQuestion, replaceExamOptions } from "@/actions/exams";
 import { EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exams";
 import { cn } from "@/lib/utils";
+import { isInteractive } from "@/lib/exam-interactive";
+import { InteractiveOptionsEditor } from "./interactive-options-editor";
 
 export type OptionData = { id: string; text: string; isCorrect: boolean };
 export type QuestionData = {
@@ -261,7 +263,17 @@ function QuestionItem({
           </Button>
         </div>
       </div>
-      <OptionsEditor question={question} modelId={modelId} examId={examId} />
+      {isInteractive(question.type) ? (
+        <InteractiveOptionsEditor
+          type={question.type}
+          questionId={question.id}
+          modelId={modelId}
+          examId={examId}
+          initial={question.options.map((o) => o.text)}
+        />
+      ) : (
+        <OptionsEditor question={question} modelId={modelId} examId={examId} />
+      )}
     </div>
   );
 }

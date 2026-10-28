@@ -4,6 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AnswerSheetDocument, type AnswerSheetData, type AnswerSheetSection } from "@/lib/pdf/answer-sheet";
 import { getSettings } from "@/lib/settings";
 import { loadPdfLogo } from "@/lib/pdf/logo";
+import { correctAnswerText, isInteractive } from "@/lib/exam-interactive";
 
 export const runtime = "nodejs";
 
@@ -46,7 +47,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
       .order("order_index"),
     admin
       .from("exam_questions")
-      .select("id, section_id, question_text, points, order_index")
+      .select("id, section_id, question_text, question_type, points, order_index")
       .eq("exam_model_id", attempt.exam_model_id)
       .order("order_index"),
     admin
@@ -60,11 +61,21 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   const questionIds = (questions ?? []).map((q) => q.id);
   const { data: optionsRaw } = await admin
     .from("exam_options")
-    .select("question_id, option_text, is_correct")
+    .select("id, question_id, option_text, is_correct, order_index")
     .in("question_id", questionIds.length > 0 ? questionIds : ["00000000-0000-0000-0000-000000000000"]);
 
   const correctByQuestion = new Map<string, string[]>();
+  const interactiveIds = new Set<string>();
+  for (const q of questions ?? []) {
+    if (!isInteractive(q.question_type)) continue;
+    interactiveIds.add(q.id);
+    const opts = (optionsRaw ?? [])
+      .filter((o) => o.question_id === q.id)
+      .map((o) => ({ id: o.id, text: o.option_text, orderIndex: o.order_index }));
+    correctByQuestion.set(q.id, [correctAnswerText(q.question_type, opts)]);
+  }
   for (const o of optionsRaw ?? []) {
+    if (interactiveIds.has(o.question_id)) continue;
     if (!o.is_correct) continue;
     const arr = correctByQuestion.get(o.question_id) ?? [];
     arr.push(o.option_text);

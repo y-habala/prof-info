@@ -4,6 +4,7 @@ import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { EXAM_SESSION_COOKIE, verifyExamSession } from "@/lib/auth/exam-session";
 import { normalizeAnswerText } from "@/lib/normalize-text";
+import { gradeInteractive, isInteractive } from "@/lib/exam-interactive";
 
 export const runtime = "nodejs";
 
@@ -69,13 +70,13 @@ export async function POST(
     .eq("exam_model_id", session.modelId);
   const { data: options } = await admin
     .from("exam_options")
-    .select("id, question_id, option_text, is_correct")
+    .select("id, question_id, option_text, is_correct, order_index")
     .in("question_id", (questions ?? []).map((q) => q.id).concat("00000000-0000-0000-0000-000000000000"));
 
-  const optionsByQuestion = new Map<string, { id: string; text: string; isCorrect: boolean }[]>();
+  const optionsByQuestion = new Map<string, { id: string; text: string; isCorrect: boolean; orderIndex: number }[]>();
   for (const o of options ?? []) {
     const arr = optionsByQuestion.get(o.question_id) ?? [];
-    arr.push({ id: o.id, text: o.option_text, isCorrect: o.is_correct });
+    arr.push({ id: o.id, text: o.option_text, isCorrect: o.is_correct, orderIndex: o.order_index });
     optionsByQuestion.set(o.question_id, arr);
   }
 
@@ -100,7 +101,13 @@ export async function POST(
     let pointsEarned = 0;
     let answerText = "";
 
-    if (q.question_type === "qcm_single" || q.question_type === "true_false" || q.question_type === "matching") {
+    if (isInteractive(q.question_type)) {
+      // Same seed as the exam page, so the shuffled columns line up.
+      const graded = gradeInteractive(q.question_type, qOptions, submitted?.text, `${attemptId}:${q.id}`);
+      answerText = graded.answerText;
+      pointsEarned = Math.round(points * graded.fraction * 100) / 100;
+      isCorrect = graded.fraction === 1;
+    } else if (q.question_type === "qcm_single" || q.question_type === "true_false" || q.question_type === "matching") {
       const chosen = submitted?.optionIds?.[0] ?? "";
       answerText = qOptions.find((o) => o.id === chosen)?.text ?? "";
       isCorrect = chosen !== "" && correctOptionIds.has(chosen);

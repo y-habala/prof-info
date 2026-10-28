@@ -8,6 +8,8 @@ import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
 import { ExamReloadWarning } from "./exam-reload-warning";
 import type { ExamQuestionType } from "@/schemas/exams";
+import { isInteractive, type InteractivePayload } from "@/lib/exam-interactive";
+import { AssociationInput, CategorizeInput, OrderingInput, interactiveAnswered } from "./interactive-inputs";
 
 type Question = {
   id: string;
@@ -15,6 +17,7 @@ type Question = {
   type: ExamQuestionType;
   points: number;
   options: { id: string; text: string }[];
+  interactive?: InteractivePayload;
 };
 
 export type SectionGroup = {
@@ -36,6 +39,7 @@ function isFauxOption(text: string) {
 }
 
 function isAnswered(q: Question, a: string[] | string | undefined): boolean {
+  if (isInteractive(q.type)) return interactiveAnswered(q.type, typeof a === "string" ? a : undefined);
   if (q.type === "fill_blank") return typeof a === "string" && a.trim().length > 0;
   return Array.isArray(a) && a.length > 0;
 }
@@ -188,6 +192,16 @@ function QuestionCard({
         </div>
       )}
 
+      {q.interactive && q.type === "association" && (
+        <AssociationInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
+      )}
+      {q.interactive && q.type === "ordering" && (
+        <OrderingInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
+      )}
+      {q.interactive && q.type === "categorize" && (
+        <CategorizeInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
+      )}
+
       {q.type === "fill_blank" && (
         <Input
           disabled={disabled}
@@ -310,6 +324,11 @@ export function ExamRunner({
       answers: allQuestions.map((q) => {
         const a = answers[q.id];
         if (q.type === "fill_blank") return { questionId: q.id, text: typeof a === "string" ? a : "" };
+        if (isInteractive(q.type)) {
+          // An untouched ordering is still an answer: the order shown.
+          const fallback = q.type === "ordering" ? JSON.stringify(q.interactive?.items.map((i) => i.id) ?? []) : "";
+          return { questionId: q.id, text: typeof a === "string" ? a : fallback };
+        }
         return { questionId: q.id, optionIds: Array.isArray(a) ? a : [] };
       }),
     };

@@ -1,6 +1,15 @@
 import { z } from "zod";
 
-export const EXAM_QUESTION_TYPES = ["qcm_single", "qcm_multiple", "true_false", "fill_blank", "matching"] as const;
+export const EXAM_QUESTION_TYPES = [
+  "qcm_single",
+  "qcm_multiple",
+  "true_false",
+  "fill_blank",
+  "matching",
+  "association",
+  "ordering",
+  "categorize",
+] as const;
 export type ExamQuestionType = (typeof EXAM_QUESTION_TYPES)[number];
 
 export const EXAM_QUESTION_TYPE_LABELS: Record<ExamQuestionType, string> = {
@@ -9,6 +18,9 @@ export const EXAM_QUESTION_TYPE_LABELS: Record<ExamQuestionType, string> = {
   true_false: "Vrai / Faux",
   fill_blank: "Texte à trous",
   matching: "Appariement",
+  association: "Association (relier deux colonnes)",
+  ordering: "Remettre dans l'ordre",
+  categorize: "Classer par catégorie",
 };
 
 // Parent exam (the test itself — one per level, N models hang off it)
