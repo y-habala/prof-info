@@ -292,7 +292,7 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
                         aria-label={`${row.text} : ${c}`}
                         className={cn(
                           "flex h-11 w-full items-center justify-center transition-colors",
-                          on ? "bg-primary/10" : "hover:bg-muted/60"
+                          on ? "bg-primary/20" : "hover:bg-muted/60"
                         )}
                       >
                         {on ? (

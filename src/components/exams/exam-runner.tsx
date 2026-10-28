@@ -195,9 +195,11 @@ function MatchBox({
         disabled={disabled}
         onChange={(e) => onPick(e.target.value)}
         className={cn(
-          "h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-[15px] transition-colors",
+          "h-11 w-full min-w-0 rounded-lg px-3 text-[15px] transition-colors",
           "focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
-          value ? "font-semibold text-foreground" : "text-muted-foreground"
+          value
+            ? "border-2 border-primary bg-[var(--ex-soft)] font-bold text-primary"
+            : "border border-input bg-background text-muted-foreground"
         )}
       >
         <option value="">Choisir…</option>
@@ -256,7 +258,9 @@ function QcmCard({
               className={cn(
                 "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors active:scale-[0.99]",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                on ? "border-primary bg-[var(--ex-soft)] font-semibold" : "border-transparent hover:bg-muted/60",
+                on
+                  ? "border-primary bg-primary font-semibold text-primary-foreground shadow-sm"
+                  : "border-border/70 hover:border-primary/40 hover:bg-[var(--ex-soft)]",
                 disabled && "pointer-events-none opacity-60"
               )}
             >
@@ -273,10 +277,10 @@ function QcmCard({
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center border-2 text-xs font-bold transition-colors",
                   multi ? "rounded-md" : "rounded-full",
-                  on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground"
+                  on ? "border-white bg-white text-primary" : "border-muted-foreground/30 text-muted-foreground"
                 )}
               >
-                {on && multi ? <Check className="size-3.5" strokeWidth={3} /> : LETTERS[i] ?? i + 1}
+                {on ? <Check className="size-3.5" strokeWidth={3} /> : LETTERS[i] ?? i + 1}
               </span>
               <span className="leading-snug">{o.text}</span>
             </label>
@@ -325,7 +329,10 @@ function BlockQuestion({
             value={text ?? ""}
             onChange={(e) => onSetText(e.target.value)}
             placeholder="Ta réponse…"
-            className="h-11 max-w-md text-[15px]"
+            className={cn(
+              "h-11 max-w-md text-[15px]",
+              text?.trim() && "border-2 border-primary bg-[var(--ex-soft)] font-semibold text-primary"
+            )}
           />
         ) : null}
       </div>
