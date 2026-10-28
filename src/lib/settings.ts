@@ -9,6 +9,11 @@ export type SettingsBundle = {
   institution: string;
   academie: string;
   direction: string;
+  /** Arabic lines printed under the logo on exam sheets; optional. */
+  academie_ar: string;
+  direction_ar: string;
+  /** Public URL of the PNG/JPEG logo shown on exam sheets; "" when none. */
+  exam_logo_url: string;
   /** Number of classes per level name, e.g. {"1APIC": 4, "2APIC": 3} */
   class_counts: Record<string, number>;
 };
@@ -18,6 +23,9 @@ const DEFAULTS: SettingsBundle = {
   institution: "—",
   academie: "—",
   direction: "—",
+  academie_ar: "",
+  direction_ar: "",
+  exam_logo_url: "",
   class_counts: {},
 };
 
@@ -37,6 +45,9 @@ export async function getSettings(): Promise<SettingsBundle> {
     institution: map.institution ?? DEFAULTS.institution,
     academie: map.academie ?? DEFAULTS.academie,
     direction: map.direction ?? DEFAULTS.direction,
+    academie_ar: map.academie_ar ?? DEFAULTS.academie_ar,
+    direction_ar: map.direction_ar ?? DEFAULTS.direction_ar,
+    exam_logo_url: map.exam_logo_url ?? DEFAULTS.exam_logo_url,
     class_counts,
   };
 }

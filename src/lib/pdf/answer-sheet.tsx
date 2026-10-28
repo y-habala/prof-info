@@ -1,4 +1,4 @@
-import { Document, Page, View, Text, StyleSheet, Font, Svg, Path } from "@react-pdf/renderer";
+import { Document, Page, View, Text, StyleSheet, Font, Svg, Path, Polygon, Image } from "@react-pdf/renderer";
 import path from "node:path";
 import { scoreOutOf20, getAppreciation } from "@/lib/grading";
 
@@ -12,14 +12,30 @@ Font.register({
   family: "PatrickHand",
   fonts: [{ src: path.join(FONT_DIR, "PatrickHand-Regular.ttf") }],
 });
+Font.register({
+  family: "Cairo",
+  fonts: [
+    { src: path.join(FONT_DIR, "Cairo-Regular.ttf") },
+    { src: path.join(FONT_DIR, "Cairo-Bold.ttf"), fontWeight: 700 },
+  ],
+});
 
 const SUBJECT = "Informatique";
 
-function currentSchoolYear(): string {
-  const now = new Date();
-  const y = now.getFullYear();
-  const startYear = now.getMonth() >= 8 ? y : y - 1;
+// School year of the sitting itself, not of the day the PDF is printed.
+function schoolYearOf(dateIso: string): string {
+  const d = new Date(dateIso);
+  const y = d.getFullYear();
+  const startYear = d.getMonth() >= 8 ? y : y - 1;
   return `${startYear}/${startYear + 1}`;
+}
+
+// "3APIC" / "3 APIC" → "3ème année collégiale"; anything else is shown as is.
+function levelLabel(name: string | null): string {
+  if (!name) return "—";
+  const n = name.match(/\d/)?.[0];
+  if (!n) return name;
+  return n === "1" ? "1ère année collégiale" : `${n}ème année collégiale`;
 }
 
 const TEACHER_RED = "#D32F2F";
@@ -44,34 +60,39 @@ function CrossIcon({ color = TEACHER_RED, size = 7 }: { color?: string; size?: n
 const styles = StyleSheet.create({
   page: { padding: 22, fontSize: 7.5, fontFamily: "Helvetica" },
 
-  letterhead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    borderBottomWidth: 1.5,
-    borderBottomColor: "#1e293b",
-    paddingBottom: 4,
-    marginBottom: 6,
-  },
-  letterCol: { width: "28%" },
-  letterColCenter: { width: "44%", alignItems: "center" },
-  letterLine: { fontSize: 6, fontWeight: 700, textAlign: "center", marginBottom: 0.5 },
-  letterLineRight: { fontSize: 6, fontWeight: 700, textAlign: "right", marginBottom: 0.5 },
-  examTitle: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", marginBottom: 1, textAlign: "center" },
-  examMeta: { fontSize: 6.5, fontWeight: 700, textAlign: "center" },
+  // Official exam header: one outer frame, a 3-cell top row
+  // (school info | logo + Arabic lines | student), then the title ribbon.
+  header: { borderWidth: 1.5, borderColor: "#000", marginBottom: 8 },
+  headerTop: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#000" },
+  cell: { paddingVertical: 5, paddingHorizontal: 6, justifyContent: "center" },
+  cellLeft: { width: "31%", borderRightWidth: 1, borderRightColor: "#000" },
+  cellCenter: { width: "38%", alignItems: "center", borderRightWidth: 1, borderRightColor: "#000" },
+  cellRight: { width: "31%" },
+  infoLine: { fontFamily: "Times-Italic", fontSize: 8.5, marginBottom: 2 },
+  infoValue: { fontFamily: "Times-BoldItalic" },
+  logo: { maxHeight: 40, maxWidth: "100%", objectFit: "contain", marginBottom: 2 },
+  arLine: { fontFamily: "Cairo", fontWeight: 700, fontSize: 8, textAlign: "center", lineHeight: 1.3 },
+  arLineSmall: { fontFamily: "Cairo", fontWeight: 700, fontSize: 7, textAlign: "center", lineHeight: 1.3 },
+  studentLine: { flexDirection: "row", alignItems: "baseline", marginBottom: 4 },
+  studentLabel: { fontFamily: "Times-BoldItalic", fontSize: 10.5 },
+  studentVal: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginLeft: 4, flexShrink: 1 },
+  dots: { fontFamily: "Times-Roman", fontSize: 8, color: "#666", marginLeft: 4 },
 
-  studentSection: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 8,
+  headerBottom: { flexDirection: "row", alignItems: "center", paddingVertical: 4, paddingHorizontal: 6 },
+  ribbonSide: { width: 105 },
+  ribbonWrap: { flex: 1, alignItems: "center" },
+  ribbon: { width: 300, height: 28, position: "relative" },
+  ribbonText: {
+    position: "absolute",
+    top: 7.5,
+    left: 22,
+    right: 22,
+    textAlign: "center",
+    fontFamily: "Helvetica-Bold",
+    fontSize: 10,
   },
-  studentBox: { borderWidth: 1, borderColor: "#000", padding: 4, width: "62%" },
-  studentRow: { flexDirection: "row", justifyContent: "space-between" },
-  studentLabel: { fontSize: 6.5, color: "#333" },
-  studentVal: { fontFamily: "Helvetica-Bold", fontSize: 8 },
 
-  stampWrapper: { width: 100, alignItems: "center" },
+  stampWrapper: { width: 105, alignItems: "center" },
   stamp: {
     borderWidth: 1.5,
     borderColor: TEACHER_RED,
@@ -130,6 +151,9 @@ export type AnswerSheetSection = {
 export type AnswerSheetData = {
   examTitle: string;
   modelLabel: string;
+  levelName: string | null;
+  /** Logo bytes fetched by the route; null when unset or unreachable. */
+  logo: { data: Buffer; format: "png" | "jpg" } | null;
   studentFirstName: string;
   studentName: string;
   studentNumber: string | null;
@@ -142,9 +166,38 @@ export type AnswerSheetData = {
     institution: string;
     academie: string;
     direction: string;
+    academieAr: string;
+    directionAr: string;
     teacherName: string;
   };
 };
+
+function Ribbon({ text }: { text: string }) {
+  return (
+    <View style={styles.ribbon}>
+      <Svg width={300} height={28} viewBox="0 0 300 28">
+        {/* Folded tails behind the band, notched at their outer ends */}
+        <Polygon points="0,9 34,9 34,27 0,27 9,18" fill="#d1d5db" stroke="#000" strokeWidth={0.8} />
+        <Polygon points="300,9 266,9 266,27 300,27 291,18" fill="#d1d5db" stroke="#000" strokeWidth={0.8} />
+        <Polygon points="20,2 280,2 280,22 20,22" fill="#eceef1" stroke="#000" strokeWidth={0.9} />
+      </Svg>
+      <Text style={styles.ribbonText}>{text}</Text>
+    </View>
+  );
+}
+
+function StudentField({ label, value }: { label: string; value: string | null }) {
+  return (
+    <View style={styles.studentLine}>
+      <Text style={styles.studentLabel}>{label} :</Text>
+      {value && value.trim() ? (
+        <Text style={styles.studentVal}>{value}</Text>
+      ) : (
+        <Text style={styles.dots}>....................</Text>
+      )}
+    </View>
+  );
+}
 
 function QuestionBlock({ q, index }: { q: AnswerSheetQuestion; index: number }) {
   return (
@@ -159,7 +212,7 @@ function QuestionBlock({ q, index }: { q: AnswerSheetQuestion; index: number }) 
         </Text>
       </View>
       {!q.isCorrect && q.correctAnswerTexts.length > 0 ? (
-        <Text style={styles.note}>→ {q.correctAnswerTexts.join(", ")}</Text>
+        <Text style={styles.note}>Réponse : {q.correctAnswerTexts.join(", ")}</Text>
       ) : null}
     </View>
   );
@@ -195,69 +248,63 @@ function SectionBlock({ section }: { section: AnswerSheetSection }) {
 }
 
 export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
-  const submittedDate = new Date(data.submittedAt).toLocaleDateString("fr-FR");
   const score20 = scoreOutOf20(data.score, data.maxScore);
+  const fullName = `${data.studentFirstName} ${data.studentName}`.trim();
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.letterhead}>
-          <View style={styles.letterCol}>
-            <Text style={styles.letterLine}>ROYAUME DU MAROC</Text>
-            <Text style={styles.letterLine}>
-              Ministère de l&apos;Éducation Nationale, du Préscolaire et des Sports
-            </Text>
-          </View>
-          <View style={styles.letterColCenter}>
-            <Text style={styles.examTitle}>
-              {data.examTitle} ({data.modelLabel.toUpperCase()})
-            </Text>
-            <Text style={styles.examMeta}>{data.settings.institution}</Text>
-            <Text style={styles.examMeta}>
-              Matière : {SUBJECT} — Année scolaire : {currentSchoolYear()}
-            </Text>
-          </View>
-          <View style={styles.letterCol}>
-            <Text style={styles.letterLineRight}>Académie : {data.settings.academie}</Text>
-            <Text style={styles.letterLineRight}>Direction : {data.settings.direction}</Text>
-            <Text style={styles.letterLineRight}>Enseignant(e) : {data.settings.teacherName}</Text>
-            <Text style={styles.letterLineRight}>Date : {submittedDate}</Text>
-          </View>
-        </View>
-
-        <View style={styles.studentSection}>
-          <View style={styles.studentBox}>
-            <View style={styles.studentRow}>
-              <Text style={styles.studentLabel}>Nom et Prénom :</Text>
-              <Text style={styles.studentVal}>
-                {data.studentFirstName} {data.studentName}
+        <View style={styles.header}>
+          <View style={styles.headerTop}>
+            <View style={[styles.cell, styles.cellLeft]}>
+              <Text style={styles.infoLine}>
+                Etablissement : <Text style={styles.infoValue}>{data.settings.institution}.</Text>
+              </Text>
+              <Text style={styles.infoLine}>
+                Matière : <Text style={styles.infoValue}>{SUBJECT}.</Text>
+              </Text>
+              <Text style={styles.infoLine}>
+                Niveau : <Text style={styles.infoValue}>{levelLabel(data.levelName)}.</Text>
+              </Text>
+              <Text style={styles.infoLine}>
+                Année scolaire : <Text style={styles.infoValue}>{schoolYearOf(data.submittedAt)}</Text>
               </Text>
             </View>
-            <View style={styles.studentRow}>
-              {data.studentNumber ? (
-                <>
-                  <Text style={styles.studentLabel}>N° :</Text>
-                  <Text style={styles.studentVal}>{data.studentNumber}</Text>
-                </>
-              ) : (
-                <Text> </Text>
-              )}
-              {data.studentClass ? (
-                <>
-                  <Text style={styles.studentLabel}>Classe :</Text>
-                  <Text style={styles.studentVal}>{data.studentClass}</Text>
-                </>
+
+            <View style={[styles.cell, styles.cellCenter]}>
+              {data.logo ? (
+                // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt
+                <Image style={styles.logo} src={data.logo} />
+              ) : null}
+              {data.settings.academieAr ? (
+                <Text style={styles.arLine}>{data.settings.academieAr}</Text>
+              ) : null}
+              {data.settings.directionAr ? (
+                <Text style={styles.arLineSmall}>{data.settings.directionAr}</Text>
               ) : null}
             </View>
-          </View>
-          <View style={styles.stampWrapper}>
-            <View style={styles.stamp}>
-              <View style={styles.scoreRow}>
-                <Text style={styles.scoreVal}>{score20.toFixed(2)}</Text>
-                <Text style={styles.scoreMax}>sur 20</Text>
-              </View>
+
+            <View style={[styles.cell, styles.cellRight]}>
+              <StudentField label="Nom" value={fullName} />
+              <StudentField label="Classe" value={data.studentClass} />
+              <StudentField label="N°" value={data.studentNumber} />
             </View>
-            <Text style={styles.appreciation}>{getAppreciation(score20)}</Text>
+          </View>
+
+          <View style={styles.headerBottom}>
+            <View style={styles.ribbonSide} />
+            <View style={styles.ribbonWrap}>
+              <Ribbon text={`${data.examTitle} - ${data.modelLabel.toUpperCase()}`} />
+            </View>
+            <View style={styles.stampWrapper}>
+              <View style={styles.stamp}>
+                <View style={styles.scoreRow}>
+                  <Text style={styles.scoreVal}>{score20.toFixed(2)}</Text>
+                  <Text style={styles.scoreMax}>sur 20</Text>
+                </View>
+              </View>
+              <Text style={styles.appreciation}>{getAppreciation(score20)}</Text>
+            </View>
           </View>
         </View>
 

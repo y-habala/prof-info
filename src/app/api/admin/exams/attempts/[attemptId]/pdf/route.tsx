@@ -6,6 +6,22 @@ import { getSettings } from "@/lib/settings";
 
 export const runtime = "nodejs";
 
+// Fetched here rather than by react-pdf so an unreachable logo just drops out
+// of the header instead of failing the whole PDF.
+async function loadLogo(url: string): Promise<AnswerSheetData["logo"]> {
+  if (!url) return null;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const type = res.headers.get("content-type") ?? "";
+    const format = type.includes("png") ? "png" : type.includes("jpeg") || type.includes("jpg") ? "jpg" : null;
+    if (!format) return null;
+    return { data: Buffer.from(await res.arrayBuffer()), format };
+  } catch {
+    return null;
+  }
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ attemptId: string }> }) {
   // Admin-only — same reasoning as v1: the answer sheet shows full
   // correction (right answers for wrong student answers) and must never
@@ -22,7 +38,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   const { data: attempt } = await admin
     .from("exam_attempts")
     .select(
-      "id, exam_model_id, student_name, student_first_name, student_number, student_class, score, max_score, submitted_at, exam_models(label, exam_id, exams(title))"
+      "id, exam_model_id, student_name, student_first_name, student_number, student_class, score, max_score, submitted_at, exam_models(label, exam_id, exams(title, levels(name)))"
     )
     .eq("id", attemptId)
     .maybeSingle();
@@ -32,7 +48,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   const modelRow = attempt.exam_models as unknown as {
     label: string;
     exam_id: string;
-    exams: { title: string } | null;
+    exams: { title: string; levels: { name: string } | null } | null;
   } | null;
   if (!modelRow || !modelRow.exams) return new Response("Examen introuvable.", { status: 404 });
 
@@ -93,10 +109,13 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   ].filter((s) => s.questions.length > 0);
 
   const settings = await getSettings();
+  const logo = await loadLogo(settings.exam_logo_url);
 
   const data: AnswerSheetData = {
     examTitle: modelRow.exams.title,
     modelLabel: modelRow.label,
+    levelName: modelRow.exams.levels?.name ?? null,
+    logo,
     studentFirstName: attempt.student_first_name,
     studentName: attempt.student_name,
     studentNumber: attempt.student_number,
@@ -109,6 +128,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
       institution: settings.institution,
       academie: settings.academie,
       direction: settings.direction,
+      academieAr: settings.academie_ar,
+      directionAr: settings.direction_ar,
       teacherName: settings.teacher_name,
     },
   };

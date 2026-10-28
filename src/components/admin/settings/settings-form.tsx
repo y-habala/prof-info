@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { saveSettings } from "@/actions/settings";
 import type { SettingsBundle } from "@/lib/settings";
+import { ExamLogoField } from "./exam-logo-field";
 
 type Level = { id: string; name: string };
 
@@ -49,6 +50,28 @@ export function SettingsForm({ initial, levels }: { initial: SettingsBundle; lev
             <div className="space-y-2">
               <Label htmlFor="direction">Direction</Label>
               <Input id="direction" name="direction" defaultValue={initial.direction} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="academie_ar">Académie en arabe (en-tête des examens)</Label>
+              <Input
+                id="academie_ar"
+                name="academie_ar"
+                dir="rtl"
+                lang="ar"
+                defaultValue={initial.academie_ar}
+                placeholder="الأكاديمية الجهوية للتربية والتكوين مراكش-آسفي"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="direction_ar">Direction en arabe (en-tête des examens)</Label>
+              <Input
+                id="direction_ar"
+                name="direction_ar"
+                dir="rtl"
+                lang="ar"
+                defaultValue={initial.direction_ar}
+                placeholder="المديرية الإقليمية قلعة السراغنة"
+              />
             </div>
           </div>
 
@@ -101,6 +124,7 @@ export function SettingsForm({ initial, levels }: { initial: SettingsBundle; lev
           </div>
         </form>
       </Card>
+      <ExamLogoField initialUrl={initial.exam_logo_url} />
     </div>
   );
 }

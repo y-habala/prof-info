@@ -1,32 +1,7 @@
 "use server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SUPABASE_URL } from "@/lib/env";
-
-const BUCKET = "lesson-files";
-
-// Ensure the public bucket exists on first use.
-async function ensureBucket() {
-  const admin = createAdminClient();
-  const { error } = await admin.storage.createBucket(BUCKET, {
-    public: true,
-    fileSizeLimit: 20 * 1024 * 1024, // 20 MB
-    allowedMimeTypes: [
-      "image/*",
-      "video/*",
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "application/vnd.ms-powerpoint",
-      "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-      "application/vnd.ms-excel",
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ],
-  });
-  // Ignore "already exists" error
-  if (error && !error.message.includes("already exists")) {
-    console.error("[ensureBucket]", error.message);
-  }
-}
+import { LESSON_FILES_BUCKET as BUCKET, ensureLessonFilesBucket as ensureBucket } from "@/lib/storage";
 
 export type FileItem = {
   name: string;
