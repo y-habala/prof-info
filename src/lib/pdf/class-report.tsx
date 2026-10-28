@@ -23,22 +23,21 @@ const MEDALS = ["#c8a03c", "#9aa3b2", "#b0753f"];
 const s = StyleSheet.create({
   page: { paddingTop: 24, paddingBottom: 40, paddingHorizontal: 26, fontFamily: "Cairo", fontSize: 8.5, color: "#1f2937", lineHeight: 1.25 },
 
-  header: { marginBottom: 12 },
-  titleBlock: { alignItems: "center", paddingVertical: 5 },
-  kicker: { fontWeight: 700, fontSize: 7.5, color: GOLD, letterSpacing: 2 },
-  title: { fontWeight: 700, fontSize: 18, color: NAVY, textAlign: "center", lineHeight: 1.2 },
+  header: { marginBottom: 9 },
+  titleBlock: { alignItems: "center", paddingTop: 4, paddingBottom: 13 },
+  title: { fontWeight: 700, fontSize: 17, color: NAVY, textAlign: "center", letterSpacing: 1.5 },
 
   /* Overview */
-  overview: { flexDirection: "row", gap: 8, marginBottom: 8 },
-  hero: { width: "34%", backgroundColor: NAVY, borderRadius: 8, padding: 10, alignItems: "center" },
+  overview: { flexDirection: "row", gap: 8, marginBottom: 6 },
+  hero: { width: "34%", backgroundColor: NAVY, borderRadius: 8, padding: 7, alignItems: "center" },
   heroLabel: { fontSize: 7.5, color: "#c9d4ec", letterSpacing: 1 },
   heroValueRow: { flexDirection: "row", alignItems: "baseline" },
   heroValue: { fontWeight: 700, fontSize: 30, color: "#ffffff", lineHeight: 1.45 },
   heroMax: { fontSize: 11, color: "#c9d4ec", marginLeft: 3 },
-  heroPill: { marginTop: 12, backgroundColor: GOLD, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 1 },
+  heroPill: { marginTop: 9, backgroundColor: GOLD, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 1 },
   heroPillText: { fontWeight: 700, fontSize: 8, color: NAVY_DARK },
 
-  card: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, padding: 10, justifyContent: "center" },
+  card: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, padding: 7, justifyContent: "center" },
   cardLabel: { fontSize: 7.5, color: INK_MUTED, letterSpacing: 1 },
   cardValue: { fontWeight: 700, fontSize: 20, color: NAVY, lineHeight: 1.45 },
   cardSub: { fontSize: 7.5, color: INK_MUTED },
@@ -50,7 +49,7 @@ const s = StyleSheet.create({
   splitValue: { fontWeight: 700, fontSize: 16, lineHeight: 1.45 },
 
   /* Stat tiles */
-  tiles: { flexDirection: "row", gap: 8, marginBottom: 10 },
+  tiles: { flexDirection: "row", gap: 8, marginBottom: 6 },
   tile: { flex: 1, flexDirection: "row", borderWidth: 0.8, borderColor: RULE, borderRadius: 6 },
   tileBar: { width: 4, borderTopLeftRadius: 5, borderBottomLeftRadius: 5 },
   tileBody: { paddingVertical: 5, paddingHorizontal: 8 },
@@ -58,15 +57,15 @@ const s = StyleSheet.create({
   tileValue: { fontWeight: 700, fontSize: 13, color: NAVY, lineHeight: 1.35 },
 
   /* Panels */
-  panels: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  panel: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, padding: 10 },
-  panelTitle: { fontWeight: 700, fontSize: 10, color: NAVY, marginBottom: 6 },
-  podiumRow: { flexDirection: "row", alignItems: "center", marginBottom: 4 },
+  panels: { flexDirection: "row", gap: 8, marginBottom: 8 },
+  panel: { flex: 1, borderWidth: 0.8, borderColor: RULE, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10 },
+  panelTitle: { fontWeight: 700, fontSize: 10, color: NAVY, marginBottom: 3 },
+  podiumRow: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
   medal: { width: 16, height: 16, borderRadius: 8, alignItems: "center", justifyContent: "center", marginRight: 6 },
   medalText: { fontWeight: 700, fontSize: 8, color: "#ffffff" },
   podiumName: { flex: 1, fontSize: 8.5 },
   podiumScore: { fontWeight: 700, fontSize: 9.5, color: NAVY },
-  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 2 },
+  barRow: { flexDirection: "row", alignItems: "center", marginBottom: 1 },
   barLabel: { width: 52, fontSize: 7.5 },
   barTrack: { flex: 1, height: 8, borderRadius: 4, backgroundColor: "#eef1f6", marginHorizontal: 5 },
   barFill: { height: 8, borderRadius: 4 },
@@ -74,24 +73,24 @@ const s = StyleSheet.create({
   empty: { fontSize: 8, color: INK_MUTED },
 
   /* Student list */
-  listTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 5 },
+  listTitleRow: { flexDirection: "row", alignItems: "center", marginBottom: 9 },
   listTitle: { fontWeight: 700, fontSize: 11, color: NAVY },
   listRule: { flex: 1, height: 1, backgroundColor: GOLD, marginLeft: 8, marginTop: 5 },
   tables: { flexDirection: "row", gap: 10 },
   table: { flex: 1 },
   th: { flexDirection: "row", backgroundColor: NAVY, borderTopLeftRadius: 4, borderTopRightRadius: 4, paddingVertical: 3 },
   thText: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: "#ffffff" },
-  tr: { flexDirection: "row", alignItems: "center", paddingVertical: 2.5, borderBottomWidth: 0.5, borderBottomColor: "#e5e9f2" },
+  tr: { flexDirection: "row", alignItems: "center", height: 13.2, borderBottomWidth: 0.5, borderBottomColor: "#e5e9f2" },
   trAlt: { backgroundColor: TINT },
   cNum: { width: 20, textAlign: "center" },
   cName: { flex: 1, paddingRight: 4 },
   cScore: { width: 32, textAlign: "center" },
   cMention: { width: 58, alignItems: "center" },
-  num: { fontFamily: "Helvetica", fontSize: 7.5, color: INK_MUTED },
-  name: { fontFamily: "Helvetica", fontSize: 8.5 },
-  score: { fontFamily: "Helvetica-Bold", fontSize: 8.5 },
-  badge: { borderRadius: 3, paddingTop: 1.8, paddingBottom: 0.8, paddingHorizontal: 4 },
-  badgeText: { fontFamily: "Helvetica-Bold", fontSize: 6.5, color: "#ffffff" },
+  num: { fontFamily: "Helvetica", fontSize: 7.5, color: INK_MUTED, lineHeight: 1 },
+  name: { fontFamily: "Helvetica", fontSize: 8.5, lineHeight: 1 },
+  score: { fontFamily: "Helvetica-Bold", fontSize: 8.5, lineHeight: 1 },
+  badge: { borderRadius: 3, paddingTop: 1.6, paddingBottom: 0.9, paddingHorizontal: 4 },
+  badgeText: { fontFamily: "Helvetica-Bold", fontSize: 6.5, color: "#ffffff", lineHeight: 1 },
 
   footer: {
     position: "absolute",
@@ -105,8 +104,8 @@ const s = StyleSheet.create({
     paddingTop: 4,
   },
   footerText: { fontSize: 7, color: INK_MUTED, lineHeight: 1 },
-  signature: { marginTop: 10, alignSelf: "flex-end", width: 180, alignItems: "center" },
-  signatureLine: { width: "100%", borderBottomWidth: 0.8, borderBottomColor: INK_MUTED, marginTop: 16 },
+  signature: { marginTop: 6, alignSelf: "flex-end", width: 180, alignItems: "center" },
+  signatureLine: { width: "100%", borderBottomWidth: 0.8, borderBottomColor: INK_MUTED, marginTop: 14 },
 });
 
 export type ClassReportStudent = { name: string; score: number };
@@ -213,12 +212,11 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
             right={[
               { label: "Classe", value: data.className },
               { label: "Session", value: `Semestre ${data.semester}` },
-              { label: "Devoir N°", value: data.devoir },
+              { label: "Contrôle N°", value: data.devoir },
             ]}
           >
             <View style={s.titleBlock}>
-              <Text style={s.kicker}>RAPPORT D&apos;ÉVALUATION</Text>
-              <Text style={s.title}>{data.examTitle}</Text>
+              <Text style={s.title}>RAPPORT D&apos;ÉVALUATION</Text>
             </View>
           </OfficialHeader>
         </View>
