@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { parseMassarCcFile, MassarFileError } from "@/lib/massar/cc-file";
 import { CONTROL_COUNT, ABSENCE_VALUES } from "@/lib/massar/cc-constants";
+import { classKey, matchName, nameKey, nameTokens } from "@/lib/massar/name-match";
 
 const PAGE = "/admin/controle-continu";
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -163,18 +164,6 @@ export async function saveCcGrades(
   return { saved: updates.length };
 }
 
-const nameTokens = (s: string) =>
-  s
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toUpperCase()
-    .replace(/[^A-Z]+/g, " ")
-    .trim()
-    .split(" ")
-    .filter(Boolean);
-const sameClass = (a: string | null, b: string) =>
-  !!a && a.replace(/\s+/g, "").toUpperCase() === b.replace(/\s+/g, "").toUpperCase();
-
 export type ExamFillResult = {
   error?: string;
   matches?: { studentId: string; note: string }[];
@@ -206,36 +195,25 @@ export async function gradesFromExam(sheetId: string, examId: string): Promise<E
 
   // One attempt per student: the most recently submitted.
   const latest = new Map<string, NonNullable<typeof attempts>[number]>();
-  for (const a of (attempts ?? []).filter((a) => sameClass(a.student_class, sheet.class_name))) {
-    const key = nameTokens(`${a.student_name} ${a.student_first_name}`).sort().join(" ");
+  for (const a of (attempts ?? []).filter((a) => classKey(a.student_class) === classKey(sheet.class_name))) {
+    const key = nameKey(`${a.student_name} ${a.student_first_name}`);
     const prev = latest.get(key);
     if (!prev || (a.submitted_at ?? "") > (prev.submitted_at ?? "")) latest.set(key, a);
   }
 
-  const roster = (students ?? []).map((s) => ({ id: s.id, tokens: nameTokens(s.full_name) }));
+  const roster = (students ?? []).map((s) => ({ tokens: nameTokens(s.full_name), item: s.id }));
   const used = new Set<string>();
   const matches: { studentId: string; note: string }[] = [];
   const unmatched: string[] = [];
 
   for (const a of latest.values()) {
-    const tokens = nameTokens(`${a.student_name} ${a.student_first_name}`);
-    const key = [...tokens].sort().join(" ");
-    let candidates = roster.filter((s) => !used.has(s.id) && [...s.tokens].sort().join(" ") === key);
-    if (candidates.length !== 1) {
-      // Partial names (a missing second first name, a compound surname…).
-      candidates = roster.filter(
-        (s) =>
-          !used.has(s.id) &&
-          tokens.length > 0 &&
-          (tokens.every((t) => s.tokens.includes(t)) || s.tokens.every((t) => tokens.includes(t)))
-      );
-    }
     const label = `${a.student_name} ${a.student_first_name}`.trim();
+    const studentId = matchName(label, roster, used);
     const max = Number(a.max_score ?? 0);
-    if (candidates.length === 1 && max > 0) {
-      used.add(candidates[0].id);
+    if (studentId && max > 0) {
+      used.add(studentId);
       const note = Math.round(Math.min(20, (Number(a.score ?? 0) / max) * 20) * 100) / 100;
-      matches.push({ studentId: candidates[0].id, note: String(note) });
+      matches.push({ studentId, note: String(note) });
     } else {
       unmatched.push(label);
     }

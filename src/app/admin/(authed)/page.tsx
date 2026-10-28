@@ -3,6 +3,8 @@ import { Library, GraduationCap, KeyRound, ArrowRight, Users, TrendingUp, BarCha
 import { createClient } from "@/lib/supabase/server";
 import { Card } from "@/components/ui/card";
 import { scoreOutOf20 } from "@/lib/grading";
+import { computeExamAlerts } from "@/lib/exam-alerts";
+import { ExamAlertsCard } from "@/components/admin/exam-alerts-card";
 
 async function countRows(table: string): Promise<number> {
   const supabase = await createClient();
@@ -13,12 +15,13 @@ async function countRows(table: string): Promise<number> {
 export default async function AdminDashboardPage() {
   const supabase = await createClient();
 
-  const [levels, sessionsCount, exams, codes, { data: attempts }] = await Promise.all([
+  const [levels, sessionsCount, exams, codes, { data: attempts }, alerts] = await Promise.all([
     countRows("levels"),
     countRows("sessions"),
     countRows("exams"),
     countRows("access_codes"),
     supabase.from("exam_attempts").select("score, max_score, submitted_at"),
+    computeExamAlerts(supabase),
   ]);
 
   const submitted = (attempts ?? []).filter((a) => a.submitted_at);
@@ -36,6 +39,8 @@ export default async function AdminDashboardPage() {
         <h1 className="text-2xl font-bold tracking-tight">Tableau de bord</h1>
         <p className="mt-1 text-sm text-muted-foreground">Vue d&apos;ensemble de la plateforme.</p>
       </div>
+
+      <ExamAlertsCard alerts={alerts} />
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard label="Niveaux" value={levels} icon={GraduationCap} tint="bg-blue-50 text-blue-600" />
