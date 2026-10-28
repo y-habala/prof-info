@@ -1,13 +1,19 @@
 "use client";
 import { useState, useTransition } from "react";
-import { Plus, Pencil, Trash2, FolderOpen, FileText, Check } from "lucide-react";
+import { Plus, Pencil, Trash2, FolderOpen, FileText, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SectionDialog } from "./section-dialog";
 import { QuestionDialog } from "./question-dialog";
-import { deleteExamSection, deleteExamQuestion, replaceExamOptions } from "@/actions/exams";
+import {
+  deleteExamSection,
+  deleteExamQuestion,
+  replaceExamOptions,
+  reorderExamSections,
+  reorderExamQuestions,
+} from "@/actions/exams";
 import { EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exams";
 import { cn } from "@/lib/utils";
 import { isInteractive } from "@/lib/exam-interactive";
@@ -39,16 +45,74 @@ export type ModelData = {
   unsectionedQuestions: QuestionData[];
 };
 
+function swapped<T>(list: T[], i: number, j: number) {
+  const next = list.slice();
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
+}
+
+// Up/down arrows: the list reorders right away; the server catches up.
+function MoveButtons({
+  first,
+  last,
+  disabled,
+  onMove,
+  label,
+}: {
+  first: boolean;
+  last: boolean;
+  disabled: boolean;
+  onMove: (dir: -1 | 1) => void;
+  label: string;
+}) {
+  return (
+    <div className="flex items-center gap-1">
+      <Button size="sm" variant="outline" disabled={disabled || first} onClick={() => onMove(-1)} title={`Monter ${label}`}>
+        <ArrowUp className="size-3.5" />
+      </Button>
+      <Button size="sm" variant="outline" disabled={disabled || last} onClick={() => onMove(1)} title={`Descendre ${label}`}>
+        <ArrowDown className="size-3.5" />
+      </Button>
+    </div>
+  );
+}
+
 export function ModelBuilder({ data }: { data: ModelData }) {
+  const [sections, setSections] = useState(data.sections);
+  const [synced, setSynced] = useState(data.sections);
+  const [isPending, startTransition] = useTransition();
+  // Server data changed (add / edit / delete): take it over.
+  if (synced !== data.sections) {
+    setSynced(data.sections);
+    setSections(data.sections);
+  }
+
+  function moveSection(i: number, dir: -1 | 1) {
+    const next = swapped(sections, i, i + dir);
+    setSections(next);
+    startTransition(async () => {
+      await reorderExamSections(data.modelId, data.examId, next.map((s) => s.id));
+    });
+  }
+
   return (
     <div className="space-y-6">
       {/* Sections */}
-      {data.sections.map((section) => (
+      {sections.map((section, i) => (
         <SectionBlock
           key={section.id}
           section={section}
           examId={data.examId}
           modelId={data.modelId}
+          move={
+            <MoveButtons
+              first={i === 0}
+              last={i === sections.length - 1}
+              disabled={isPending}
+              onMove={(dir) => moveSection(i, dir)}
+              label="la section"
+            />
+          }
         />
       ))}
 
@@ -98,10 +162,12 @@ function SectionBlock({
   section,
   examId,
   modelId,
+  move,
 }: {
   section: SectionData;
   examId: string;
   modelId: string;
+  move: React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
   const totalPoints = section.questions.reduce((s, q) => s + Number(q.points), 0);
@@ -120,6 +186,7 @@ function SectionBlock({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {move}
           <QuestionDialog
             mode="create"
             modelId={modelId}
@@ -165,11 +232,7 @@ function SectionBlock({
       {section.questions.length === 0 ? (
         <p className="p-5 text-sm text-muted-foreground">Aucune question. Clique sur <strong>+ Question</strong>.</p>
       ) : (
-        <div className="divide-y divide-border">
-          {section.questions.map((q, i) => (
-            <QuestionItem key={q.id} question={q} index={i + 1} modelId={modelId} examId={examId} />
-          ))}
-        </div>
+        <QuestionList questions={section.questions} modelId={modelId} examId={examId} />
       )}
     </Card>
   );
@@ -192,12 +255,49 @@ function UnsectionedQuestionsBlock({
           <h2 className="font-bold">Questions sans section</h2>
         </div>
       </div>
-      <div className="divide-y divide-border">
-        {questions.map((q, i) => (
-          <QuestionItem key={q.id} question={q} index={i + 1} modelId={modelId} examId={examId} />
-        ))}
-      </div>
+      <QuestionList questions={questions} modelId={modelId} examId={examId} />
     </Card>
+  );
+}
+
+function QuestionList({ questions, modelId, examId }: { questions: QuestionData[]; modelId: string; examId: string }) {
+  const [list, setList] = useState(questions);
+  const [synced, setSynced] = useState(questions);
+  const [isPending, startTransition] = useTransition();
+  if (synced !== questions) {
+    setSynced(questions);
+    setList(questions);
+  }
+
+  function move(i: number, dir: -1 | 1) {
+    const next = swapped(list, i, i + dir);
+    setList(next);
+    startTransition(async () => {
+      await reorderExamQuestions(modelId, examId, next.map((q) => q.id));
+    });
+  }
+
+  return (
+    <div className="divide-y divide-border">
+      {list.map((q, i) => (
+        <QuestionItem
+          key={q.id}
+          question={q}
+          index={i + 1}
+          modelId={modelId}
+          examId={examId}
+          move={
+            <MoveButtons
+              first={i === 0}
+              last={i === list.length - 1}
+              disabled={isPending}
+              onMove={(dir) => move(i, dir)}
+              label="la question"
+            />
+          }
+        />
+      ))}
+    </div>
   );
 }
 
@@ -206,11 +306,13 @@ function QuestionItem({
   index,
   modelId,
   examId,
+  move,
 }: {
   question: QuestionData;
   index: number;
   modelId: string;
   examId: string;
+  move: React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
 
@@ -232,6 +334,7 @@ function QuestionItem({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {move}
           <QuestionDialog
             mode="edit"
             modelId={modelId}

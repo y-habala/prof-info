@@ -299,6 +299,39 @@ export async function upsertExamSection(
   revalidatePath(`/admin/exams/${examId}/models/${modelId}`);
 }
 
+// Reordering reuses the rows' current order_index values, just reassigned in
+// the new order: indexes stay unique across the whole model, which the model
+// duplication relies on to pair copied rows with their originals.
+async function reorderRows(table: "exam_sections" | "exam_questions", modelId: string, orderedIds: string[]) {
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from(table)
+    .select("id, order_index")
+    .eq("exam_model_id", modelId)
+    .in("id", orderedIds);
+  if (!rows || rows.length !== orderedIds.length) return { error: "Éléments introuvables." };
+  const slots = rows.map((r) => r.order_index as number).sort((a, b) => a - b);
+  const results = await Promise.all(
+    orderedIds.map((id, i) =>
+      supabase.from(table).update({ order_index: slots[i] }).eq("id", id).eq("exam_model_id", modelId)
+    )
+  );
+  if (results.some((r) => r.error)) return { error: "Une erreur est survenue." };
+  return {};
+}
+
+export async function reorderExamSections(modelId: string, examId: string, orderedIds: string[]) {
+  const res = await reorderRows("exam_sections", modelId, orderedIds);
+  revalidatePath(`/admin/exams/${examId}/models/${modelId}`);
+  return res;
+}
+
+export async function reorderExamQuestions(modelId: string, examId: string, orderedIds: string[]) {
+  const res = await reorderRows("exam_questions", modelId, orderedIds);
+  revalidatePath(`/admin/exams/${examId}/models/${modelId}`);
+  return res;
+}
+
 export async function deleteExamSection(id: string, modelId: string, examId: string) {
   const supabase = await createClient();
   await supabase.from("exam_sections").delete().eq("id", id);
