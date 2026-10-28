@@ -1,4 +1,5 @@
 import { Document, Page, View, Text, StyleSheet, Svg, Path } from "@react-pdf/renderer";
+import { NAVY, GOLD, INK_MUTED, TINT, RULE } from "./theme";
 
 const SUBJECT = "Informatique";
 
@@ -47,42 +48,46 @@ const s = StyleSheet.create({
   page: { padding: 28, fontFamily: "Helvetica", fontSize: 9 },
 
   /* ── Letterhead ── */
-  letterhead: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    borderBottomWidth: 2,
-    borderBottomColor: "#1e293b",
-    paddingBottom: 8,
-    marginBottom: 10,
+  frame: { borderWidth: 1.2, borderColor: NAVY, borderRadius: 6, marginBottom: 10 },
+  accentBar: { height: 4, backgroundColor: NAVY, borderTopLeftRadius: 5, borderTopRightRadius: 5 },
+  accentGold: { height: 1.5, backgroundColor: GOLD },
+  letterhead: { flexDirection: "row", alignItems: "stretch" },
+  col30: { width: "30%", paddingVertical: 8, paddingHorizontal: 9, justifyContent: "center" },
+  col40: {
+    width: "40%",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    borderLeftWidth: 0.8,
+    borderRightWidth: 0.8,
+    borderColor: RULE,
   },
-  col30: { width: "30%" },
-  col40: { width: "40%", alignItems: "center" },
-  lineLeft:   { fontSize: 7.5, textAlign: "left",   marginBottom: 2 },
-  lineCenter: { fontSize: 7.5, textAlign: "center", marginBottom: 2 },
-  lineRight:  { fontSize: 7.5, textAlign: "right",  marginBottom: 2 },
-  lineBold: { fontFamily: "Helvetica-Bold" },
-  reportTitle: {
-    fontFamily: "Helvetica-Bold",
-    fontSize: 13,
-    textAlign: "center",
-    marginBottom: 2,
-  },
-  reportSub: { fontSize: 8, textAlign: "center", color: "#555" },
+  kingdom: { fontFamily: "Helvetica-Bold", fontSize: 8.5, color: NAVY, letterSpacing: 0.6, marginBottom: 3 },
+  ministry: { fontSize: 7.5, color: INK_MUTED, marginBottom: 1.5 },
+  rightRow: { flexDirection: "row", justifyContent: "flex-end", marginBottom: 2.5 },
+  rightLabel: { fontSize: 7, color: INK_MUTED },
+  rightValue: { fontFamily: "Helvetica-Bold", fontSize: 7.5, color: NAVY, maxWidth: 120, textAlign: "right" },
+  kicker: { fontFamily: "Helvetica-Bold", fontSize: 7, color: GOLD, letterSpacing: 1.6, marginBottom: 3 },
+  reportTitle: { fontFamily: "Helvetica-Bold", fontSize: 14, color: NAVY, textAlign: "center" },
+  titleRule: { width: 60, height: 1.2, backgroundColor: GOLD, marginVertical: 4 },
+  reportSub: { fontSize: 8, textAlign: "center", color: INK_MUTED },
 
   /* ── Meta boxes ── */
   metaRow: { flexDirection: "row", marginBottom: 10 },
   metaBox: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: "#cbd5e1",
-    borderRadius: 4,
-    padding: 6,
+    backgroundColor: TINT,
+    borderWidth: 0.8,
+    borderColor: RULE,
+    borderRadius: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 4,
     marginHorizontal: 3,
     alignItems: "center",
   },
-  metaLabel: { fontSize: 7.5, color: "#555", marginBottom: 2 },
-  metaValue: { fontFamily: "Helvetica-Bold", fontSize: 11 },
+  metaLabel: { fontSize: 6.5, color: INK_MUTED, letterSpacing: 0.8, marginBottom: 2.5 },
+  metaValue: { fontFamily: "Helvetica-Bold", fontSize: 11, color: NAVY },
 
   /* ── KPI grid ── */
   kpiGrid: { flexDirection: "row", flexWrap: "wrap", marginBottom: 10 },
@@ -136,8 +141,17 @@ const s = StyleSheet.create({
 function MetaBox({ label, value }: { label: string; value: string }) {
   return (
     <View style={s.metaBox}>
-      <Text style={s.metaLabel}>{label}</Text>
+      <Text style={s.metaLabel}>{label.toUpperCase()}</Text>
       <Text style={s.metaValue}>{value}</Text>
+    </View>
+  );
+}
+
+function RightLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={s.rightRow}>
+      <Text style={s.rightLabel}>{label} : </Text>
+      <Text style={s.rightValue}>{value}</Text>
     </View>
   );
 }
@@ -203,26 +217,29 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
       <Page size="A4" style={s.page}>
 
         {/* ── Letterhead ── */}
-        <View style={s.letterhead}>
-          <View style={s.col30}>
-            <Text style={[s.lineLeft, s.lineBold]}>ROYAUME DU MAROC</Text>
-            <Text style={s.lineLeft}>
-              Ministère de l&apos;Éducation Nationale,
-            </Text>
-            <Text style={s.lineLeft}>du Préscolaire et des Sports</Text>
-          </View>
-          <View style={s.col40}>
-            <Text style={s.reportTitle}>Rapport d&apos;évaluation</Text>
-            <Text style={[s.reportTitle, { fontSize: 11 }]}>{data.examTitle}</Text>
-            <Text style={s.reportSub}>
-              Matière : {SUBJECT} — Année scolaire : {currentSchoolYear()}
-            </Text>
-          </View>
-          <View style={s.col30}>
-            <Text style={[s.lineRight, s.lineBold]}>Académie : {data.settings.academie}</Text>
-            <Text style={[s.lineRight, s.lineBold]}>Direction : {data.settings.direction}</Text>
-            <Text style={[s.lineRight, s.lineBold]}>Établissement : {data.settings.institution}</Text>
-            <Text style={[s.lineRight, s.lineBold]}>Enseignant(e) : {data.settings.teacherName}</Text>
+        <View style={s.frame}>
+          <View style={s.accentBar} />
+          <View style={s.accentGold} />
+          <View style={s.letterhead}>
+            <View style={s.col30}>
+              <Text style={s.kingdom}>ROYAUME DU MAROC</Text>
+              <Text style={s.ministry}>Ministère de l&apos;Éducation Nationale,</Text>
+              <Text style={s.ministry}>du Préscolaire et des Sports</Text>
+            </View>
+            <View style={s.col40}>
+              <Text style={s.kicker}>RAPPORT D&apos;ÉVALUATION</Text>
+              <Text style={s.reportTitle}>{data.examTitle}</Text>
+              <View style={s.titleRule} />
+              <Text style={s.reportSub}>
+                Matière : {SUBJECT} — Année scolaire : {currentSchoolYear()}
+              </Text>
+            </View>
+            <View style={s.col30}>
+              <RightLine label="Académie" value={data.settings.academie} />
+              <RightLine label="Direction" value={data.settings.direction} />
+              <RightLine label="Établissement" value={data.settings.institution} />
+              <RightLine label="Enseignant(e)" value={data.settings.teacherName} />
+            </View>
           </View>
         </View>
 
@@ -238,7 +255,7 @@ export function ClassReportDocument({ data }: { data: ClassReportData }) {
         <View style={s.kpiGrid}>
           <KpiCard label="Nb. élèves"     value={String(total)} />
           <KpiCard label="Absents"        value={String(data.absentCount)} />
-          <KpiCard label="Reçus (≥10)"    value={String(passing)} />
+          <KpiCard label="Reçus (10 et +)"    value={String(passing)} />
           <KpiCard label="Échoués"        value={String(failing)} />
           <KpiCard label="Moyenne"        value={`${average.toFixed(2)} / 20`} />
           <KpiCard label="Note max."      value={maxScore.toFixed(2)} />

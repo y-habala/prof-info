@@ -1,6 +1,7 @@
 import { Document, Page, View, Text, StyleSheet, Font, Svg, Path, Polygon, Image } from "@react-pdf/renderer";
 import path from "node:path";
 import { scoreOutOf20, getAppreciation } from "@/lib/grading";
+import { NAVY, NAVY_DARK, GOLD, INK_MUTED, TINT, RULE } from "./theme";
 
 const FONT_DIR = path.join(process.cwd(), "src", "lib", "pdf", "fonts");
 
@@ -62,34 +63,54 @@ const styles = StyleSheet.create({
 
   // Official exam header: one outer frame, a 3-cell top row
   // (school info | logo + Arabic lines | student), then the title ribbon.
-  header: { borderWidth: 1.5, borderColor: "#000", marginBottom: 8 },
-  headerTop: { flexDirection: "row", borderBottomWidth: 1, borderBottomColor: "#000" },
-  cell: { paddingVertical: 5, paddingHorizontal: 6, justifyContent: "center" },
-  cellLeft: { width: "31%", borderRightWidth: 1, borderRightColor: "#000" },
-  cellCenter: { width: "38%", alignItems: "center", borderRightWidth: 1, borderRightColor: "#000" },
-  cellRight: { width: "31%" },
-  infoLine: { fontFamily: "Times-Italic", fontSize: 8.5, marginBottom: 2 },
-  infoValue: { fontFamily: "Times-BoldItalic" },
-  logo: { maxHeight: 40, maxWidth: "100%", objectFit: "contain", marginBottom: 2 },
-  arLine: { fontFamily: "Cairo", fontWeight: 700, fontSize: 8, textAlign: "center", lineHeight: 1.3 },
-  arLineSmall: { fontFamily: "Cairo", fontWeight: 700, fontSize: 7, textAlign: "center", lineHeight: 1.3 },
-  studentLine: { flexDirection: "row", alignItems: "baseline", marginBottom: 4 },
-  studentLabel: { fontFamily: "Times-BoldItalic", fontSize: 10.5 },
-  studentVal: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginLeft: 4, flexShrink: 1 },
-  dots: { fontFamily: "Times-Roman", fontSize: 8, color: "#666", marginLeft: 4 },
+  header: { borderWidth: 1.2, borderColor: NAVY, borderRadius: 6, marginBottom: 10 },
+  accentBar: {
+    height: 4,
+    backgroundColor: NAVY,
+    borderTopLeftRadius: 5,
+    borderTopRightRadius: 5,
+  },
+  accentGold: { height: 1.5, backgroundColor: GOLD },
+  headerTop: { flexDirection: "row", borderBottomWidth: 0.8, borderBottomColor: RULE },
+  cell: { paddingVertical: 7, paddingHorizontal: 8, justifyContent: "center" },
+  cellLeft: { width: "31%", borderRightWidth: 0.8, borderRightColor: RULE },
+  cellCenter: { width: "38%", alignItems: "center", borderRightWidth: 0.8, borderRightColor: RULE },
+  cellRight: { width: "31%", backgroundColor: TINT },
+  infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 3 },
+  infoDot: { width: 3.5, height: 3.5, borderRadius: 1.75, backgroundColor: GOLD, marginRight: 4 },
+  infoLine: { fontFamily: "Times-Italic", fontSize: 8.5, color: INK_MUTED },
+  infoValue: { fontFamily: "Times-BoldItalic", color: NAVY },
+  logo: { maxHeight: 40, maxWidth: "100%", objectFit: "contain" },
+  centerRule: { width: 70, height: 1, backgroundColor: GOLD, marginVertical: 3 },
+  arLine: { fontFamily: "Cairo", fontWeight: 700, fontSize: 8, color: NAVY, textAlign: "center", lineHeight: 1.3 },
+  arLineSmall: { fontFamily: "Cairo", fontWeight: 700, fontSize: 7, color: INK_MUTED, textAlign: "center", lineHeight: 1.3 },
+  studentLine: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    marginBottom: 5,
+    paddingBottom: 1.5,
+    borderBottomWidth: 0.6,
+    borderBottomColor: RULE,
+    borderBottomStyle: "dashed",
+  },
+  studentLabel: { fontFamily: "Times-BoldItalic", fontSize: 10.5, color: NAVY },
+  studentVal: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginLeft: 5, flexShrink: 1 },
+  dots: { fontSize: 8, marginLeft: 5 },
 
-  headerBottom: { flexDirection: "row", alignItems: "center", paddingVertical: 4, paddingHorizontal: 6 },
+  headerBottom: { flexDirection: "row", alignItems: "center", paddingVertical: 5, paddingHorizontal: 8 },
   ribbonSide: { width: 105 },
   ribbonWrap: { flex: 1, alignItems: "center" },
-  ribbon: { width: 300, height: 28, position: "relative" },
+  ribbon: { width: 310, height: 30, position: "relative" },
   ribbonText: {
     position: "absolute",
-    top: 7.5,
-    left: 22,
-    right: 22,
+    top: 7,
+    left: 26,
+    right: 26,
     textAlign: "center",
     fontFamily: "Helvetica-Bold",
-    fontSize: 10,
+    fontSize: 10.5,
+    color: "#ffffff",
+    letterSpacing: 0.3,
   },
 
   stampWrapper: { width: 105, alignItems: "center" },
@@ -175,13 +196,27 @@ export type AnswerSheetData = {
 function Ribbon({ text }: { text: string }) {
   return (
     <View style={styles.ribbon}>
-      <Svg width={300} height={28} viewBox="0 0 300 28">
-        {/* Folded tails behind the band, notched at their outer ends */}
-        <Polygon points="0,9 34,9 34,27 0,27 9,18" fill="#d1d5db" stroke="#000" strokeWidth={0.8} />
-        <Polygon points="300,9 266,9 266,27 300,27 291,18" fill="#d1d5db" stroke="#000" strokeWidth={0.8} />
-        <Polygon points="20,2 280,2 280,22 20,22" fill="#eceef1" stroke="#000" strokeWidth={0.9} />
+      <Svg width={310} height={30} viewBox="0 0 310 30">
+        {/* Notched tails behind the band, with a dark fold where they meet it */}
+        <Polygon points="0,9 42,9 42,29 0,29 10,19" fill={NAVY_DARK} />
+        <Polygon points="310,9 268,9 268,29 310,29 300,19" fill={NAVY_DARK} />
+        <Polygon points="26,24 42,24 42,29" fill="#050b1a" />
+        <Polygon points="284,24 268,24 268,29" fill="#050b1a" />
+        <Polygon points="26,2 284,2 284,24 26,24" fill={NAVY} />
+        <Path d="M 30 4.6 L 280 4.6 M 30 21.4 L 280 21.4" stroke={GOLD} strokeWidth={0.7} />
       </Svg>
       <Text style={styles.ribbonText}>{text}</Text>
+    </View>
+  );
+}
+
+function InfoLine({ label, value }: { label: string; value: string }) {
+  return (
+    <View style={styles.infoRow}>
+      <View style={styles.infoDot} />
+      <Text style={styles.infoLine}>
+        {label} : <Text style={styles.infoValue}>{value}</Text>
+      </Text>
     </View>
   );
 }
@@ -193,7 +228,7 @@ function StudentField({ label, value }: { label: string; value: string | null })
       {value && value.trim() ? (
         <Text style={styles.studentVal}>{value}</Text>
       ) : (
-        <Text style={styles.dots}>....................</Text>
+        <Text style={styles.dots}> </Text>
       )}
     </View>
   );
@@ -255,26 +290,23 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
+          <View style={styles.accentBar} />
+          <View style={styles.accentGold} />
           <View style={styles.headerTop}>
             <View style={[styles.cell, styles.cellLeft]}>
-              <Text style={styles.infoLine}>
-                Etablissement : <Text style={styles.infoValue}>{data.settings.institution}.</Text>
-              </Text>
-              <Text style={styles.infoLine}>
-                Matière : <Text style={styles.infoValue}>{SUBJECT}.</Text>
-              </Text>
-              <Text style={styles.infoLine}>
-                Niveau : <Text style={styles.infoValue}>{levelLabel(data.levelName)}.</Text>
-              </Text>
-              <Text style={styles.infoLine}>
-                Année scolaire : <Text style={styles.infoValue}>{schoolYearOf(data.submittedAt)}</Text>
-              </Text>
+              <InfoLine label="Etablissement" value={`${data.settings.institution}.`} />
+              <InfoLine label="Matière" value={`${SUBJECT}.`} />
+              <InfoLine label="Niveau" value={`${levelLabel(data.levelName)}.`} />
+              <InfoLine label="Année scolaire" value={schoolYearOf(data.submittedAt)} />
             </View>
 
             <View style={[styles.cell, styles.cellCenter]}>
               {data.logo ? (
                 // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt
                 <Image style={styles.logo} src={data.logo} />
+              ) : null}
+              {data.settings.academieAr || data.settings.directionAr ? (
+                <View style={styles.centerRule} />
               ) : null}
               {data.settings.academieAr ? (
                 <Text style={styles.arLine}>{data.settings.academieAr}</Text>
