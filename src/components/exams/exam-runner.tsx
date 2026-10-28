@@ -133,7 +133,7 @@ function MatchBox({
         <span
           className={cn(
             "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-            value ? "bg-primary text-primary-foreground" : "bg-slate-800 text-white"
+            value ? "bg-emerald-600 text-white" : "bg-slate-800 text-white"
           )}
         >
           {q.text.trim()}
@@ -148,12 +148,18 @@ function MatchBox({
         className={cn(
           "h-11 w-full min-w-0 rounded-lg border bg-white px-3 text-[15px] transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
-          value ? "border-primary font-semibold text-primary" : "border-slate-300 text-slate-400"
+          value
+            ? "border-2 border-emerald-600 bg-emerald-50 font-bold text-emerald-800"
+            : "border-2 border-rose-300 font-medium text-rose-600"
         )}
       >
-        <option value="">Choisir…</option>
+        {/* Options are styled on their own so the open list reads sharp and
+            dark, whatever colour the closed select shows. */}
+        <option value="" className="bg-white font-normal text-rose-600">
+          Choisir…
+        </option>
         {q.options.map((o) => (
-          <option key={o.id} value={o.id}>
+          <option key={o.id} value={o.id} className="bg-white font-bold text-slate-900">
             {o.text}
           </option>
         ))}
