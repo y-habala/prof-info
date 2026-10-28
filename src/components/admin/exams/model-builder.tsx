@@ -12,6 +12,7 @@ import { EXAM_QUESTION_TYPE_LABELS, type ExamQuestionType } from "@/schemas/exam
 import { cn } from "@/lib/utils";
 import { isInteractive } from "@/lib/exam-interactive";
 import { InteractiveOptionsEditor } from "./interactive-options-editor";
+import { TableOptionsEditor } from "./table-options-editor";
 
 export type OptionData = { id: string; text: string; isCorrect: boolean };
 export type QuestionData = {
@@ -263,7 +264,14 @@ function QuestionItem({
           </Button>
         </div>
       </div>
-      {isInteractive(question.type) ? (
+      {question.type === "table" ? (
+        <TableOptionsEditor
+          questionId={question.id}
+          modelId={modelId}
+          examId={examId}
+          initial={question.options.map((o) => o.text)}
+        />
+      ) : isInteractive(question.type) ? (
         <InteractiveOptionsEditor
           type={question.type}
           questionId={question.id}

@@ -239,21 +239,29 @@ export function OrderingInput({ payload, value, disabled, onChange }: Props) {
   );
 }
 
-/* ── Table: tick the right column on each row ── */
+/* ── Table: tick the right column(s) on each row ── */
 export function TableInput({ payload, value, disabled, onChange }: Props) {
-  const chosen = parse<Record<string, string>>(value, {});
+  const raw = parse<Record<string, string[] | string>>(value, {});
+  const chosen = (rowId: string) => {
+    const v = raw[rowId];
+    return Array.isArray(v) ? v : typeof v === "string" ? [v] : [];
+  };
   const columns = payload.categories ?? [];
 
   function pick(rowId: string, column: string) {
-    const next = { ...chosen };
-    if (next[rowId] === column) delete next[rowId];
-    else next[rowId] = column;
+    const cur = chosen(rowId);
+    const nextRow = cur.includes(column) ? cur.filter((c) => c !== column) : [...cur, column];
+    const next: Record<string, string[]> = {};
+    for (const it of payload.items) {
+      const row = it.id === rowId ? nextRow : chosen(it.id);
+      if (row.length > 0) next[it.id] = row;
+    }
     onChange(JSON.stringify(next));
   }
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">Coche la bonne case sur chaque ligne.</p>
+      <p className="text-xs text-muted-foreground">Coche la ou les bonnes cases sur chaque ligne.</p>
       <div className="overflow-x-auto rounded-xl border border-border">
         <table className="w-full border-collapse text-sm">
           <thead>
@@ -273,7 +281,7 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
                   {row.text}
                 </th>
                 {columns.map((c) => {
-                  const on = chosen[row.id] === c;
+                  const on = chosen(row.id).includes(c);
                   return (
                     <td key={c} className="border-l border-border p-0 text-center">
                       <button

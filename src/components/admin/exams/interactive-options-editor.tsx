@@ -8,7 +8,9 @@ import { PAIR_SEP, splitPair, type InteractiveType } from "@/lib/exam-interactiv
 
 type Row = { left: string; right: string };
 
-const COPY: Record<InteractiveType, { title: string; left: string; right?: string; help: string }> = {
+type EditorType = Exclude<InteractiveType, "table">;
+
+const COPY: Record<EditorType, { title: string; left: string; right?: string; help: string }> = {
   association: {
     title: "Paires à relier",
     left: "Élément (colonne de gauche)",
@@ -20,12 +22,6 @@ const COPY: Record<InteractiveType, { title: string; left: string; right?: strin
     left: "Élément",
     help: "Saisis les éléments dans l'ordre correct : l'élève les recevra mélangés et devra les remettre dans cet ordre.",
   },
-  table: {
-    title: "Lignes du tableau et bonne colonne",
-    left: "Ligne (ex. Clavier)",
-    right: "Bonne colonne (ex. Périphérique d'entrée)",
-    help: "Chaque ligne du tableau avec le titre de sa bonne colonne (même orthographe pour une même colonne). Les colonnes apparaissent dans l'ordre où tu les écris ; l'élève coche une case par ligne.",
-  },
 };
 
 export function InteractiveOptionsEditor({
@@ -35,7 +31,7 @@ export function InteractiveOptionsEditor({
   examId,
   initial,
 }: {
-  type: InteractiveType;
+  type: EditorType;
   questionId: string;
   modelId: string;
   examId: string;
@@ -52,7 +48,6 @@ export function InteractiveOptionsEditor({
   const [error, setError] = useState<string | null>(null);
   const copy = COPY[type];
 
-  const categories = type === "table" ? [...new Set(rows.map((r) => r.right.trim()).filter(Boolean))] : [];
 
   function update(i: number, patch: Partial<Row>) {
     setRows((prev) => prev.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -71,10 +66,6 @@ export function InteractiveOptionsEditor({
     const complete = rows.filter((r) => r.left.trim() && (!twoCols || r.right.trim()));
     if (complete.length < 2) {
       setError(twoCols ? "Il faut au moins 2 lignes complètes (les deux colonnes remplies)." : "Il faut au moins 2 éléments.");
-      return;
-    }
-    if (type === "table" && new Set(complete.map((r) => r.right.trim())).size < 2) {
-      setError("Il faut au moins 2 colonnes différentes.");
       return;
     }
     if ([...rows.map((r) => r.left), ...rows.map((r) => r.right)].some((t) => t.includes(PAIR_SEP))) {
@@ -118,7 +109,6 @@ export function InteractiveOptionsEditor({
                   value={r.right}
                   onChange={(e) => update(i, { right: e.target.value })}
                   placeholder={copy.right}
-                  list={type === "table" ? `cats-${questionId}` : undefined}
                   className="h-8"
                 />
               </>
@@ -148,21 +138,7 @@ export function InteractiveOptionsEditor({
           </div>
         ))}
       </div>
-      {type === "table" ? (
-        <>
-          <datalist id={`cats-${questionId}`}>
-            {categories.map((c) => (
-              <option key={c} value={c} />
-            ))}
-          </datalist>
-          {categories.length > 0 ? (
-            <p className="text-xs text-muted-foreground">
-              Colonnes du tableau : <span className="font-medium text-foreground">{categories.join(" · ")}</span>
-            </p>
-          ) : null}
-        </>
-      ) : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {error ?<p className="text-xs text-destructive">{error}</p> : null}
       <div className="flex items-center justify-between gap-2 pt-1">
         <Button
           size="sm"
