@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Send, Loader2, CircleCheck, CircleDashed, ArrowDownToLine, Lightbulb } from "lucide-react";
+import { Check, Send, Loader2, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -28,27 +28,10 @@ export type SectionGroup = {
 
 type Answers = Record<string, string[] | string>;
 
+// One accent colour (the platform blue) everywhere: it marks what the
+// student chose, nothing else. Exercises are set apart by layout, not colour.
 const LETTERS = "abcdefghij";
 
-// One calm, distinct colour per exercise. Each card overrides --primary with
-// its colour, so every accent inside it (numbers, selections, tables…)
-// follows without per-component colour props.
-const EXERCISE_COLORS = [
-  { main: "oklch(0.5 0.17 255)", soft: "oklch(0.97 0.02 255)" }, // bleu
-  { main: "oklch(0.52 0.11 185)", soft: "oklch(0.97 0.02 185)" }, // turquoise
-  { main: "oklch(0.5 0.17 295)", soft: "oklch(0.97 0.02 295)" }, // violet
-  { main: "oklch(0.58 0.14 55)", soft: "oklch(0.975 0.025 70)" }, // ambre
-  { main: "oklch(0.55 0.17 15)", soft: "oklch(0.97 0.02 15)" }, // rose
-  { main: "oklch(0.52 0.13 150)", soft: "oklch(0.97 0.025 150)" }, // vert
-];
-const colorOf = (i: number) => EXERCISE_COLORS[i % EXERCISE_COLORS.length];
-const themeVars = (i: number) =>
-  ({ "--primary": colorOf(i).main, "--ring": colorOf(i).main, "--ex-soft": colorOf(i).soft }) as React.CSSProperties;
-
-function isVraiOption(text: string) {
-  const t = text.trim().toLowerCase();
-  return t === "vrai" || t === "true" || t === "oui";
-}
 function isFauxOption(text: string) {
   const t = text.trim().toLowerCase();
   return t === "faux" || t === "false" || t === "non";
@@ -60,72 +43,23 @@ function isAnswered(q: Question, a: string[] | string | undefined): boolean {
   return Array.isArray(a) && a.length > 0;
 }
 
-// Every question carries its state so the student never loses one:
-// orange frame = still to answer, green frame = answered.
-const stateFrame = (done: boolean) =>
-  cn(
-    "border-l-4 transition-colors data-[flash=true]:ring-4 data-[flash=true]:ring-amber-300",
-    done ? "border-l-emerald-500" : "border-l-amber-400 bg-amber-50/60"
-  );
-
-/* ── Vrai / Faux ── */
-function TrueFalsePills({
-  options,
-  name,
-  answer,
-  disabled,
-  onChange,
-}: {
-  options: { id: string; text: string }[];
-  name: string;
-  answer: string[] | string | undefined;
-  disabled: boolean;
-  onChange: (id: string) => void;
-}) {
-  const selected = Array.isArray(answer) ? answer[0] : undefined;
-  // "Vrai" always first, then "Faux", whatever order the options come in.
-  const ordered = [...options].sort((a, b) => Number(isFauxOption(a.text)) - Number(isFauxOption(b.text)));
-  return (
-    <div className="flex gap-2">
-      {ordered.map((o, i) => {
-        const isVrai = isVraiOption(o.text) || (!isFauxOption(o.text) && i === 0);
-        const checked = selected === o.id;
-        return (
-          <label
-            key={o.id}
-            className={cn(
-              "min-w-24 cursor-pointer rounded-full border-2 px-5 py-2.5 text-center text-[15px] font-bold transition-all active:scale-95",
-              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
-              disabled && "pointer-events-none opacity-60",
-              checked
-                ? isVrai
-                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                  : "border-rose-600 bg-rose-600 text-white shadow-sm"
-                : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
-            )}
-          >
-            <input type="radio" name={name} checked={checked} disabled={disabled} onChange={() => onChange(o.id)} className="sr-only" />
-            {o.text}
-          </label>
-        );
-      })}
-    </div>
-  );
-}
-
+/** Question number: grey while to do, blue with a check once answered. */
 function Num({ n, done }: { n: number; done: boolean }) {
   return (
     <span
       className={cn(
-        "mt-px flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
-        done ? "bg-emerald-500 text-white" : "bg-amber-400 text-amber-950"
+        "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
+        done ? "bg-primary text-primary-foreground" : "border border-slate-300 text-slate-500"
       )}
     >
-      {done ? <Check className="size-4" strokeWidth={3} /> : n}
+      {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
     </span>
   );
 }
 
+const flash = "rounded-lg transition-shadow data-[flash=true]:ring-2 data-[flash=true]:ring-primary/40";
+
+/* ── Vrai / Faux ── */
 function TfRow({
   q,
   n,
@@ -140,24 +74,45 @@ function TfRow({
   onPick: (id: string) => void;
 }) {
   const done = isAnswered(q, answer);
+  const selected = Array.isArray(answer) ? answer[0] : undefined;
+  // "Vrai" always first, then "Faux".
+  const ordered = [...q.options].sort((a, b) => Number(isFauxOption(a.text)) - Number(isFauxOption(b.text)));
   return (
     <div
       data-q={q.id}
       data-done={done}
-      className={cn("flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6", stateFrame(done))}
+      className={cn("flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6", flash)}
     >
-      <p className="flex gap-3 text-[15px] leading-relaxed">
+      <p className="flex gap-3 text-[15px] leading-relaxed text-slate-800">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
-      <div className="shrink-0 pl-9 sm:pl-0">
-        <TrueFalsePills options={q.options} name={q.id} answer={answer} disabled={disabled} onChange={onPick} />
+      <div className="flex shrink-0 gap-2 pl-9 sm:pl-0">
+        {ordered.map((o) => {
+          const on = selected === o.id;
+          return (
+            <label
+              key={o.id}
+              className={cn(
+                "min-w-20 cursor-pointer rounded-lg border px-4 py-2 text-center text-sm font-semibold transition-colors",
+                "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-1",
+                disabled && "pointer-events-none opacity-60",
+                on
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+              )}
+            >
+              <input type="radio" name={q.id} checked={on} disabled={disabled} onChange={() => onPick(o.id)} className="sr-only" />
+              {o.text}
+            </label>
+          );
+        })}
       </div>
     </div>
   );
 }
 
-/* ── Appariement (dropdown) ── */
+/* ── Appariement (liste déroulante) ── */
 function MatchBox({
   q,
   answer,
@@ -170,36 +125,30 @@ function MatchBox({
   onPick: (id: string) => void;
 }) {
   const value = Array.isArray(answer) ? (answer[0] ?? "") : "";
-  // A bare number is a label on a diagram: shown as a numbered badge.
+  // A bare number is a label on a diagram.
   const numbered = /^\s*\d{1,3}\s*$/.test(q.text);
   return (
-    <label
-      data-q={q.id}
-      data-done={!!value}
-      className={cn(
-        "flex gap-3 rounded-xl border p-3",
-        stateFrame(!!value),
-        value ? "border-emerald-200 bg-[var(--ex-soft)]" : "border-amber-200",
-        numbered ? "items-center" : "flex-col"
-      )}
-    >
+    <label data-q={q.id} data-done={!!value} className={cn("flex gap-3", numbered ? "items-center" : "flex-col gap-1.5", flash)}>
       {numbered ? (
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+        <span
+          className={cn(
+            "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
+            value ? "bg-primary text-primary-foreground" : "bg-slate-800 text-white"
+          )}
+        >
           {q.text.trim()}
         </span>
       ) : (
-        <span className="text-[15px] font-semibold leading-snug">{q.text}</span>
+        <span className="text-[15px] font-medium text-slate-800">{q.text}</span>
       )}
       <select
         value={value}
         disabled={disabled}
         onChange={(e) => onPick(e.target.value)}
         className={cn(
-          "h-11 w-full min-w-0 rounded-lg px-3 text-[15px] transition-colors",
-          "focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
-          value
-            ? "border-2 border-primary bg-[var(--ex-soft)] font-bold text-primary"
-            : "border border-input bg-background text-muted-foreground"
+          "h-11 w-full min-w-0 rounded-lg border bg-white px-3 text-[15px] transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
+          value ? "border-primary font-semibold text-primary" : "border-slate-300 text-slate-400"
         )}
       >
         <option value="">Choisir…</option>
@@ -232,35 +181,24 @@ function QcmCard({
   const multi = q.type === "qcm_multiple";
   const chosen = Array.isArray(answer) ? answer : [];
   return (
-    <fieldset
-      data-q={q.id}
-      data-done={chosen.length > 0}
-      className={cn(
-        "rounded-xl border p-4",
-        stateFrame(chosen.length > 0),
-        chosen.length > 0 ? "border-emerald-200 bg-card" : "border-amber-200"
-      )}
-    >
-      <legend className="sr-only">Question {n}</legend>
-      <p className="mb-3 flex gap-2.5 text-[15px] font-semibold leading-snug">
+    <fieldset data-q={q.id} data-done={chosen.length > 0} className={cn("space-y-2", flash)}>
+      <legend className="mb-2 flex gap-3 text-[15px] font-medium leading-snug text-slate-800">
         <Num n={n} done={chosen.length > 0} />
         <span>
           {q.text}
-          {multi ? <span className="ml-1 text-xs font-medium text-muted-foreground">(plusieurs réponses possibles)</span> : null}
+          {multi ? <span className="ml-1 text-xs font-normal text-slate-500">(plusieurs réponses)</span> : null}
         </span>
-      </p>
-      <div className="space-y-1.5">
+      </legend>
+      <div className="space-y-1.5 pl-9">
         {q.options.map((o, i) => {
           const on = chosen.includes(o.id);
           return (
             <label
               key={o.id}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors active:scale-[0.99]",
+                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                on
-                  ? "border-primary bg-primary font-semibold text-primary-foreground shadow-sm"
-                  : "border-border/70 hover:border-primary/40 hover:bg-[var(--ex-soft)]",
+                on ? "border-primary bg-primary text-primary-foreground" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400",
                 disabled && "pointer-events-none opacity-60"
               )}
             >
@@ -275,9 +213,9 @@ function QcmCard({
               <span
                 aria-hidden
                 className={cn(
-                  "flex size-6 shrink-0 items-center justify-center border-2 text-xs font-bold transition-colors",
+                  "flex size-6 shrink-0 items-center justify-center text-xs font-bold",
                   multi ? "rounded-md" : "rounded-full",
-                  on ? "border-white bg-white text-primary" : "border-muted-foreground/30 text-muted-foreground"
+                  on ? "bg-white text-primary" : "border border-slate-300 text-slate-500"
                 )}
               >
                 {on ? <Check className="size-3.5" strokeWidth={3} /> : LETTERS[i] ?? i + 1}
@@ -308,8 +246,8 @@ function BlockQuestion({
   const text = typeof answer === "string" ? answer : undefined;
   const done = isAnswered(q, answer);
   return (
-    <div data-q={q.id} data-done={done} className={cn("space-y-3 px-5 py-5", stateFrame(done))}>
-      <p className="flex gap-3 text-[15px] font-semibold leading-relaxed">
+    <div data-q={q.id} data-done={done} className={cn("space-y-3 py-3.5", flash)}>
+      <p className="flex gap-3 text-[15px] font-medium leading-relaxed text-slate-800">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
@@ -329,10 +267,7 @@ function BlockQuestion({
             value={text ?? ""}
             onChange={(e) => onSetText(e.target.value)}
             placeholder="Ta réponse…"
-            className={cn(
-              "h-11 max-w-md text-[15px]",
-              text?.trim() && "border-2 border-primary bg-[var(--ex-soft)] font-semibold text-primary"
-            )}
+            className={cn("h-11 max-w-md text-[15px]", text?.trim() && "border-primary font-semibold text-primary")}
           />
         ) : null}
       </div>
@@ -394,98 +329,80 @@ function SectionCard({
   onSetText: (qId: string, text: string) => void;
 }) {
   const totalPoints = section.questions.reduce((s, q) => s + q.points, 0);
-  const done = section.questions.filter((q) => isAnswered(q, answers[q.id])).length;
-  const complete = done === section.questions.length;
   const groups = groupByLayout(section.questions);
 
   return (
-    <section
-      id={`exercice-${index}`}
-      style={themeVars(index - 1)}
-      className="scroll-mt-32 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.04)]"
-    >
-      <div className="flex items-center gap-4 border-b border-border bg-[var(--ex-soft)] px-5 py-4">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-xl font-bold text-primary-foreground">
+    <section id={`exercice-${index}`} className="scroll-mt-24 rounded-xl border border-slate-200 bg-white">
+      <header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-white">
           {index}
         </span>
-        <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Exercice {index}</p>
-          <h2 className="font-heading text-lg font-semibold leading-snug text-foreground">{sectionHeading(section.title)}</h2>
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-1">
-          <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
-            {fmtPoints(totalPoints)}
-          </span>
-          <span
-            className={cn(
-              "inline-flex items-center gap-1 text-xs font-semibold",
-              complete ? "text-emerald-700" : "text-muted-foreground"
-            )}
-          >
-            {complete ? <CircleCheck className="size-3.5" /> : <CircleDashed className="size-3.5" />}
-            {done}/{section.questions.length}
-          </span>
-        </div>
-      </div>
+        <h2 className="min-w-0 flex-1 font-heading text-[17px] font-semibold leading-snug text-slate-900">
+          {sectionHeading(section.title)}
+        </h2>
+        <span className="shrink-0 text-sm font-medium text-slate-500">{fmtPoints(totalPoints)}</span>
+      </header>
 
       {section.imageUrl ? (
-        <div className="border-b border-border bg-white p-4">
+        <div className="border-b border-slate-100 p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={section.imageUrl} alt="" className="mx-auto max-h-[480px] w-full rounded-lg object-contain" />
+          <img src={section.imageUrl} alt="" className="mx-auto max-h-[480px] w-full object-contain" />
         </div>
       ) : null}
 
-      {groups.map((g) => {
-        if (g.layout === "tf") {
+      <div className="space-y-4 px-5 py-4 sm:px-6">
+        {groups.map((g) => {
+          if (g.layout === "tf") {
+            return (
+              <div key="tf" className="divide-y divide-slate-100">
+                {g.items.map(({ q, n }) => (
+                  <TfRow key={q.id} q={q} n={n} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
+                ))}
+              </div>
+            );
+          }
+          if (g.layout === "match") {
+            return (
+              <div key="match" className="grid grid-cols-1 gap-x-6 gap-y-4 py-2 sm:grid-cols-2">
+                {g.items.map(({ q }) => (
+                  <MatchBox key={q.id} q={q} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
+                ))}
+              </div>
+            );
+          }
+          if (g.layout === "qcm") {
+            return (
+              <div key="qcm" className="grid grid-cols-1 gap-x-8 gap-y-6 py-2 md:grid-cols-2">
+                {g.items.map(({ q, n }) => (
+                  <QcmCard
+                    key={q.id}
+                    q={q}
+                    n={n}
+                    answer={answers[q.id]}
+                    disabled={disabled}
+                    onSetSingle={(id) => onSetSingle(q.id, id)}
+                    onToggleMulti={(id) => onToggleMulti(q.id, id)}
+                  />
+                ))}
+              </div>
+            );
+          }
           return (
-            <div key="tf" className="divide-y divide-border/70">
+            <div key="block" className="divide-y divide-slate-100">
               {g.items.map(({ q, n }) => (
-                <TfRow key={q.id} q={q} n={n} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
-              ))}
-            </div>
-          );
-        }
-        if (g.layout === "match") {
-          return (
-            <div key="match" className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
-              {g.items.map(({ q }) => (
-                <MatchBox key={q.id} q={q} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
-              ))}
-            </div>
-          );
-        }
-        if (g.layout === "qcm") {
-          return (
-            <div key="qcm" className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
-              {g.items.map(({ q, n }) => (
-                <QcmCard
+                <BlockQuestion
                   key={q.id}
                   q={q}
                   n={n}
                   answer={answers[q.id]}
                   disabled={disabled}
-                  onSetSingle={(id) => onSetSingle(q.id, id)}
-                  onToggleMulti={(id) => onToggleMulti(q.id, id)}
+                  onSetText={(text) => onSetText(q.id, text)}
                 />
               ))}
             </div>
           );
-        }
-        return (
-          <div key="block" className="divide-y divide-border/70">
-            {g.items.map(({ q, n }) => (
-              <BlockQuestion
-                key={q.id}
-                q={q}
-                n={n}
-                answer={answers[q.id]}
-                disabled={disabled}
-                onSetText={(text) => onSetText(q.id, text)}
-              />
-            ))}
-          </div>
-        );
-      })}
+        })}
+      </div>
     </section>
   );
 }
@@ -583,37 +500,31 @@ export function ExamRunner({
     }
   }
 
-  // Scrolls to the next question still to answer (after the one in view)
-  // and makes it pulse briefly so the eye lands on it.
+  function highlight(el: HTMLElement) {
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.dataset.flash = "true";
+    setTimeout(() => {
+      el.dataset.flash = "false";
+    }, 1500);
+  }
+
+  // Next question still to answer, after the one in view.
   function goToNextUnanswered() {
     const todo = [...document.querySelectorAll<HTMLElement>('[data-q][data-done="false"]')];
     if (todo.length === 0) return;
-    const viewTop = 140;
-    const next = todo.find((el) => el.getBoundingClientRect().top > viewTop + 10) ?? todo[0];
-    next.scrollIntoView({ behavior: "smooth", block: "center" });
-    next.dataset.flash = "true";
-    setTimeout(() => {
-      next.dataset.flash = "false";
-    }, 1600);
+    highlight(todo.find((el) => el.getBoundingClientRect().top > 110) ?? todo[0]);
   }
 
-  // The student confirms before handing in with unanswered questions (and
-  // is taken to the first one if they go back); the timer hands in without
-  // asking.
+  // The student confirms before handing in with gaps (and is taken to the
+  // first one if they go back); the timer hands in without asking.
   function submitByStudent() {
     if (remaining > 0) {
       const ok = confirm(
-        `Attention : il te reste ${remaining} question${remaining > 1 ? "s" : ""} sans réponse (en orange).\n\nOK = terminer quand même\nAnnuler = revenir aux questions oubliées`
+        `Il te reste ${remaining} question${remaining > 1 ? "s" : ""} sans réponse.\n\nOK = terminer\nAnnuler = revenir aux questions`
       );
       if (!ok) {
         const first = document.querySelector<HTMLElement>('[data-q][data-done="false"]');
-        first?.scrollIntoView({ behavior: "smooth", block: "center" });
-        if (first) {
-          first.dataset.flash = "true";
-          setTimeout(() => {
-            first.dataset.flash = "false";
-          }, 1600);
-        }
+        if (first) highlight(first);
         return;
       }
     }
@@ -621,20 +532,14 @@ export function ExamRunner({
   }
 
   return (
-    <div className="min-h-screen bg-[oklch(0.975_0.005_250)]">
+    <div className="min-h-screen bg-slate-50">
       <ExamReloadWarning />
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[oklch(0.27_0.06_260)] text-white shadow-lg">
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3">
+      <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+        <div className="mx-auto flex max-w-4xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6">
           <div className="min-w-0">
-            <h1 className="truncate font-heading text-base font-semibold sm:text-xl">
-              {examTitle}
-              <span className="ml-2 hidden rounded-md bg-white/15 px-1.5 py-0.5 align-middle text-xs font-bold sm:inline">
-                Modèle {modelLabel.toUpperCase()}
-              </span>
-            </h1>
-            <p className="truncate text-xs text-white/70">
-              {levelName ? `${levelName} · ` : ""}Informatique
-              <span className="sm:hidden"> · Modèle {modelLabel.toUpperCase()}</span>
+            <h1 className="truncate font-heading text-base font-semibold text-slate-900 sm:text-lg">{examTitle}</h1>
+            <p className="truncate text-xs text-slate-500">
+              {levelName ? `${levelName} · ` : ""}Informatique · Modèle {modelLabel.toUpperCase()}
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
@@ -643,11 +548,11 @@ export function ExamRunner({
                 type="button"
                 onClick={goToNextUnanswered}
                 title="Aller à la prochaine question sans réponse"
-                className="inline-flex h-9 items-center gap-1.5 rounded-full bg-amber-400 px-3 text-sm font-bold text-amber-950 shadow-sm transition-colors hover:bg-amber-300"
+                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
               >
-                <ArrowDownToLine className="size-4" />
-                <span className="hidden md:inline">Question suivante</span>
-                <span className="rounded-full bg-amber-950/15 px-1.5 text-xs tabular-nums">{remaining}</span>
+                <ChevronDown className="size-4" />
+                <span className="tabular-nums">{remaining}</span>
+                <span className="hidden md:inline">à faire</span>
               </button>
             ) : null}
             <ExamTimer deadline={deadline} onExpire={submit} />
@@ -656,57 +561,19 @@ export function ExamRunner({
               disabled={isSubmitting}
               onClick={submitByStudent}
               aria-label="Terminer l'examen"
-              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-bold text-[oklch(0.27_0.06_260)] shadow-sm transition-colors hover:bg-white/90 disabled:opacity-60 sm:px-4"
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 sm:px-4"
             >
               {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
               <span className="hidden sm:inline">Terminer</span>
             </button>
           </div>
         </div>
-
-        {/* Exercise navigator: colour + progress per exercise */}
-        <nav aria-label="Exercices" className="mx-auto flex max-w-5xl gap-2 overflow-x-auto px-4 pb-2.5 sm:px-6 sm:pb-3">
-          {sections.map((s, i) => {
-            const done = s.questions.filter((q) => isAnswered(q, answers[q.id])).length;
-            const complete = done === s.questions.length;
-            return (
-              <a
-                key={s.id ?? "none"}
-                href={`#exercice-${i + 1}`}
-                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 transition-colors hover:bg-white/20"
-              >
-                <span className="size-2.5 rounded-full" style={{ backgroundColor: colorOf(i).main }} />
-                Ex {i + 1}
-                <span className={cn("tabular-nums", complete ? "text-emerald-300" : "text-white/60")}>
-                  {complete ? <Check className="inline size-3.5" strokeWidth={3} /> : `${done}/${s.questions.length}`}
-                </span>
-              </a>
-            );
-          })}
-          <span className="ml-auto hidden shrink-0 items-center text-xs font-semibold text-white/70 sm:inline-flex">
-            {answeredCount}/{allQuestions.length} réponses
-          </span>
-        </nav>
-        <div className="h-1 w-full bg-white/10">
-          <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="h-0.5 w-full bg-slate-100">
+          <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl space-y-7 px-4 py-7 sm:px-6 sm:py-9">
-        <div className="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sm leading-relaxed text-sky-950">
-          <Lightbulb className="mt-0.5 size-5 shrink-0 text-sky-600" />
-          <div>
-            <p className="font-heading text-base font-semibold">Bon courage !</p>
-            <p>
-              Lis bien chaque question. Les questions{" "}
-              <span className="rounded bg-amber-200 px-1 font-semibold text-amber-950">en orange</span> attendent ta
-              réponse, celles{" "}
-              <span className="rounded bg-emerald-200 px-1 font-semibold text-emerald-950">en vert</span> sont faites.
-              Le bouton <strong>Question suivante</strong> en haut t&apos;emmène à celle que tu as oubliée.
-            </p>
-          </div>
-        </div>
-
+      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
         {sections.map((s, i) => (
           <SectionCard
             key={s.id ?? "unsectioned"}
@@ -720,40 +587,21 @@ export function ExamRunner({
           />
         ))}
 
-        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_1px_3px_rgb(0_0_0/0.04)] sm:p-6">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="font-heading text-lg font-semibold">
-                {remaining === 0 ? "Bravo, tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} à faire`}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {remaining === 0
-                  ? "Relis tes réponses, puis valide ton examen."
-                  : "Elles sont encadrées en orange. Clique sur « Question suivante » pour les retrouver."}
-              </p>
-            </div>
-            {remaining > 0 ? (
-              <button
-                type="button"
-                onClick={goToNextUnanswered}
-                className="inline-flex h-12 items-center gap-2 rounded-full border-2 border-amber-400 bg-amber-50 px-5 text-base font-bold text-amber-900 transition-colors hover:bg-amber-100"
-              >
-                <ArrowDownToLine className="size-5" />
-                Voir les questions oubliées
-              </button>
-            ) : null}
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={submitByStudent}
-              className="inline-flex h-12 items-center gap-2 rounded-full bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
-            >
-              {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
-              Valider l&apos;examen
-            </button>
-          </div>
+        <div className="flex flex-col items-center gap-3 py-4">
+          <p className="text-sm text-slate-500">
+            {answeredCount}/{allQuestions.length} questions répondues
+          </p>
+          <button
+            type="button"
+            disabled={isSubmitting}
+            onClick={submitByStudent}
+            className="inline-flex h-12 items-center gap-2 rounded-lg bg-primary px-8 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+          >
+            {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
+            Valider l&apos;examen
+          </button>
           {error ? (
-            <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </p>
           ) : null}

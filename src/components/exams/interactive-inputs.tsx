@@ -38,16 +38,6 @@ function parse<T>(value: string | undefined, fallback: T): T {
   }
 }
 
-// One colour per box, as on the paper exercise.
-const BOX_COLORS = [
-  { box: "border-orange-300 bg-orange-50", title: "text-orange-700", chip: "bg-orange-500" },
-  { box: "border-cyan-300 bg-cyan-50", title: "text-cyan-700", chip: "bg-cyan-600" },
-  { box: "border-violet-300 bg-violet-50", title: "text-violet-700", chip: "bg-violet-600" },
-  { box: "border-indigo-300 bg-indigo-50", title: "text-indigo-700", chip: "bg-indigo-600" },
-  { box: "border-emerald-300 bg-emerald-50", title: "text-emerald-700", chip: "bg-emerald-600" },
-  { box: "border-rose-300 bg-rose-50", title: "text-rose-700", chip: "bg-rose-600" },
-];
-
 /* ── Boxes: click an item then a box (or drag it there) ── */
 export function BoxesInput({ payload, value, disabled, onChange }: Props) {
   const raw = parse<Record<string, string[] | string>>(value, {});
@@ -71,10 +61,7 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs text-muted-foreground">
-        Clique sur un élément, puis sur la bonne boîte (tu peux aussi le faire glisser). Clique sur un élément rangé
-        pour le retirer.
-      </p>
+      <p className="text-xs text-slate-500">Clique sur un élément, puis sur sa boîte.</p>
 
       {pool.length > 0 ? (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -87,10 +74,8 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
               onDragStart={(e) => e.dataTransfer.setData("text/plain", it.id)}
               onClick={() => setActive(active === it.id ? null : it.id)}
               className={cn(
-                "min-h-12 rounded-xl border-2 bg-card px-4 py-2.5 text-left text-[15px] font-semibold transition-all",
-                active === it.id
-                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
-                  : "border-border hover:border-primary/40 hover:shadow-sm"
+                "min-h-11 rounded-lg border bg-white px-3.5 py-2 text-left text-[15px] text-slate-800 transition-colors",
+                active === it.id ? "border-primary ring-2 ring-primary/25" : "border-slate-300 hover:border-slate-400"
               )}
             >
               {it.text}
@@ -98,14 +83,11 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
           ))}
         </div>
       ) : (
-        <p className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
-          Tous les éléments sont rangés. Tu peux encore les déplacer.
-        </p>
+        <p className="text-sm text-slate-500">Tous les éléments sont rangés.</p>
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {boxes.map((b, bi) => {
-          const c = BOX_COLORS[bi % BOX_COLORS.length];
+        {boxes.map((b) => {
           const { title, note } = splitBox(b);
           const inside = payload.items.filter((it) => placed(it.id) === b);
           return (
@@ -128,14 +110,13 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
                 if (id && !disabled) put(id, b);
               }}
               className={cn(
-                "flex min-h-32 flex-col rounded-2xl border-2 border-dashed p-3 transition-all",
-                c.box,
-                active && !disabled && "cursor-pointer hover:border-solid hover:shadow-md"
+                "flex min-h-28 flex-col rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 transition-colors",
+                active && !disabled && "cursor-pointer border-primary/60 bg-white hover:border-solid hover:border-primary"
               )}
             >
               <div className="mb-2 text-center">
-                <p className={cn("font-heading text-base font-bold", c.title)}>{title}</p>
-                {note ? <p className="text-xs text-muted-foreground">{note}</p> : null}
+                <p className="font-heading text-[15px] font-semibold text-slate-900">{title}</p>
+                {note ? <p className="text-xs text-slate-500">{note}</p> : null}
               </div>
               <div className="flex flex-wrap justify-center gap-1.5">
                 {inside.map((it) => (
@@ -151,8 +132,7 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
                     }}
                     title="Retirer de la boîte"
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white shadow-sm",
-                      c.chip
+                      "inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-sm font-medium text-primary-foreground"
                     )}
                   >
                     {it.text}
