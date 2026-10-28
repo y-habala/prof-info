@@ -102,8 +102,7 @@ export async function POST(
     let answerText = "";
 
     if (isInteractive(q.question_type)) {
-      // Same seed as the exam page, so the shuffled columns line up.
-      const graded = gradeInteractive(q.question_type, qOptions, submitted?.text, `${attemptId}:${q.id}`);
+      const graded = gradeInteractive(q.question_type, qOptions, submitted?.text);
       answerText = graded.answerText;
       pointsEarned = Math.round(points * graded.fraction * 100) / 100;
       isCorrect = graded.fraction === 1;

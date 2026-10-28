@@ -20,7 +20,7 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import type { InteractivePayload } from "@/lib/exam-interactive";
+import { splitBox, type InteractivePayload } from "@/lib/exam-interactive";
 
 type Props = {
   payload: InteractivePayload;
@@ -38,100 +38,131 @@ function parse<T>(value: string | undefined, fallback: T): T {
   }
 }
 
-// Distinct, print-safe colours to show which left item went with which right.
-const PAIR_COLORS = [
-  "bg-sky-100 border-sky-500 text-sky-900",
-  "bg-amber-100 border-amber-500 text-amber-900",
-  "bg-emerald-100 border-emerald-500 text-emerald-900",
-  "bg-violet-100 border-violet-500 text-violet-900",
-  "bg-rose-100 border-rose-500 text-rose-900",
-  "bg-lime-100 border-lime-600 text-lime-900",
-  "bg-orange-100 border-orange-500 text-orange-900",
-  "bg-cyan-100 border-cyan-600 text-cyan-900",
-  "bg-fuchsia-100 border-fuchsia-500 text-fuchsia-900",
-  "bg-teal-100 border-teal-600 text-teal-900",
+// One colour per box, as on the paper exercise.
+const BOX_COLORS = [
+  { box: "border-orange-300 bg-orange-50", title: "text-orange-700", chip: "bg-orange-500" },
+  { box: "border-cyan-300 bg-cyan-50", title: "text-cyan-700", chip: "bg-cyan-600" },
+  { box: "border-violet-300 bg-violet-50", title: "text-violet-700", chip: "bg-violet-600" },
+  { box: "border-indigo-300 bg-indigo-50", title: "text-indigo-700", chip: "bg-indigo-600" },
+  { box: "border-emerald-300 bg-emerald-50", title: "text-emerald-700", chip: "bg-emerald-600" },
+  { box: "border-rose-300 bg-rose-50", title: "text-rose-700", chip: "bg-rose-600" },
 ];
 
-/* ── Association: click a left item, then its match on the right ── */
-export function AssociationInput({ payload, value, disabled, onChange }: Props) {
-  const links = parse<Record<string, string>>(value, {});
+/* ── Boxes: click an item then a box (or drag it there) ── */
+export function BoxesInput({ payload, value, disabled, onChange }: Props) {
+  const raw = parse<Record<string, string[] | string>>(value, {});
+  const placed = (id: string) => {
+    const v = raw[id];
+    return Array.isArray(v) ? v[0] : typeof v === "string" ? v : undefined;
+  };
+  const boxes = payload.categories ?? [];
   const [active, setActive] = useState<string | null>(null);
-  const rights = payload.rights ?? [];
-  const colorOf = (leftId: string) => PAIR_COLORS[payload.items.findIndex((i) => i.id === leftId) % PAIR_COLORS.length];
-  const leftOfRight = (rightId: string) => Object.keys(links).find((l) => links[l] === rightId);
+  const pool = payload.items.filter((it) => !placed(it.id));
 
-  function link(rightId: string) {
-    if (!active) return;
-    const next = { ...links };
-    for (const l of Object.keys(next)) if (next[l] === rightId) delete next[l];
-    next[active] = rightId;
+  function put(itemId: string, box: string | null) {
+    const next: Record<string, string[]> = {};
+    for (const it of payload.items) {
+      const b = it.id === itemId ? box : placed(it.id);
+      if (b) next[it.id] = [b];
+    }
     onChange(JSON.stringify(next));
     setActive(null);
   }
-  function unlink(leftId: string) {
-    const next = { ...links };
-    delete next[leftId];
-    onChange(JSON.stringify(next));
-  }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <p className="text-xs text-muted-foreground">
-        Clique sur un élément de gauche, puis sur sa correspondance à droite.
+        Clique sur un élément, puis sur la bonne boîte (tu peux aussi le faire glisser). Clique sur un élément rangé
+        pour le retirer.
       </p>
-      <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-2">
-          {payload.items.map((it) => {
-            const linked = links[it.id] != null;
-            return (
-              <div key={it.id} className="flex items-center gap-1">
-                <button
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => setActive(active === it.id ? null : it.id)}
-                  className={cn(
-                    "min-h-11 flex-1 rounded-xl border-2 px-3 py-2 text-left text-sm font-medium transition-all",
-                    linked ? colorOf(it.id) : "border-border bg-card hover:border-primary/50",
-                    active === it.id && "ring-2 ring-primary ring-offset-2"
-                  )}
-                >
-                  {it.text}
-                </button>
-                {linked && !disabled ? (
-                  <button
-                    type="button"
-                    onClick={() => unlink(it.id)}
-                    aria-label={`Délier ${it.text}`}
-                    className="rounded-md p-1 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="size-4" />
-                  </button>
-                ) : null}
+
+      {pool.length > 0 ? (
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {pool.map((it) => (
+            <button
+              key={it.id}
+              type="button"
+              draggable={!disabled}
+              disabled={disabled}
+              onDragStart={(e) => e.dataTransfer.setData("text/plain", it.id)}
+              onClick={() => setActive(active === it.id ? null : it.id)}
+              className={cn(
+                "min-h-12 rounded-xl border-2 bg-card px-4 py-2.5 text-left text-[15px] font-semibold transition-all",
+                active === it.id
+                  ? "border-primary bg-primary/5 ring-2 ring-primary/30"
+                  : "border-border hover:border-primary/40 hover:shadow-sm"
+              )}
+            >
+              {it.text}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <p className="rounded-xl border border-dashed border-emerald-300 bg-emerald-50 px-4 py-2.5 text-sm font-medium text-emerald-800">
+          Tous les éléments sont rangés. Tu peux encore les déplacer.
+        </p>
+      )}
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {boxes.map((b, bi) => {
+          const c = BOX_COLORS[bi % BOX_COLORS.length];
+          const { title, note } = splitBox(b);
+          const inside = payload.items.filter((it) => placed(it.id) === b);
+          return (
+            <div
+              key={b}
+              role="button"
+              tabIndex={disabled ? -1 : 0}
+              aria-label={`Ranger dans ${title}`}
+              onClick={() => active && !disabled && put(active, b)}
+              onKeyDown={(e) => {
+                if ((e.key === "Enter" || e.key === " ") && active && !disabled) {
+                  e.preventDefault();
+                  put(active, b);
+                }
+              }}
+              onDragOver={(e) => e.preventDefault()}
+              onDrop={(e) => {
+                e.preventDefault();
+                const id = e.dataTransfer.getData("text/plain");
+                if (id && !disabled) put(id, b);
+              }}
+              className={cn(
+                "flex min-h-32 flex-col rounded-2xl border-2 border-dashed p-3 transition-all",
+                c.box,
+                active && !disabled && "cursor-pointer hover:border-solid hover:shadow-md"
+              )}
+            >
+              <div className="mb-2 text-center">
+                <p className={cn("font-heading text-base font-bold", c.title)}>{title}</p>
+                {note ? <p className="text-xs text-muted-foreground">{note}</p> : null}
               </div>
-            );
-          })}
-        </div>
-        <div className="space-y-2">
-          {rights.map((r) => {
-            const left = leftOfRight(r.id);
-            return (
-              <button
-                key={r.id}
-                type="button"
-                disabled={disabled || !active}
-                onClick={() => link(r.id)}
-                className={cn(
-                  "min-h-11 w-full rounded-xl border-2 px-3 py-2 text-left text-sm transition-all",
-                  left ? colorOf(left) : "border-dashed border-border bg-card",
-                  active && !disabled && "hover:border-primary hover:bg-primary/5 cursor-pointer",
-                  !active && "cursor-default"
-                )}
-              >
-                {r.text}
-              </button>
-            );
-          })}
-        </div>
+              <div className="flex flex-wrap justify-center gap-1.5">
+                {inside.map((it) => (
+                  <button
+                    key={it.id}
+                    type="button"
+                    disabled={disabled}
+                    draggable={!disabled}
+                    onDragStart={(e) => e.dataTransfer.setData("text/plain", it.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      put(it.id, null);
+                    }}
+                    title="Retirer de la boîte"
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-semibold text-white shadow-sm",
+                      c.chip
+                    )}
+                  >
+                    {it.text}
+                    <X className="size-3.5 opacity-80" />
+                  </button>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -8,15 +8,9 @@ import { PAIR_SEP, splitPair, type InteractiveType } from "@/lib/exam-interactiv
 
 type Row = { left: string; right: string };
 
-type EditorType = Exclude<InteractiveType, "table">;
+type EditorType = Extract<InteractiveType, "ordering">;
 
 const COPY: Record<EditorType, { title: string; left: string; right?: string; help: string }> = {
-  association: {
-    title: "Paires à relier",
-    left: "Élément (colonne de gauche)",
-    right: "Correspondance (colonne de droite)",
-    help: "L'élève verra les deux colonnes mélangées et devra relier chaque élément à sa correspondance.",
-  },
   ordering: {
     title: "Éléments dans le bon ordre",
     left: "Élément",

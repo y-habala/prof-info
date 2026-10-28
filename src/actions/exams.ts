@@ -355,7 +355,7 @@ function defaultOptionsFor(type: string) {
       { option_text: "", is_correct: false, order_index: 1 },
     ];
   }
-  if (type === "association" || type === "table") {
+  if (type === "boxes" || type === "table") {
     return [0, 1, 2].map((i) => ({ option_text: "||", is_correct: true, order_index: i }));
   }
   if (type === "ordering") {

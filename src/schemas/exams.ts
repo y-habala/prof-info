@@ -6,9 +6,9 @@ export const EXAM_QUESTION_TYPES = [
   "true_false",
   "fill_blank",
   "matching",
-  "association",
   "ordering",
   "table",
+  "boxes",
 ] as const;
 export type ExamQuestionType = (typeof EXAM_QUESTION_TYPES)[number];
 
@@ -18,9 +18,9 @@ export const EXAM_QUESTION_TYPE_LABELS: Record<ExamQuestionType, string> = {
   true_false: "Vrai / Faux",
   fill_blank: "Texte à trous",
   matching: "Appariement",
-  association: "Association (relier deux colonnes)",
   ordering: "Remettre dans l'ordre",
   table: "Tableau (cocher la bonne case)",
+  boxes: "Classer dans des boîtes",
 };
 
 // Types offered when creating a question. "ordering" stays valid for the

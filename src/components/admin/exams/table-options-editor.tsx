@@ -11,18 +11,21 @@ type Row = { text: string; ticked: number[] };
 
 // Grid editor for "Tableau": columns across, rows down, tick the right box(es).
 export function TableOptionsEditor({
+  mode = "table",
   questionId,
   modelId,
   examId,
   initial,
 }: {
+  mode?: "table" | "boxes";
   questionId: string;
   modelId: string;
   examId: string;
   initial: string[];
 }) {
   const parsed = parseTable(initial.map((text, i) => ({ id: String(i), text, orderIndex: i })));
-  const startCols = parsed.columns.length >= 2 ? parsed.columns : ["Colonne 1", "Colonne 2"];
+  const boxes = mode === "boxes";
+  const startCols = parsed.columns.length >= 2 ? parsed.columns : boxes ? ["Boîte 1", "Boîte 2"] : ["Colonne 1", "Colonne 2"];
   const [columns, setColumns] = useState<string[]>(startCols);
   const [rows, setRows] = useState<Row[]>(() => {
     const r = parsed.rows
@@ -39,7 +42,11 @@ export function TableOptionsEditor({
   function toggle(r: number, c: number) {
     setRows((prev) =>
       prev.map((row, i) =>
-        i !== r ? row : { ...row, ticked: row.ticked.includes(c) ? row.ticked.filter((x) => x !== c) : [...row.ticked, c] }
+        i !== r
+          ? row
+          : boxes
+            ? { ...row, ticked: row.ticked.includes(c) ? [] : [c] }
+            : { ...row, ticked: row.ticked.includes(c) ? row.ticked.filter((x) => x !== c) : [...row.ticked, c] }
       )
     );
     touch();
@@ -63,7 +70,7 @@ export function TableOptionsEditor({
     }
     const missing = complete.find((r) => r.ticked.length === 0);
     if (missing) {
-      setError(`Coche au moins une bonne case pour « ${missing.text.trim()} ».`);
+      setError(boxes ? `Choisis la boîte de « ${missing.text.trim()} ».` : `Coche au moins une bonne case pour « ${missing.text.trim()} ».`);
       return;
     }
     if ([...cols, ...complete.map((r) => r.text)].some((t) => t.includes(PAIR_SEP) || t.includes(COL_SEP))) {
@@ -87,9 +94,19 @@ export function TableOptionsEditor({
   return (
     <div className="mt-4 space-y-3 rounded-lg border border-dashed border-border bg-muted/20 p-3">
       <div>
-        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Tableau à cocher</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          {boxes ? "Boîtes et éléments à classer" : "Tableau à cocher"}
+        </p>
         <p className="text-xs text-muted-foreground">
-          Écris les titres des colonnes et des lignes, puis coche la ou les bonnes cases de chaque ligne.
+          {boxes ? (
+            <>
+              En haut, une colonne par boîte : écris son nom, et si tu veux une petite description après « :: »
+              (ex. <code className="rounded bg-muted px-1">PAN :: une personne</code>). Puis écris chaque élément et
+              coche sa boîte. Tu peux commencer un élément par un emoji (ex. 🌐 Internet).
+            </>
+          ) : (
+            "Écris les titres des colonnes et des lignes, puis coche la ou les bonnes cases de chaque ligne."
+          )}
         </p>
       </div>
 
@@ -107,7 +124,7 @@ export function TableOptionsEditor({
                         setColumns((prev) => prev.map((x, i) => (i === ci ? e.target.value : x)));
                         touch();
                       }}
-                      placeholder={`Colonne ${ci + 1}`}
+                      placeholder={boxes ? `Boîte ${ci + 1}` : `Colonne ${ci + 1}`}
                       className="h-8 text-center font-semibold"
                     />
                     {columns.length > 2 ? (
@@ -148,7 +165,7 @@ export function TableOptionsEditor({
                       setRows((prev) => prev.map((x, i) => (i === ri ? { ...x, text: e.target.value } : x)));
                       touch();
                     }}
-                    placeholder={`Ligne ${ri + 1}`}
+                    placeholder={boxes ? `Élément ${ri + 1}` : `Ligne ${ri + 1}`}
                     className="h-8 font-semibold"
                   />
                 </td>

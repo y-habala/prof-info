@@ -8,7 +8,7 @@ import { ExamTimer } from "./exam-timer";
 import { ExamReloadWarning } from "./exam-reload-warning";
 import type { ExamQuestionType } from "@/schemas/exams";
 import { isInteractive, type InteractivePayload } from "@/lib/exam-interactive";
-import { AssociationInput, OrderingInput, TableInput, interactiveAnswered } from "./interactive-inputs";
+import { BoxesInput, OrderingInput, TableInput, interactiveAnswered } from "./interactive-inputs";
 
 type Question = {
   id: string;
@@ -291,7 +291,7 @@ function QcmCard({
   );
 }
 
-/* ── Other types (texte à trous, association, tableau…) ── */
+/* ── Other types (texte à trous, boîtes, tableau…) ── */
 function BlockQuestion({
   q,
   n,
@@ -314,8 +314,8 @@ function BlockQuestion({
         <span>{q.text}</span>
       </p>
       <div className="sm:pl-9">
-        {q.interactive && q.type === "association" ? (
-          <AssociationInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
+        {q.interactive && q.type === "boxes" ? (
+          <BoxesInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
         ) : null}
         {q.interactive && q.type === "ordering" ? (
           <OrderingInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />

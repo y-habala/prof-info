@@ -1,16 +1,17 @@
 import { shuffleSeeded } from "@/lib/shuffle";
 
 // Interactive exam question types. They reuse exam_options: one option row
-// per pair / item, the two sides joined by PAIR_SEP in option_text, and the
-// row order (order_index) as the correct order for "ordering".
-//   association: "left||right"            — link each left item to its right item
-//   ordering:    "item"                   — put the items back in order
-//   table:       "row||colA&&colB"        — tick the right column(s) on each row
-//                "#COLS#||A&&B&&C"         — optional header fixing the columns
-// "ordering" is no longer offered for new questions but still renders and
-// grades for the ones that exist.
+// per item, the two sides joined by PAIR_SEP in option_text, and the row
+// order (order_index) as the correct order for "ordering".
+//   ordering: "item"                — put the items back in order
+//   table:    "row||colA&&colB"     — tick the right column(s) on each row
+//   boxes:    "item||Box"           — drop each item into its box
+//   header:   "#COLS#||A&&B&&C"     — optional, fixes the columns / boxes
+// A box name may carry a description after BOX_NOTE_SEP ("PAN :: une
+// personne"). "ordering" is no longer offered for new questions but still
+// renders and grades for the ones that exist.
 
-export const INTERACTIVE_TYPES = ["association", "ordering", "table"] as const;
+export const INTERACTIVE_TYPES = ["ordering", "table", "boxes"] as const;
 export type InteractiveType = (typeof INTERACTIVE_TYPES)[number];
 export const isInteractive = (t: string): t is InteractiveType =>
   (INTERACTIVE_TYPES as readonly string[]).includes(t);
@@ -18,6 +19,7 @@ export const isInteractive = (t: string): t is InteractiveType =>
 export const PAIR_SEP = "||";
 export const COL_SEP = "&&";
 export const COLS_MARK = "#COLS#";
+export const BOX_NOTE_SEP = "::";
 
 export function splitPair(text: string): [string, string] {
   const i = text.indexOf(PAIR_SEP);
@@ -25,12 +27,18 @@ export function splitPair(text: string): [string, string] {
   return [text.slice(0, i).trim(), text.slice(i + PAIR_SEP.length).trim()];
 }
 
+/** "PAN :: une personne" → { title: "PAN", note: "une personne" }. */
+export function splitBox(name: string): { title: string; note: string } {
+  const i = name.indexOf(BOX_NOTE_SEP);
+  if (i < 0) return { title: name.trim(), note: "" };
+  return { title: name.slice(0, i).trim(), note: name.slice(i + BOX_NOTE_SEP.length).trim() };
+}
+
 export type StoredOption = { id: string; text: string; orderIndex: number };
 
-/** What the student's browser receives: never the pairing or the order. */
+/** What the student's browser receives: never which column / box is right. */
 export type InteractivePayload = {
   items: { id: string; text: string }[];
-  rights?: { id: string; text: string }[];
   categories?: string[];
 };
 
@@ -61,35 +69,20 @@ export function parseTable(options: StoredOption[]): { columns: string[]; rows: 
   return { columns, rows };
 }
 
-// Right-hand column of an association, shuffled per attempt. Its ids are
-// positions in this shuffle, so they say nothing about which left item they
-// belong to; the server rebuilds the same shuffle to grade.
-function associationRights(options: StoredOption[], seed: string) {
-  return shuffleSeeded(byOrder(options), `${seed}:rights`).map((o, i) => ({
-    id: String(i),
-    text: splitPair(o.text)[1],
-    optionId: o.id,
-  }));
-}
-
 export function buildInteractivePayload(type: InteractiveType, options: StoredOption[], seed: string): InteractivePayload {
   const ordered = byOrder(options);
-  if (type === "association") {
-    return {
-      items: shuffleSeeded(ordered, `${seed}:lefts`).map((o) => ({ id: o.id, text: splitPair(o.text)[0] })),
-      rights: associationRights(options, seed).map(({ id, text }) => ({ id, text })),
-    };
-  }
   if (type === "ordering") {
     let items = shuffleSeeded(ordered, `${seed}:order`);
     // Never hand out the list already in the right order.
     if (items.length > 1 && items.every((o, i) => o.id === ordered[i].id)) items = [...items.slice(1), items[0]];
     return { items: items.map((o) => ({ id: o.id, text: o.text.trim() })) };
   }
-  // Table: rows and columns keep the teacher's order, like the paper sheet.
-  // Only the labels are sent, never which boxes are right.
+  // Table and boxes: only the labels are sent, never which column is right.
+  // Table rows keep the teacher's order like the paper sheet; the items to
+  // sort into boxes are shuffled per student.
   const { columns, rows } = parseTable(options);
-  return { items: rows.map((r) => ({ id: r.id, text: r.text })), categories: columns };
+  const items = rows.map((r) => ({ id: r.id, text: r.text }));
+  return { items: type === "boxes" ? shuffleSeeded(items, `${seed}:items`) : items, categories: columns };
 }
 
 function parseJson(raw: string | undefined): unknown {
@@ -104,30 +97,17 @@ function parseJson(raw: string | undefined): unknown {
 const asObject = (v: unknown): Record<string, unknown> =>
   v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
 
+const label = (type: InteractiveType, column: string) => (type === "boxes" ? splitBox(column).title : column);
+
 /** Fraction of the points earned (0..1) and a readable version of the answer. */
 export function gradeInteractive(
   type: InteractiveType,
   options: StoredOption[],
-  rawAnswer: string | undefined,
-  seed: string
+  rawAnswer: string | undefined
 ): { fraction: number; answerText: string } {
   const ordered = byOrder(options);
   if (ordered.length === 0) return { fraction: 0, answerText: "" };
   const answer = parseJson(rawAnswer);
-
-  if (type === "association") {
-    const map = asObject(answer);
-    const rights = new Map(associationRights(options, seed).map((r) => [r.id, r]));
-    let good = 0;
-    const parts: string[] = [];
-    for (const o of ordered) {
-      const chosen = rights.get(String(map[o.id]));
-      // Compared by text: two pairs may share the same right-hand side.
-      if (chosen && chosen.text === splitPair(o.text)[1]) good++;
-      parts.push(`${splitPair(o.text)[0]} → ${chosen ? chosen.text : "?"}`);
-    }
-    return { fraction: good / ordered.length, answerText: parts.join(" ; ") };
-  }
 
   if (type === "ordering") {
     const ids = Array.isArray(answer) ? (answer as string[]) : [];
@@ -136,7 +116,7 @@ export function gradeInteractive(
     return { fraction: good / ordered.length, answerText: ids.map((id) => text.get(id) ?? "?").join(" > ") };
   }
 
-  // Table: a row scores when its ticked boxes are exactly the right ones.
+  // Table / boxes: a row scores when its chosen columns are exactly the right ones.
   const { rows } = parseTable(options);
   if (rows.length === 0) return { fraction: 0, answerText: "" };
   const map = asObject(answer);
@@ -148,15 +128,15 @@ export function gradeInteractive(
     const ticked = Array.isArray(raw) ? raw.map(String) : typeof raw === "string" ? [raw] : [];
     const same = ticked.length === r.correct.length && r.correct.every((c) => ticked.includes(c));
     if (same && r.correct.length > 0) good++;
-    parts.push(`${r.text} → ${ticked.length ? ticked.join(" + ") : "?"}`);
+    parts.push(`${r.text} → ${ticked.length ? ticked.map((c) => label(type, c)).join(" + ") : "?"}`);
   }
   return { fraction: good / rows.length, answerText: parts.join(" ; ") };
 }
 
 /** Readable correct answer, for the corrected answer sheet. */
 export function correctAnswerText(type: InteractiveType, options: StoredOption[]): string {
-  const ordered = byOrder(options);
-  if (type === "ordering") return ordered.map((o) => o.text.trim()).join(" > ");
-  if (type === "table") return parseTable(options).rows.map((r) => `${r.text} → ${r.correct.join(" + ")}`).join(" ; ");
-  return ordered.map((o) => splitPair(o.text).join(" → ")).join(" ; ");
+  if (type === "ordering") return byOrder(options).map((o) => o.text.trim()).join(" > ");
+  return parseTable(options)
+    .rows.map((r) => `${r.text} → ${r.correct.map((c) => label(type, c)).join(" + ")}`)
+    .join(" ; ");
 }

@@ -367,8 +367,9 @@ function QuestionItem({
           </Button>
         </div>
       </div>
-      {question.type === "table" ? (
+      {question.type === "table" || question.type === "boxes" ? (
         <TableOptionsEditor
+          mode={question.type}
           questionId={question.id}
           modelId={modelId}
           examId={examId}
