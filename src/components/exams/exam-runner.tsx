@@ -95,7 +95,7 @@ function TfRow({
             <label
               key={o.id}
               className={cn(
-                "min-w-20 cursor-pointer rounded-lg border-2 px-4 py-2 text-center text-sm font-bold transition-colors",
+                "min-w-20 cursor-pointer rounded-full border-2 px-5 py-2 text-center text-sm font-bold transition-colors",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-1",
                 disabled && "pointer-events-none opacity-60",
                 on
@@ -325,7 +325,7 @@ function sectionHeading(title: string | null): string {
   return t.replace(/^exercice\s*\d+\s*[:\-–]\s*/i, "") || "Questions";
 }
 
-const fmtPoints = (p: number) => `${Number.isInteger(p) ? p : p.toFixed(2).replace(/0$/, "")} pt${p > 1 ? "s" : ""}`;
+const fmtPoints = (p: number) => `${Number.isInteger(p) ? p : p.toFixed(2).replace(/0$/, "")} Pt${p > 1 ? "s" : ""}`;
 
 function SectionCard({
   section,
@@ -348,15 +348,18 @@ function SectionCard({
   const groups = groupByLayout(section.questions);
 
   return (
-    <section id={`exercice-${index}`} className="scroll-mt-24 rounded-xl border border-slate-200 bg-white">
-      <header className="flex items-center gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
-        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-slate-800 text-sm font-bold text-white">
-          {index}
-        </span>
-        <h2 className="min-w-0 flex-1 font-heading text-[17px] font-semibold leading-snug text-slate-900">
-          {sectionHeading(section.title)}
+    <section
+      id={`exercice-${index}`}
+      className="scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 border-t-4 border-t-primary bg-white shadow-sm"
+    >
+      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3.5 sm:px-6">
+        <h2 className="min-w-0 text-[17px] leading-snug text-slate-900">
+          <span className="font-heading font-bold">Exercice {index} :</span>{" "}
+          <span className="font-semibold">{sectionHeading(section.title)}</span>
         </h2>
-        <span className="shrink-0 text-sm font-medium text-slate-500">{fmtPoints(totalPoints)}</span>
+        <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+          {fmtPoints(totalPoints)}
+        </span>
       </header>
 
       {section.imageUrl ? (
@@ -589,7 +592,7 @@ export function ExamRunner({
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-5 px-4 py-6 sm:px-6 sm:py-8">
+      <main className="mx-auto max-w-4xl space-y-8 px-4 py-6 sm:px-6 sm:py-8">
         {sections.map((s, i) => (
           <SectionCard
             key={s.id ?? "unsectioned"}
