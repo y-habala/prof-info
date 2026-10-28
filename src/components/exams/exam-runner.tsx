@@ -90,16 +90,21 @@ function TfRow({
       <div className="flex shrink-0 gap-2 pl-9 sm:pl-0">
         {ordered.map((o) => {
           const on = selected === o.id;
+          const faux = isFauxOption(o.text);
           return (
             <label
               key={o.id}
               className={cn(
-                "min-w-20 cursor-pointer rounded-lg border px-4 py-2 text-center text-sm font-semibold transition-colors",
+                "min-w-20 cursor-pointer rounded-lg border-2 px-4 py-2 text-center text-sm font-bold transition-colors",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-1",
                 disabled && "pointer-events-none opacity-60",
                 on
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                  ? faux
+                    ? "border-rose-600 bg-rose-600 text-white"
+                    : "border-emerald-600 bg-emerald-600 text-white"
+                  : faux
+                    ? "border-slate-300 bg-white text-slate-800 hover:border-rose-400 hover:text-rose-700"
+                    : "border-slate-300 bg-white text-slate-800 hover:border-emerald-500 hover:text-emerald-700"
               )}
             >
               <input type="radio" name={q.id} checked={on} disabled={disabled} onChange={() => onPick(o.id)} className="sr-only" />
@@ -133,7 +138,7 @@ function MatchBox({
         <span
           className={cn(
             "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-            value ? "bg-emerald-600 text-white" : "bg-slate-800 text-white"
+            value ? "bg-primary text-primary-foreground" : "bg-slate-800 text-white"
           )}
         >
           {q.text.trim()}
@@ -149,13 +154,13 @@ function MatchBox({
           "h-11 w-full min-w-0 rounded-lg border bg-white px-3 text-[15px] transition-colors",
           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30",
           value
-            ? "border-2 border-emerald-600 bg-emerald-50 font-bold text-emerald-800"
-            : "border-2 border-rose-300 font-medium text-rose-600"
+            ? "border-2 border-primary bg-primary/5 font-bold text-primary"
+            : "border-2 border-slate-300 font-medium text-slate-600"
         )}
       >
         {/* Options are styled on their own so the open list reads sharp and
             dark, whatever colour the closed select shows. */}
-        <option value="" className="bg-white font-normal text-rose-600">
+        <option value="" className="bg-white font-normal text-slate-500">
           Choisir…
         </option>
         {q.options.map((o) => (
@@ -202,9 +207,11 @@ function QcmCard({
             <label
               key={o.id}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors",
+                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border-2 px-3 py-2 text-[15px] transition-colors",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
-                on ? "border-primary bg-primary text-primary-foreground" : "border-slate-200 bg-white text-slate-700 hover:border-slate-400",
+                on
+                  ? "border-primary bg-primary font-semibold text-primary-foreground"
+                  : "border-slate-300 bg-white text-slate-800 hover:border-primary/60",
                 disabled && "pointer-events-none opacity-60"
               )}
             >
@@ -221,7 +228,7 @@ function QcmCard({
                 className={cn(
                   "flex size-6 shrink-0 items-center justify-center text-xs font-bold",
                   multi ? "rounded-md" : "rounded-full",
-                  on ? "bg-white text-primary" : "border border-slate-300 text-slate-500"
+                  on ? "bg-white text-primary" : "border-2 border-slate-300 text-slate-600"
                 )}
               >
                 {on ? <Check className="size-3.5" strokeWidth={3} /> : LETTERS[i] ?? i + 1}
@@ -273,7 +280,10 @@ function BlockQuestion({
             value={text ?? ""}
             onChange={(e) => onSetText(e.target.value)}
             placeholder="Ta réponse…"
-            className={cn("h-11 max-w-md text-[15px]", text?.trim() && "border-primary font-semibold text-primary")}
+            className={cn(
+              "h-11 max-w-md border-2 border-slate-300 text-[15px] text-slate-800",
+              text?.trim() && "border-primary font-bold text-primary"
+            )}
           />
         ) : null}
       </div>

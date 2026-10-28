@@ -74,8 +74,8 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
               onDragStart={(e) => e.dataTransfer.setData("text/plain", it.id)}
               onClick={() => setActive(active === it.id ? null : it.id)}
               className={cn(
-                "min-h-11 rounded-lg border bg-white px-3.5 py-2 text-left text-[15px] text-slate-800 transition-colors",
-                active === it.id ? "border-primary ring-2 ring-primary/25" : "border-slate-300 hover:border-slate-400"
+                "min-h-11 rounded-lg border-2 bg-white px-3.5 py-2 text-left text-[15px] font-medium text-slate-900 transition-colors",
+                active === it.id ? "border-primary bg-primary/5 ring-2 ring-primary/25" : "border-slate-300 hover:border-primary/60"
               )}
             >
               {it.text}
@@ -110,7 +110,7 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
                 if (id && !disabled) put(id, b);
               }}
               className={cn(
-                "flex min-h-28 flex-col rounded-xl border border-dashed border-slate-300 bg-slate-50 p-3 transition-colors",
+                "flex min-h-28 flex-col rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 p-3 transition-colors",
                 active && !disabled && "cursor-pointer border-primary/60 bg-white hover:border-solid hover:border-primary"
               )}
             >
@@ -132,7 +132,7 @@ export function BoxesInput({ payload, value, disabled, onChange }: Props) {
                     }}
                     title="Retirer de la boîte"
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-sm font-medium text-primary-foreground"
+                      "inline-flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-sm font-semibold text-primary-foreground"
                     )}
                   >
                     {it.text}
@@ -272,14 +272,14 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
 
   return (
     <div className="space-y-2">
-      <p className="text-xs text-muted-foreground">Coche la ou les bonnes cases sur chaque ligne.</p>
-      <div className="overflow-x-auto rounded-xl border border-border">
+      <p className="text-xs text-slate-500">Coche la ou les bonnes cases sur chaque ligne.</p>
+      <div className="overflow-x-auto rounded-xl border-2 border-slate-200">
         <table className="w-full border-collapse text-sm">
           <thead>
-            <tr className="bg-muted/60">
+            <tr className="bg-slate-100">
               <th className="border-b border-border px-3 py-2" />
               {columns.map((c) => (
-                <th key={c} className="border-b border-l border-border px-3 py-2 text-center font-semibold">
+                <th key={c} className="border-b border-l border-slate-200 px-3 py-2.5 text-center font-bold text-slate-900">
                   {c}
                 </th>
               ))}
@@ -287,14 +287,14 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
           </thead>
           <tbody>
             {payload.items.map((row) => (
-              <tr key={row.id} className="border-t border-border">
-                <th scope="row" className="bg-muted/30 px-3 py-2 text-left font-semibold">
+              <tr key={row.id} className="border-t border-slate-200">
+                <th scope="row" className="bg-slate-50 px-3 py-2.5 text-left font-semibold text-slate-900">
                   {row.text}
                 </th>
                 {columns.map((c) => {
                   const on = chosen(row.id).includes(c);
                   return (
-                    <td key={c} className="border-l border-border p-0 text-center">
+                    <td key={c} className="border-l border-slate-200 p-0 text-center">
                       <button
                         type="button"
                         disabled={disabled}
@@ -303,15 +303,15 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
                         aria-label={`${row.text} : ${c}`}
                         className={cn(
                           "flex h-11 w-full items-center justify-center transition-colors",
-                          on ? "bg-primary/20" : "hover:bg-muted/60"
+                          on ? "bg-primary" : "hover:bg-slate-50"
                         )}
                       >
                         {on ? (
-                          <span className="flex size-6 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                            <Check className="size-4" strokeWidth={3} />
+                          <span className="flex size-6 items-center justify-center rounded-md bg-white text-primary">
+                            <Check className="size-4" strokeWidth={3.5} />
                           </span>
                         ) : (
-                          <span className="size-5 rounded-md border-2 border-muted-foreground/30" />
+                          <span className="size-5 rounded-md border-2 border-slate-300" />
                         )}
                       </button>
                     </td>
