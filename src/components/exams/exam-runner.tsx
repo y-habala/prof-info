@@ -1,8 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Send, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Check, Send, Loader2, CircleCheck, CircleDashed } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -27,7 +26,24 @@ export type SectionGroup = {
   questions: Question[];
 };
 
+type Answers = Record<string, string[] | string>;
+
 const LETTERS = "abcdefghij";
+
+// One calm, distinct colour per exercise. Each card overrides --primary with
+// its colour, so every accent inside it (numbers, selections, tables…)
+// follows without per-component colour props.
+const EXERCISE_COLORS = [
+  { main: "oklch(0.5 0.17 255)", soft: "oklch(0.97 0.02 255)" }, // bleu
+  { main: "oklch(0.52 0.11 185)", soft: "oklch(0.97 0.02 185)" }, // turquoise
+  { main: "oklch(0.5 0.17 295)", soft: "oklch(0.97 0.02 295)" }, // violet
+  { main: "oklch(0.58 0.14 55)", soft: "oklch(0.975 0.025 70)" }, // ambre
+  { main: "oklch(0.55 0.17 15)", soft: "oklch(0.97 0.02 15)" }, // rose
+  { main: "oklch(0.52 0.13 150)", soft: "oklch(0.97 0.025 150)" }, // vert
+];
+const colorOf = (i: number) => EXERCISE_COLORS[i % EXERCISE_COLORS.length];
+const themeVars = (i: number) =>
+  ({ "--primary": colorOf(i).main, "--ring": colorOf(i).main, "--ex-soft": colorOf(i).soft }) as React.CSSProperties;
 
 function isVraiOption(text: string) {
   const t = text.trim().toLowerCase();
@@ -44,56 +60,7 @@ function isAnswered(q: Question, a: string[] | string | undefined): boolean {
   return Array.isArray(a) && a.length > 0;
 }
 
-function ChoiceOption({
-  name,
-  type,
-  letter,
-  label,
-  checked,
-  disabled,
-  onChange,
-}: {
-  name: string;
-  type: "radio" | "checkbox";
-  letter: string;
-  label: string;
-  checked: boolean;
-  disabled: boolean;
-  onChange: () => void;
-}) {
-  return (
-    <label
-      className={cn(
-        "flex cursor-pointer items-center gap-3 rounded-xl border-2 px-4 py-3 text-sm transition-all",
-        "has-[:checked]:border-primary has-[:checked]:bg-primary/5",
-        "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
-        disabled ? "pointer-events-none opacity-60" : "border-border hover:border-primary/40 hover:bg-muted/40"
-      )}
-    >
-      <input
-        type={type}
-        name={type === "radio" ? name : undefined}
-        checked={checked}
-        disabled={disabled}
-        onChange={onChange}
-        className="peer sr-only"
-      />
-      <span
-        aria-hidden
-        className={cn(
-          "flex size-6 shrink-0 items-center justify-center border-2 border-muted-foreground/40 text-transparent transition-colors",
-          "peer-checked:border-primary peer-checked:bg-primary peer-checked:text-primary-foreground",
-          type === "radio" ? "rounded-full after:size-2.5 after:rounded-full after:bg-current" : "rounded-md"
-        )}
-      >
-        {type === "checkbox" ? <Check className="size-4" strokeWidth={3} /> : null}
-      </span>
-      <span className="font-mono text-xs font-bold text-muted-foreground">{letter})</span>
-      <span className="flex-1 leading-snug">{label}</span>
-    </label>
-  );
-}
-
+/* ── Vrai / Faux ── */
 function TrueFalsePills({
   options,
   name,
@@ -109,7 +76,7 @@ function TrueFalsePills({
 }) {
   const selected = Array.isArray(answer) ? answer[0] : undefined;
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex gap-2">
       {options.map((o, i) => {
         const isVrai = isVraiOption(o.text) || (!isFauxOption(o.text) && i === 0);
         const checked = selected === o.id;
@@ -117,13 +84,14 @@ function TrueFalsePills({
           <label
             key={o.id}
             className={cn(
-              "cursor-pointer rounded-full border-2 px-5 py-2 text-sm font-semibold transition-all",
-              disabled ? "pointer-events-none opacity-60" : "",
+              "min-w-20 cursor-pointer rounded-full border-2 px-4 py-1.5 text-center text-sm font-bold transition-all",
+              "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring has-[:focus-visible]:ring-offset-2",
+              disabled && "pointer-events-none opacity-60",
               checked
                 ? isVrai
-                  ? "border-success bg-success text-success-foreground shadow-sm"
-                  : "border-destructive bg-destructive text-destructive-foreground shadow-sm"
-                : "border-border hover:border-foreground/40"
+                  ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                  : "border-rose-600 bg-rose-600 text-white shadow-sm"
+                : "border-border bg-card text-muted-foreground hover:border-foreground/30 hover:text-foreground"
             )}
           >
             <input type="radio" name={name} checked={checked} disabled={disabled} onChange={() => onChange(o.id)} className="sr-only" />
@@ -135,82 +103,205 @@ function TrueFalsePills({
   );
 }
 
-function QuestionCard({
-  question: q,
-  index,
+function Num({ n }: { n: number }) {
+  return (
+    <span className="mt-px flex size-6 shrink-0 items-center justify-center rounded-full bg-primary/12 text-xs font-bold text-primary">
+      {n}
+    </span>
+  );
+}
+
+function TfRow({
+  q,
+  n,
+  answer,
+  disabled,
+  onPick,
+}: {
+  q: Question;
+  n: number;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+      <p className="flex gap-3 text-[15px] leading-relaxed">
+        <Num n={n} />
+        <span>{q.text}</span>
+      </p>
+      <div className="shrink-0 pl-9 sm:pl-0">
+        <TrueFalsePills options={q.options} name={q.id} answer={answer} disabled={disabled} onChange={onPick} />
+      </div>
+    </div>
+  );
+}
+
+/* ── Appariement (dropdown) ── */
+function MatchBox({
+  q,
+  answer,
+  disabled,
+  onPick,
+}: {
+  q: Question;
+  answer: string[] | string | undefined;
+  disabled: boolean;
+  onPick: (id: string) => void;
+}) {
+  const value = Array.isArray(answer) ? (answer[0] ?? "") : "";
+  // A bare number is a label on a diagram: shown as a numbered badge.
+  const numbered = /^\s*\d{1,3}\s*$/.test(q.text);
+  return (
+    <label
+      className={cn(
+        "flex gap-3 rounded-xl border p-3 transition-colors",
+        value ? "border-primary/40 bg-[var(--ex-soft)]" : "border-border bg-card",
+        numbered ? "items-center" : "flex-col"
+      )}
+    >
+      {numbered ? (
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-primary-foreground">
+          {q.text.trim()}
+        </span>
+      ) : (
+        <span className="text-[15px] font-semibold leading-snug">{q.text}</span>
+      )}
+      <select
+        value={value}
+        disabled={disabled}
+        onChange={(e) => onPick(e.target.value)}
+        className={cn(
+          "h-11 w-full min-w-0 rounded-lg border border-input bg-background px-3 text-[15px] transition-colors",
+          "focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/25",
+          value ? "font-semibold text-foreground" : "text-muted-foreground"
+        )}
+      >
+        <option value="">Choisir…</option>
+        {q.options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.text}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+/* ── QCM ── */
+function QcmCard({
+  q,
+  n,
   answer,
   disabled,
   onSetSingle,
   onToggleMulti,
-  onSetText,
 }: {
-  question: Question;
-  index: number;
+  q: Question;
+  n: number;
   answer: string[] | string | undefined;
   disabled: boolean;
-  onSetSingle: (optionId: string) => void;
-  onToggleMulti: (optionId: string) => void;
+  onSetSingle: (id: string) => void;
+  onToggleMulti: (id: string) => void;
+}) {
+  const multi = q.type === "qcm_multiple";
+  const chosen = Array.isArray(answer) ? answer : [];
+  return (
+    <fieldset
+      className={cn(
+        "rounded-xl border bg-card p-4 transition-colors",
+        chosen.length > 0 ? "border-primary/40" : "border-border"
+      )}
+    >
+      <legend className="sr-only">Question {n}</legend>
+      <p className="mb-3 flex gap-2.5 text-[15px] font-semibold leading-snug">
+        <Num n={n} />
+        <span>
+          {q.text}
+          {multi ? <span className="ml-1 text-xs font-medium text-muted-foreground">(plusieurs réponses possibles)</span> : null}
+        </span>
+      </p>
+      <div className="space-y-1.5">
+        {q.options.map((o, i) => {
+          const on = chosen.includes(o.id);
+          return (
+            <label
+              key={o.id}
+              className={cn(
+                "flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-[15px] transition-colors",
+                "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
+                on ? "border-primary bg-[var(--ex-soft)] font-semibold" : "border-transparent hover:bg-muted/60",
+                disabled && "pointer-events-none opacity-60"
+              )}
+            >
+              <input
+                type={multi ? "checkbox" : "radio"}
+                name={q.id}
+                checked={on}
+                disabled={disabled}
+                onChange={() => (multi ? onToggleMulti(o.id) : onSetSingle(o.id))}
+                className="sr-only"
+              />
+              <span
+                aria-hidden
+                className={cn(
+                  "flex size-6 shrink-0 items-center justify-center border-2 text-xs font-bold transition-colors",
+                  multi ? "rounded-md" : "rounded-full",
+                  on ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground/30 text-muted-foreground"
+                )}
+              >
+                {on && multi ? <Check className="size-3.5" strokeWidth={3} /> : LETTERS[i] ?? i + 1}
+              </span>
+              <span className="leading-snug">{o.text}</span>
+            </label>
+          );
+        })}
+      </div>
+    </fieldset>
+  );
+}
+
+/* ── Other types (texte à trous, association, tableau…) ── */
+function BlockQuestion({
+  q,
+  n,
+  answer,
+  disabled,
+  onSetText,
+}: {
+  q: Question;
+  n: number;
+  answer: string[] | string | undefined;
+  disabled: boolean;
   onSetText: (text: string) => void;
 }) {
-  const isMulti = q.type === "qcm_multiple";
-  const isChoice = q.type === "qcm_single" || isMulti || q.type === "matching";
-
+  const text = typeof answer === "string" ? answer : undefined;
   return (
-    <div className="space-y-3 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <p className="flex-1 leading-snug">
-          <span className="mr-2 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-bold text-primary">
-            Q{index}
-          </span>
-          <span className="font-medium">{q.text}</span>
-        </p>
-        <span className="shrink-0 text-xs font-medium text-muted-foreground">
-          {q.points} {q.points > 1 ? "pts" : "pt"}
-        </span>
+    <div className="space-y-3 px-5 py-5">
+      <p className="flex gap-3 text-[15px] font-semibold leading-relaxed">
+        <Num n={n} />
+        <span>{q.text}</span>
+      </p>
+      <div className="sm:pl-9">
+        {q.interactive && q.type === "association" ? (
+          <AssociationInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
+        ) : null}
+        {q.interactive && q.type === "ordering" ? (
+          <OrderingInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
+        ) : null}
+        {q.interactive && q.type === "table" ? (
+          <TableInput payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
+        ) : null}
+        {q.type === "fill_blank" ? (
+          <Input
+            disabled={disabled}
+            value={text ?? ""}
+            onChange={(e) => onSetText(e.target.value)}
+            placeholder="Ta réponse…"
+            className="h-11 max-w-md text-[15px]"
+          />
+        ) : null}
       </div>
-
-      {q.type === "true_false" && (
-        <TrueFalsePills options={q.options} name={q.id} answer={answer} disabled={disabled} onChange={onSetSingle} />
-      )}
-
-      {isChoice && q.type !== "true_false" && (
-        <div className="space-y-2">
-          {q.options.map((o, i) => (
-            <ChoiceOption
-              key={o.id}
-              name={q.id}
-              type={isMulti ? "checkbox" : "radio"}
-              letter={LETTERS[i] ?? String(i + 1)}
-              label={o.text}
-              disabled={disabled}
-              checked={
-                isMulti ? Array.isArray(answer) && answer.includes(o.id) : Array.isArray(answer) && answer[0] === o.id
-              }
-              onChange={() => (isMulti ? onToggleMulti(o.id) : onSetSingle(o.id))}
-            />
-          ))}
-        </div>
-      )}
-
-      {q.interactive && q.type === "association" && (
-        <AssociationInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
-      )}
-      {q.interactive && q.type === "ordering" && (
-        <OrderingInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
-      )}
-      {q.interactive && q.type === "table" && (
-        <TableInput payload={q.interactive} value={typeof answer === "string" ? answer : undefined} disabled={disabled} onChange={onSetText} />
-      )}
-
-      {q.type === "fill_blank" && (
-        <Input
-          disabled={disabled}
-          value={typeof answer === "string" ? answer : ""}
-          onChange={(e) => onSetText(e.target.value)}
-          placeholder="Votre réponse…"
-          className="max-w-md"
-        />
-      )}
     </div>
   );
 }
@@ -243,131 +334,13 @@ function groupByLayout(questions: Question[]) {
   return groups;
 }
 
-function TfRow({
-  q,
-  n,
-  answer,
-  disabled,
-  onPick,
-}: {
-  q: Question;
-  n: number;
-  answer: string[] | string | undefined;
-  disabled: boolean;
-  onPick: (id: string) => void;
-}) {
-  return (
-    <div className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
-      <p className="text-sm leading-snug">
-        <span className="font-semibold">{n}.</span> {q.text}
-      </p>
-      <div className="shrink-0">
-        <TrueFalsePills options={q.options} name={q.id} answer={answer} disabled={disabled} onChange={onPick} />
-      </div>
-    </div>
-  );
+function sectionHeading(title: string | null): string {
+  const t = (title ?? "").trim();
+  // "Exercice 2 : Reliez…" → "Reliez…" (the number is shown separately).
+  return t.replace(/^exercice\s*\d+\s*[:\-–]\s*/i, "") || "Questions";
 }
 
-function MatchBox({
-  q,
-  answer,
-  disabled,
-  onPick,
-}: {
-  q: Question;
-  answer: string[] | string | undefined;
-  disabled: boolean;
-  onPick: (id: string) => void;
-}) {
-  const value = Array.isArray(answer) ? (answer[0] ?? "") : "";
-  // A bare number is a label on a diagram: shown as a numbered badge.
-  const numbered = /^\s*\d{1,3}\s*$/.test(q.text);
-  return (
-    <label className={cn("flex gap-2.5 rounded-xl bg-muted/50 p-3", numbered ? "items-center" : "flex-col")}>
-      {numbered ? (
-        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
-          {q.text.trim()}
-        </span>
-      ) : (
-        <span className="text-sm font-semibold leading-snug">{q.text}</span>
-      )}
-      <select
-        value={value}
-        disabled={disabled}
-        onChange={(e) => onPick(e.target.value)}
-        className={cn(
-          "h-10 w-full min-w-0 rounded-lg border border-input bg-background px-2 text-sm",
-          value ? "font-medium text-foreground" : "text-muted-foreground"
-        )}
-      >
-        <option value="">…</option>
-        {q.options.map((o) => (
-          <option key={o.id} value={o.id}>
-            {o.text}
-          </option>
-        ))}
-      </select>
-    </label>
-  );
-}
-
-function QcmCard({
-  q,
-  n,
-  answer,
-  disabled,
-  onSetSingle,
-  onToggleMulti,
-}: {
-  q: Question;
-  n: number;
-  answer: string[] | string | undefined;
-  disabled: boolean;
-  onSetSingle: (id: string) => void;
-  onToggleMulti: (id: string) => void;
-}) {
-  const multi = q.type === "qcm_multiple";
-  const chosen = Array.isArray(answer) ? answer : [];
-  return (
-    <fieldset className="rounded-xl border border-border bg-card p-3.5">
-      <legend className="sr-only">Question {n}</legend>
-      <p className="mb-2 text-sm font-semibold leading-snug text-primary">
-        {n}) {q.text}
-        {multi ? <span className="ml-1 text-xs font-normal text-muted-foreground">(plusieurs réponses)</span> : null}
-      </p>
-      <div className="space-y-1">
-        {q.options.map((o, i) => (
-          <label
-            key={o.id}
-            className={cn(
-              "flex cursor-pointer items-start gap-2 rounded-md px-1.5 py-1 text-sm transition-colors hover:bg-muted/60",
-              chosen.includes(o.id) && "bg-primary/10 font-medium",
-              disabled && "pointer-events-none opacity-60"
-            )}
-          >
-            <input
-              type={multi ? "checkbox" : "radio"}
-              name={q.id}
-              checked={chosen.includes(o.id)}
-              disabled={disabled}
-              onChange={() => (multi ? onToggleMulti(o.id) : onSetSingle(o.id))}
-              className="mt-0.5 size-4 shrink-0 accent-[var(--primary)]"
-            />
-            <span>
-              {LETTERS[i] ?? i + 1}) {o.text}
-            </span>
-          </label>
-        ))}
-      </div>
-    </fieldset>
-  );
-}
-
-function sectionHeading(title: string | null, index: number): [string, string] {
-  const t = title ?? "Questions";
-  const m = t.match(/^(exercice\s*\d+)\s*[:\-–]\s*(.*)$/i);
-  return m ? [m[1], m[2]] : [`Exercice ${index}`, t];
-}
+const fmtPoints = (p: number) => `${Number.isInteger(p) ? p : p.toFixed(2).replace(/0$/, "")} pt${p > 1 ? "s" : ""}`;
 
 function SectionCard({
   section,
@@ -380,29 +353,49 @@ function SectionCard({
 }: {
   section: SectionGroup;
   index: number;
-  answers: Record<string, string[] | string>;
+  answers: Answers;
   disabled: boolean;
   onSetSingle: (qId: string, optionId: string) => void;
   onToggleMulti: (qId: string, optionId: string) => void;
   onSetText: (qId: string, text: string) => void;
 }) {
   const totalPoints = section.questions.reduce((s, q) => s + q.points, 0);
+  const done = section.questions.filter((q) => isAnswered(q, answers[q.id])).length;
+  const complete = done === section.questions.length;
   const groups = groupByLayout(section.questions);
-  const [label, rest] = sectionHeading(section.title, index);
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border border-t-[3px] border-t-primary bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-3 border-b border-border bg-muted/40 px-5 py-3">
-        <h2 className="text-[15px] leading-snug">
-          <span className="font-bold">{label} :</span> <span className="font-semibold">{rest}</span>
-        </h2>
-        <span className="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-          {totalPoints} {totalPoints > 1 ? "Pts" : "Pt"}
+    <section
+      id={`exercice-${index}`}
+      style={themeVars(index - 1)}
+      className="scroll-mt-32 overflow-hidden rounded-2xl border border-border bg-card shadow-[0_1px_3px_rgb(0_0_0/0.04)]"
+    >
+      <div className="flex items-center gap-4 border-b border-border bg-[var(--ex-soft)] px-5 py-4">
+        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary font-heading text-xl font-bold text-primary-foreground">
+          {index}
         </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-primary">Exercice {index}</p>
+          <h2 className="font-heading text-lg font-semibold leading-snug text-foreground">{sectionHeading(section.title)}</h2>
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1">
+          <span className="rounded-full bg-primary px-2.5 py-0.5 text-xs font-bold text-primary-foreground">
+            {fmtPoints(totalPoints)}
+          </span>
+          <span
+            className={cn(
+              "inline-flex items-center gap-1 text-xs font-semibold",
+              complete ? "text-emerald-700" : "text-muted-foreground"
+            )}
+          >
+            {complete ? <CircleCheck className="size-3.5" /> : <CircleDashed className="size-3.5" />}
+            {done}/{section.questions.length}
+          </span>
+        </div>
       </div>
 
       {section.imageUrl ? (
-        <div className="border-b border-border p-4">
+        <div className="border-b border-border bg-white p-4">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={section.imageUrl} alt="" className="mx-auto max-h-[480px] w-full rounded-lg object-contain" />
         </div>
@@ -411,7 +404,7 @@ function SectionCard({
       {groups.map((g) => {
         if (g.layout === "tf") {
           return (
-            <div key="tf" className="divide-y divide-border">
+            <div key="tf" className="divide-y divide-border/70">
               {g.items.map(({ q, n }) => (
                 <TfRow key={q.id} q={q} n={n} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
               ))}
@@ -420,7 +413,7 @@ function SectionCard({
         }
         if (g.layout === "match") {
           return (
-            <div key="match" className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+            <div key="match" className="grid grid-cols-1 gap-3 p-5 sm:grid-cols-2">
               {g.items.map(({ q }) => (
                 <MatchBox key={q.id} q={q} answer={answers[q.id]} disabled={disabled} onPick={(id) => onSetSingle(q.id, id)} />
               ))}
@@ -429,7 +422,7 @@ function SectionCard({
         }
         if (g.layout === "qcm") {
           return (
-            <div key="qcm" className="grid grid-cols-1 gap-3 p-4 sm:grid-cols-2">
+            <div key="qcm" className="grid grid-cols-1 gap-4 p-5 md:grid-cols-2">
               {g.items.map(({ q, n }) => (
                 <QcmCard
                   key={q.id}
@@ -445,16 +438,14 @@ function SectionCard({
           );
         }
         return (
-          <div key="block" className="divide-y divide-border">
+          <div key="block" className="divide-y divide-border/70">
             {g.items.map(({ q, n }) => (
-              <QuestionCard
+              <BlockQuestion
                 key={q.id}
-                question={q}
-                index={n}
+                q={q}
+                n={n}
                 answer={answers[q.id]}
                 disabled={disabled}
-                onSetSingle={(oid) => onSetSingle(q.id, oid)}
-                onToggleMulti={(oid) => onToggleMulti(q.id, oid)}
                 onSetText={(text) => onSetText(q.id, text)}
               />
             ))}
@@ -481,7 +472,7 @@ export function ExamRunner({
   sections: SectionGroup[];
 }) {
   const router = useRouter();
-  const [answers, setAnswers] = useState<Record<string, string[] | string>>({});
+  const [answers, setAnswers] = useState<Answers>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const hasSubmittedRef = useRef(false);
@@ -501,6 +492,7 @@ export function ExamRunner({
 
   const allQuestions = sections.flatMap((s) => s.questions);
   const answeredCount = allQuestions.filter((q) => isAnswered(q, answers[q.id])).length;
+  const remaining = allQuestions.length - answeredCount;
   const progress = allQuestions.length > 0 ? Math.round((answeredCount / allQuestions.length) * 100) : 0;
 
   function setSingle(qid: string, oid: string) {
@@ -516,7 +508,7 @@ export function ExamRunner({
     setAnswers((prev) => ({ ...prev, [qid]: t }));
   }
 
-  async function handleSubmit() {
+  async function submit() {
     if (hasSubmittedRef.current) return;
     hasSubmittedRef.current = true;
     setIsSubmitting(true);
@@ -557,43 +549,79 @@ export function ExamRunner({
     }
   }
 
+  // The student confirms before handing in with unanswered questions; the
+  // timer hands in without asking.
+  function submitByStudent() {
+    if (remaining > 0) {
+      const ok = confirm(
+        `Il reste ${remaining} question${remaining > 1 ? "s" : ""} sans réponse.\nVeux-tu vraiment terminer l'examen ?`
+      );
+      if (!ok) return;
+    }
+    submit();
+  }
+
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-[oklch(0.975_0.005_250)]">
       <ExamReloadWarning />
-      <header className="sticky top-0 z-20 bg-primary text-primary-foreground shadow-md">
-        <div className="mx-auto flex max-w-4xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[oklch(0.27_0.06_260)] text-white shadow-lg">
+        <div className="mx-auto flex max-w-5xl items-center justify-between gap-3 px-4 py-2.5 sm:px-6 sm:py-3">
           <div className="min-w-0">
-            <h1 className="truncate font-heading text-lg font-bold sm:text-xl">
-              {examTitle} (Modèle {modelLabel.toUpperCase()})
+            <h1 className="truncate font-heading text-base font-semibold sm:text-xl">
+              {examTitle}
+              <span className="ml-2 hidden rounded-md bg-white/15 px-1.5 py-0.5 align-middle text-xs font-bold sm:inline">
+                Modèle {modelLabel.toUpperCase()}
+              </span>
             </h1>
-            <p className="text-xs text-primary-foreground/80">
-              {levelName ? `${levelName} | ` : ""}Informatique
+            <p className="truncate text-xs text-white/70">
+              {levelName ? `${levelName} · ` : ""}Informatique
+              <span className="sm:hidden"> · Modèle {modelLabel.toUpperCase()}</span>
             </p>
           </div>
-          <div className="flex shrink-0 items-center gap-3">
-            <span className="hidden text-xs font-medium text-primary-foreground/80 sm:inline">
-              {answeredCount}/{allQuestions.length}
-            </span>
-            <ExamTimer deadline={deadline} onExpire={handleSubmit} />
-            <Button
+          <div className="flex shrink-0 items-center gap-2.5">
+            <ExamTimer deadline={deadline} onExpire={submit} />
+            <button
               type="button"
-              variant="secondary"
-              size="sm"
               disabled={isSubmitting}
-              onClick={handleSubmit}
-              className="rounded-full gap-1.5"
+              onClick={submitByStudent}
+              aria-label="Terminer l'examen"
+              className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white px-3 text-sm font-bold text-[oklch(0.27_0.06_260)] shadow-sm transition-colors hover:bg-white/90 disabled:opacity-60 sm:px-4"
             >
-              {isSubmitting ? <Loader2 className="size-3.5 animate-spin" /> : <Send className="size-3.5" />}
-              Terminer
-            </Button>
+              {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              <span className="hidden sm:inline">Terminer</span>
+            </button>
           </div>
         </div>
-        <div className="h-1 w-full bg-primary-foreground/15">
-          <div className="h-full bg-gold transition-all duration-300" style={{ width: `${progress}%` }} />
+
+        {/* Exercise navigator: colour + progress per exercise */}
+        <nav aria-label="Exercices" className="mx-auto flex max-w-5xl gap-2 overflow-x-auto px-4 pb-2.5 sm:px-6 sm:pb-3">
+          {sections.map((s, i) => {
+            const done = s.questions.filter((q) => isAnswered(q, answers[q.id])).length;
+            const complete = done === s.questions.length;
+            return (
+              <a
+                key={s.id ?? "none"}
+                href={`#exercice-${i + 1}`}
+                className="inline-flex shrink-0 items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90 transition-colors hover:bg-white/20"
+              >
+                <span className="size-2.5 rounded-full" style={{ backgroundColor: colorOf(i).main }} />
+                Ex {i + 1}
+                <span className={cn("tabular-nums", complete ? "text-emerald-300" : "text-white/60")}>
+                  {complete ? <Check className="inline size-3.5" strokeWidth={3} /> : `${done}/${s.questions.length}`}
+                </span>
+              </a>
+            );
+          })}
+          <span className="ml-auto hidden shrink-0 items-center text-xs font-semibold text-white/70 sm:inline-flex">
+            {answeredCount}/{allQuestions.length} réponses
+          </span>
+        </nav>
+        <div className="h-1 w-full bg-white/10">
+          <div className="h-full bg-emerald-400 transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
       </header>
 
-      <main className="mx-auto max-w-4xl space-y-6 px-4 py-6 sm:py-8">
+      <main className="mx-auto max-w-5xl space-y-7 px-4 py-7 sm:px-6 sm:py-9">
         {sections.map((s, i) => (
           <SectionCard
             key={s.id ?? "unsectioned"}
@@ -606,15 +634,35 @@ export function ExamRunner({
             onSetText={setText}
           />
         ))}
-        {error ? (
-          <p role="alert" className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-            {error}
-          </p>
-        ) : null}
-        <Button type="button" disabled={isSubmitting} onClick={handleSubmit} size="lg" className="w-full gap-2">
-          {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-          Valider l&apos;examen
-        </Button>
+
+        <div className="rounded-2xl border border-border bg-card p-5 shadow-[0_1px_3px_rgb(0_0_0/0.04)] sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <p className="font-heading text-lg font-semibold">
+                {remaining === 0 ? "Tout est répondu !" : `Encore ${remaining} question${remaining > 1 ? "s" : ""} sans réponse`}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {remaining === 0
+                  ? "Relis tes réponses, puis valide ton examen."
+                  : "Tu peux revenir sur un exercice avec les boutons en haut de la page."}
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={isSubmitting}
+              onClick={submitByStudent}
+              className="inline-flex h-12 items-center gap-2 rounded-full bg-emerald-600 px-7 text-base font-bold text-white shadow-sm transition-colors hover:bg-emerald-700 disabled:opacity-60"
+            >
+              {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
+              Valider l&apos;examen
+            </button>
+          </div>
+          {error ? (
+            <p role="alert" className="mt-4 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </p>
+          ) : null}
+        </div>
       </main>
     </div>
   );

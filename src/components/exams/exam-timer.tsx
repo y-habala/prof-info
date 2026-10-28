@@ -22,7 +22,7 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
 
   if (remaining === null) {
     return (
-      <div className="inline-flex items-center gap-1.5 rounded-full bg-background/15 px-3 py-1 font-mono text-sm font-bold tracking-wider">
+      <div className="inline-flex h-9 items-center gap-1.5 rounded-full bg-white/15 px-3.5 font-mono text-sm font-bold tracking-wider text-white">
         <Clock className="size-3.5" />
         --:--
       </div>
@@ -32,11 +32,14 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
   const m = Math.floor(remaining / 60);
   const s = remaining % 60;
   const low = remaining <= 60;
+  const warn = remaining <= 5 * 60;
   return (
     <div
+      role="timer"
+      aria-label="Temps restant"
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-mono text-sm font-bold tracking-wider",
-        low ? "bg-destructive text-destructive-foreground" : "bg-background/15 text-primary-foreground"
+        "inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 font-mono text-sm font-bold tracking-wider transition-colors",
+        low ? "animate-pulse bg-rose-600 text-white" : warn ? "bg-amber-400 text-amber-950" : "bg-white/15 text-white"
       )}
     >
       <Clock className="size-3.5" />
