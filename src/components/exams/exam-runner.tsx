@@ -83,7 +83,7 @@ function TfRow({
       data-done={done}
       className={cn("flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6", flash)}
     >
-      <p className="flex gap-3 text-[15px] leading-relaxed text-slate-800">
+      <p className="flex gap-3 text-base font-semibold leading-relaxed text-slate-950">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
@@ -144,7 +144,7 @@ function MatchBox({
           {q.text.trim()}
         </span>
       ) : (
-        <span className="text-[15px] font-medium text-slate-800">{q.text}</span>
+        <span className="text-base font-semibold text-slate-950">{q.text}</span>
       )}
       <select
         value={value}
@@ -193,7 +193,7 @@ function QcmCard({
   const chosen = Array.isArray(answer) ? answer : [];
   return (
     <fieldset data-q={q.id} data-done={chosen.length > 0} className={cn("space-y-2", flash)}>
-      <legend className="mb-2 flex gap-3 text-[15px] font-medium leading-snug text-slate-800">
+      <legend className="mb-2 flex gap-3 text-base font-semibold leading-snug text-slate-950">
         <Num n={n} done={chosen.length > 0} />
         <span>
           {q.text}
@@ -207,11 +207,11 @@ function QcmCard({
             <label
               key={o.id}
               className={cn(
-                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border-2 px-3 py-2 text-[15px] transition-colors",
+                "flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border-2 px-3 py-2 text-[15px] font-medium transition-colors",
                 "has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring",
                 on
                   ? "border-primary bg-primary font-semibold text-primary-foreground"
-                  : "border-slate-300 bg-white text-slate-800 hover:border-primary/60",
+                  : "border-slate-300 bg-white text-slate-900 hover:border-primary/60",
                 disabled && "pointer-events-none opacity-60"
               )}
             >
@@ -260,7 +260,7 @@ function BlockQuestion({
   const done = isAnswered(q, answer);
   return (
     <div data-q={q.id} data-done={done} className={cn("space-y-3 py-3.5", flash)}>
-      <p className="flex gap-3 text-[15px] font-medium leading-relaxed text-slate-800">
+      <p className="flex gap-3 text-base font-semibold leading-relaxed text-slate-950">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
