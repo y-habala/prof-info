@@ -352,12 +352,14 @@ function SectionCard({
       id={`exercice-${index}`}
       className="scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 border-t-4 border-t-primary bg-white shadow-sm"
     >
-      <header className="flex items-center justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-3.5 sm:px-6">
-        <h2 className="min-w-0 text-[17px] leading-snug text-slate-900">
-          <span className="font-heading font-bold">Exercice {index} :</span>{" "}
-          <span className="font-semibold">{sectionHeading(section.title)}</span>
-        </h2>
-        <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+      <header className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+        <div className="min-w-0 space-y-2">
+          <span className="inline-flex items-center rounded-full bg-primary px-3.5 py-1 font-heading text-sm font-bold tracking-wide text-primary-foreground">
+            Exercice {index}
+          </span>
+          <h2 className="font-heading text-[22px] font-bold leading-snug text-slate-950">{sectionHeading(section.title)}</h2>
+        </div>
+        <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
           {fmtPoints(totalPoints)}
         </span>
       </header>
