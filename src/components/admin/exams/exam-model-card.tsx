@@ -5,7 +5,6 @@ import { ArrowRight, Pencil, Trash2, Copy, FileText, Layers } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ExamModelDialog } from "./exam-model-dialog";
-import { SecretCode } from "./secret-code";
 import { deleteExamModel, duplicateExamModel } from "@/actions/exams";
 import { useRouter } from "next/navigation";
 
@@ -65,7 +64,7 @@ export function ExamModelCard({ examId, model }: { examId: string; model: Model 
           </div>
           <div>
             <p className="text-xs text-muted-foreground">Code</p>
-            <SecretCode code={model.secret_code} className="text-xl" />
+            <p className="font-mono text-xl font-bold tracking-widest">{model.secret_code}</p>
           </div>
         </div>
 

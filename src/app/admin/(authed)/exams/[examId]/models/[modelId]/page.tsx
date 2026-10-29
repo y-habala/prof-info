@@ -3,7 +3,6 @@ import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ModelBuilder, type ModelData } from "@/components/admin/exams/model-builder";
-import { SecretCode } from "@/components/admin/exams/secret-code";
 
 export default async function AdminExamModelBuilderPage({
   params,
@@ -100,8 +99,8 @@ export default async function AdminExamModelBuilderPage({
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold tracking-tight">Modèle {model.label}</h1>
-              <span className="rounded-full bg-muted py-0.5 pl-3 pr-1.5">
-                <SecretCode code={model.secret_code} className="text-sm" />
+              <span className="rounded-full bg-muted px-3 py-1 font-mono text-sm font-bold tracking-widest">
+                {model.secret_code}
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{exam.title}</p>
