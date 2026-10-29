@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Loader2, ListTodo, BadgeCheck, Flag } from "lucide-react";
+import { Check, Loader2, ListTodo, BadgeCheck } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -579,16 +579,6 @@ export function ExamRunner({
               </button>
             ) : null}
             <ExamTimer deadline={deadline} onExpire={submit} />
-            <button
-              type="button"
-              disabled={isSubmitting}
-              onClick={submitByStudent}
-              aria-label="Terminer l'examen"
-              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md active:scale-95 disabled:opacity-60 sm:px-4"
-            >
-              {isSubmitting ? <Loader2 className="size-[18px] animate-spin" /> : <Flag className="size-[18px]" strokeWidth={2.25} />}
-              <span className="hidden sm:inline">Terminer</span>
-            </button>
           </div>
         </div>
         <div className="h-1.5 w-full bg-orange-100" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
