@@ -49,7 +49,7 @@ function Num({ n, done }: { n: number; done: boolean }) {
     <span
       className={cn(
         "mt-0.5 flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-bold transition-colors",
-        done ? "bg-primary text-primary-foreground" : "border border-slate-300 text-slate-500"
+        done ? "bg-orange-500 text-white" : "border border-slate-300 text-slate-500"
       )}
     >
       {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
@@ -138,7 +138,7 @@ function MatchBox({
         <span
           className={cn(
             "flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-bold",
-            value ? "bg-primary text-primary-foreground" : "bg-slate-800 text-white"
+            value ? "bg-orange-500 text-white" : "bg-slate-800 text-white"
           )}
         >
           {q.text.trim()}
