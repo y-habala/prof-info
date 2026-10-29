@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Check, Send, Loader2, ChevronDown } from "lucide-react";
+import { Check, Loader2, ListTodo, BadgeCheck, Flag } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { ExamTimer } from "./exam-timer";
@@ -567,10 +567,12 @@ export function ExamRunner({
                 type="button"
                 onClick={goToNextUnanswered}
                 title="Aller à la prochaine question sans réponse"
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-50"
+                className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-3 text-sm font-semibold text-slate-800 transition-colors hover:border-orange-400 hover:bg-orange-50"
               >
-                <ChevronDown className="size-4" />
-                <span className="tabular-nums">{remaining}</span>
+                <ListTodo className="size-[18px] text-orange-500" strokeWidth={2.25} />
+                <span className="flex min-w-5 items-center justify-center rounded-full bg-orange-500 px-1.5 text-xs font-bold tabular-nums text-white">
+                  {remaining}
+                </span>
                 <span className="hidden md:inline">à faire</span>
               </button>
             ) : null}
@@ -580,15 +582,18 @@ export function ExamRunner({
               disabled={isSubmitting}
               onClick={submitByStudent}
               aria-label="Terminer l'examen"
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60 sm:px-4"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 hover:shadow-md active:scale-95 disabled:opacity-60 sm:px-4"
             >
-              {isSubmitting ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
+              {isSubmitting ? <Loader2 className="size-[18px] animate-spin" /> : <Flag className="size-[18px]" strokeWidth={2.25} />}
               <span className="hidden sm:inline">Terminer</span>
             </button>
           </div>
         </div>
-        <div className="h-0.5 w-full bg-slate-100">
-          <div className="h-full bg-primary transition-all duration-500" style={{ width: `${progress}%` }} />
+        <div className="h-1.5 w-full bg-orange-100" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
+          <div
+            className="h-full rounded-r-full bg-orange-500 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
         </div>
       </header>
 
@@ -607,16 +612,16 @@ export function ExamRunner({
         ))}
 
         <div className="flex flex-col items-center gap-3 py-4">
-          <p className="text-sm text-slate-500">
-            {answeredCount}/{allQuestions.length} questions répondues
+          <p className="text-sm font-medium text-slate-600">
+            <span className="font-bold text-orange-600">{answeredCount}</span>/{allQuestions.length} questions répondues
           </p>
           <button
             type="button"
             disabled={isSubmitting}
             onClick={submitByStudent}
-            className="inline-flex h-12 items-center gap-2 rounded-lg bg-primary px-8 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary/90 disabled:opacity-60"
+            className="inline-flex h-14 items-center gap-3 rounded-2xl bg-primary px-9 text-lg font-bold text-primary-foreground shadow-md transition-all hover:bg-primary/90 hover:shadow-lg active:scale-[0.98] disabled:opacity-60"
           >
-            {isSubmitting ? <Loader2 className="size-5 animate-spin" /> : <Send className="size-5" />}
+            {isSubmitting ? <Loader2 className="size-6 animate-spin" /> : <BadgeCheck className="size-6" strokeWidth={2.25} />}
             Valider l&apos;examen
           </button>
           {error ? (

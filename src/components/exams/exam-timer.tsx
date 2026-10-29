@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Clock } from "lucide-react";
+import { Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: () => void }) {
@@ -22,8 +22,8 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
 
   if (remaining === null) {
     return (
-      <div className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-slate-300 px-3 font-mono text-sm font-semibold text-slate-700">
-        <Clock className="size-3.5" />
+      <div className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-3 font-mono text-sm font-bold text-slate-800">
+        <Timer className="size-[18px] text-slate-400" strokeWidth={2.25} />
         --:--
       </div>
     );
@@ -38,15 +38,15 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
       role="timer"
       aria-label="Temps restant"
       className={cn(
-        "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 font-mono text-sm font-semibold transition-colors",
+        "inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 font-mono text-sm font-bold transition-colors",
         low
-          ? "border-rose-600 bg-rose-600 text-white"
+          ? "animate-pulse border-rose-600 bg-rose-600 text-white"
           : warn
-            ? "border-amber-300 bg-amber-50 text-amber-800"
-            : "border-slate-300 text-slate-700"
+            ? "border-orange-400 bg-orange-50 text-orange-800"
+            : "border-slate-200 bg-white text-slate-800"
       )}
     >
-      <Clock className="size-3.5" />
+      <Timer className={cn("size-[18px]", low ? "text-white" : warn ? "text-orange-500" : "text-slate-400")} strokeWidth={2.25} />
       {m}:{String(s).padStart(2, "0")}
     </div>
   );
