@@ -352,23 +352,18 @@ function SectionCard({
       id={`exercice-${index}`}
       className="scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 border-t-4 border-t-primary bg-white shadow-sm"
     >
-      <header className="space-y-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+      <header className="space-y-2.5 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
         <div className="flex items-center justify-between gap-3">
-          <div className="inline-flex items-center gap-2.5 rounded-full bg-slate-900 py-1 pl-1 pr-4 text-white shadow-sm">
-            <span className="flex size-9 items-center justify-center rounded-full bg-primary font-heading text-lg font-bold leading-none">
-              {index}
-            </span>
-            <span className="font-heading text-sm font-bold uppercase tracking-[0.18em]">Exercice</span>
-          </div>
+          <span className="inline-flex items-center rounded-full bg-primary px-5 py-2 font-heading text-xl font-bold leading-none tracking-wide text-primary-foreground shadow-sm">
+            Exercice {index}
+          </span>
           <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
             {fmtPoints(totalPoints)}
           </span>
         </div>
-        <div className="rounded-xl border border-slate-200 border-l-[5px] border-l-primary bg-white px-4 py-3">
-          <h2 className="font-heading text-[19px] font-semibold leading-snug text-slate-900">
-            {sectionHeading(section.title)}
-          </h2>
-        </div>
+        <h2 className="font-heading text-[17px] font-semibold leading-snug text-slate-800">
+          {sectionHeading(section.title)}
+        </h2>
       </header>
 
       {section.imageUrl ? (

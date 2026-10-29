@@ -42,11 +42,11 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
         low
           ? "animate-pulse border-rose-600 bg-rose-600 text-white"
           : warn
-            ? "border-orange-400 bg-orange-50 text-orange-800"
+            ? "border-rose-300 bg-rose-50 text-rose-700"
             : "border-slate-200 bg-white text-slate-800"
       )}
     >
-      <Timer className={cn("size-[18px]", low ? "text-white" : warn ? "text-orange-500" : "text-slate-400")} strokeWidth={2.25} />
+      <Timer className={cn("size-[18px]", low ? "text-white" : warn ? "text-rose-500" : "text-slate-400")} strokeWidth={2.25} />
       {m}:{String(s).padStart(2, "0")}
     </div>
   );
