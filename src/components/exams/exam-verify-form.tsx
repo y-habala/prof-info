@@ -1,7 +1,7 @@
 "use client";
 import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, ChevronDown, Loader2 } from "lucide-react";
+import { ArrowRight, ChevronDown, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
   const router = useRouter();
   const [secretCode, setSecretCode] = useState("");
+  const [showCode, setShowCode] = useState(false);
   const [studentFirstName, setStudentFirstName] = useState("");
   const [studentName, setStudentName] = useState("");
   const [studentClass, setStudentClass] = useState("");
@@ -94,17 +95,30 @@ export function ExamVerifyForm({ classOptions }: { classOptions: string[] }) {
     <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
       <div className="space-y-2">
         <Label htmlFor="secretCode">Code de l&apos;examen</Label>
-        <Input
-          id="secretCode"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          maxLength={4}
-          autoComplete="off"
-          placeholder="• • • •"
-          value={secretCode}
-          onChange={(e) => handleCodeChange(e.target.value)}
-          className="h-14 text-center text-2xl font-mono tracking-[0.5em]"
-        />
+        {/* Masked by default so classmates can't read the code over a shoulder. */}
+        <div className="relative">
+          <Input
+            id="secretCode"
+            type={showCode ? "text" : "password"}
+            inputMode="numeric"
+            pattern="[0-9]*"
+            maxLength={4}
+            autoComplete="off"
+            placeholder="• • • •"
+            value={secretCode}
+            onChange={(e) => handleCodeChange(e.target.value)}
+            className="h-14 px-12 text-center text-2xl font-mono tracking-[0.5em]"
+          />
+          <button
+            type="button"
+            onClick={() => setShowCode((s) => !s)}
+            aria-label={showCode ? "Masquer le code" : "Afficher le code"}
+            title={showCode ? "Masquer le code" : "Afficher le code"}
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-lg p-2 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-800"
+          >
+            {showCode ? <EyeOff className="size-5" /> : <Eye className="size-5" />}
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
