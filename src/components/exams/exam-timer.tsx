@@ -3,7 +3,19 @@ import { useEffect, useState } from "react";
 import { Timer } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: () => void }) {
+const RING = 15; // radius of the countdown ring, in a 36×36 box
+const CIRC = 2 * Math.PI * RING;
+
+export function ExamTimer({
+  deadline,
+  totalSeconds,
+  onExpire,
+}: {
+  deadline: number;
+  /** Full exam duration, so the ring can show how much time is left. */
+  totalSeconds: number;
+  onExpire: () => void;
+}) {
   // Start at null (identical server/client first render) and let the first
   // interval tick fill in the real value — avoids a hydration mismatch when
   // this component is streamed from a server render.
@@ -20,34 +32,69 @@ export function ExamTimer({ deadline, onExpire }: { deadline: number; onExpire: 
     return () => clearInterval(id);
   }, [deadline, onExpire]);
 
-  if (remaining === null) {
-    return (
-      <div className="inline-flex h-10 items-center gap-2 rounded-xl border-2 border-slate-200 bg-white px-3 font-mono text-sm font-bold text-slate-800">
-        <Timer className="size-[18px] text-slate-400" strokeWidth={2.25} />
-        --:--
-      </div>
-    );
-  }
+  const r = remaining ?? totalSeconds;
+  const m = Math.floor(r / 60);
+  const s = r % 60;
+  const low = remaining !== null && r <= 60;
+  const warn = remaining !== null && r <= 5 * 60;
+  const fraction = totalSeconds > 0 ? Math.min(1, r / totalSeconds) : 1;
 
-  const m = Math.floor(remaining / 60);
-  const s = remaining % 60;
-  const low = remaining <= 60;
-  const warn = remaining <= 5 * 60;
   return (
     <div
       role="timer"
       aria-label="Temps restant"
       className={cn(
-        "inline-flex h-10 items-center gap-2 rounded-xl border-2 px-3 font-mono text-sm font-bold transition-colors",
+        "inline-flex h-10 items-center gap-2 rounded-xl border pl-1 pr-3 shadow-sm transition-colors",
         low
-          ? "animate-pulse border-rose-600 bg-rose-600 text-white"
+          ? "border-rose-600 bg-rose-600 text-white"
           : warn
-            ? "border-rose-300 bg-rose-50 text-rose-700"
-            : "border-slate-200 bg-white text-slate-800"
+            ? "border-rose-200 bg-rose-50 text-rose-700"
+            : "border-slate-200 bg-white text-slate-900"
       )}
     >
-      <Timer className={cn("size-[18px]", low ? "text-white" : warn ? "text-rose-500" : "text-slate-400")} strokeWidth={2.25} />
-      {m}:{String(s).padStart(2, "0")}
+      <span className={cn("relative flex size-8 items-center justify-center", low && "animate-pulse")}>
+        <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90" aria-hidden>
+          <circle
+            cx="18"
+            cy="18"
+            r={RING}
+            fill="none"
+            strokeWidth="3"
+            className={low ? "stroke-white/30" : warn ? "stroke-rose-100" : "stroke-slate-100"}
+          />
+          <circle
+            cx="18"
+            cy="18"
+            r={RING}
+            fill="none"
+            strokeWidth="3"
+            strokeLinecap="round"
+            strokeDasharray={CIRC}
+            strokeDashoffset={CIRC * (1 - fraction)}
+            className={cn(
+              "transition-[stroke-dashoffset] duration-1000 ease-linear",
+              low ? "stroke-white" : warn ? "stroke-rose-500" : "stroke-primary"
+            )}
+          />
+        </svg>
+        <Timer
+          className={cn("size-4", low ? "text-white" : warn ? "text-rose-500" : "text-primary")}
+          strokeWidth={2.5}
+        />
+      </span>
+      <span className="flex flex-col leading-none">
+        <span
+          className={cn(
+            "hidden text-[10px] font-semibold uppercase tracking-wider sm:block",
+            low ? "text-white/80" : warn ? "text-rose-500" : "text-slate-500"
+          )}
+        >
+          Temps restant
+        </span>
+        <span className="font-mono text-lg font-bold tabular-nums sm:mt-0.5">
+          {remaining === null ? "--:--" : `${m}:${String(s).padStart(2, "0")}`}
+        </span>
+      </span>
     </div>
   );
 }

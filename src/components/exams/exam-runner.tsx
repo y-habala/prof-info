@@ -436,6 +436,7 @@ export function ExamRunner({
   levelName,
   modelLabel,
   deadline,
+  durationMinutes,
   sections,
 }: {
   attemptId: string;
@@ -443,6 +444,7 @@ export function ExamRunner({
   levelName: string | null;
   modelLabel: string;
   deadline: number;
+  durationMinutes: number;
   sections: SectionGroup[];
 }) {
   const router = useRouter();
@@ -580,7 +582,7 @@ export function ExamRunner({
                 <span className="hidden md:inline">à faire</span>
               </button>
             ) : null}
-            <ExamTimer deadline={deadline} onExpire={submit} />
+            <ExamTimer deadline={deadline} totalSeconds={durationMinutes * 60} onExpire={submit} />
           </div>
         </div>
         <div className="h-1.5 w-full bg-orange-100" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>

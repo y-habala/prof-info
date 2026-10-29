@@ -120,6 +120,7 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
       levelName={modelRow.exams.levels?.name ?? null}
       modelLabel={modelRow.label}
       deadline={deadline}
+      durationMinutes={durationMinutes}
       sections={sections}
     />
   );
