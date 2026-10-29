@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { Plus, Pencil, Trash2, FolderOpen, FileText, Check, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, FolderOpen, FileText, Check, ArrowUp, ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -102,6 +102,7 @@ export function ModelBuilder({ data }: { data: ModelData }) {
         <SectionBlock
           key={section.id}
           section={section}
+          defaultOpen={i === 0}
           examId={data.examId}
           modelId={data.modelId}
           move={
@@ -160,31 +161,40 @@ export function ModelBuilder({ data }: { data: ModelData }) {
 
 function SectionBlock({
   section,
+  defaultOpen,
   examId,
   modelId,
   move,
 }: {
   section: SectionData;
+  defaultOpen: boolean;
   examId: string;
   modelId: string;
   move: React.ReactNode;
 }) {
   const [isPending, startTransition] = useTransition();
+  const [open, setOpen] = useState(defaultOpen);
   const totalPoints = section.questions.reduce((s, q) => s + Number(q.points), 0);
 
   return (
     <Card className="overflow-hidden border-t-4 border-t-primary p-0">
-      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3">
-        <div className="flex items-center gap-3">
-          <FolderOpen className="size-5 text-primary" />
-          <div>
-            <h2 className="font-bold">{section.title}</h2>
+      <div className={cn("flex flex-wrap items-center justify-between gap-3 bg-muted/30 px-5 py-3", open && "border-b border-border")}>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          aria-expanded={open}
+          className="flex min-w-0 flex-1 items-center gap-3 text-left"
+        >
+          <FolderOpen className="size-5 shrink-0 text-primary" />
+          <div className="min-w-0">
+            <h2 className="truncate font-bold">{section.title}</h2>
             <p className="text-xs text-muted-foreground">
               {section.questions.length} question{section.questions.length > 1 ? "s" : ""} ·{" "}
               {totalPoints} point{totalPoints > 1 ? "s" : ""}
             </p>
           </div>
-        </div>
+          <ChevronDown className={cn("ml-auto size-5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")} />
+        </button>
         <div className="flex items-center gap-2">
           {move}
           <QuestionDialog
@@ -225,15 +235,19 @@ function SectionBlock({
           </Button>
         </div>
       </div>
-      {section.imageUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={section.imageUrl} alt="" className="max-h-80 w-full object-contain border-b border-border p-3" />
+      {open ? (
+        <>
+          {section.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={section.imageUrl} alt="" className="max-h-80 w-full object-contain border-b border-border p-3" />
+          ) : null}
+          {section.questions.length === 0 ? (
+            <p className="p-5 text-sm text-muted-foreground">Aucune question. Clique sur <strong>+ Question</strong>.</p>
+          ) : (
+            <QuestionList questions={section.questions} modelId={modelId} examId={examId} />
+          )}
+        </>
       ) : null}
-      {section.questions.length === 0 ? (
-        <p className="p-5 text-sm text-muted-foreground">Aucune question. Clique sur <strong>+ Question</strong>.</p>
-      ) : (
-        <QuestionList questions={section.questions} modelId={modelId} examId={examId} />
-      )}
     </Card>
   );
 }
