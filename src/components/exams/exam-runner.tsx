@@ -83,7 +83,7 @@ function TfRow({
       data-done={done}
       className={cn("flex flex-col gap-3 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-6", flash)}
     >
-      <p className="flex gap-3 text-base font-semibold leading-relaxed text-slate-950">
+      <p className="flex gap-3 text-[15px] font-semibold leading-relaxed text-slate-950">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
@@ -144,7 +144,7 @@ function MatchBox({
           {q.text.trim()}
         </span>
       ) : (
-        <span className="text-base font-semibold text-slate-950">{q.text}</span>
+        <span className="text-[15px] font-semibold text-slate-950">{q.text}</span>
       )}
       <select
         value={value}
@@ -193,7 +193,7 @@ function QcmCard({
   const chosen = Array.isArray(answer) ? answer : [];
   return (
     <fieldset data-q={q.id} data-done={chosen.length > 0} className={cn("space-y-2", flash)}>
-      <legend className="mb-2 flex gap-3 text-base font-semibold leading-snug text-slate-950">
+      <legend className="mb-2 flex gap-3 text-[15px] font-semibold leading-snug text-slate-950">
         <Num n={n} done={chosen.length > 0} />
         <span>
           {q.text}
@@ -260,7 +260,7 @@ function BlockQuestion({
   const done = isAnswered(q, answer);
   return (
     <div data-q={q.id} data-done={done} className={cn("space-y-3 py-3.5", flash)}>
-      <p className="flex gap-3 text-base font-semibold leading-relaxed text-slate-950">
+      <p className="flex gap-3 text-[15px] font-semibold leading-relaxed text-slate-950">
         <Num n={n} done={done} />
         <span>{q.text}</span>
       </p>
@@ -352,14 +352,15 @@ function SectionCard({
       id={`exercice-${index}`}
       className="scroll-mt-24 overflow-hidden rounded-xl border border-slate-200 border-t-4 border-t-primary bg-white shadow-sm"
     >
-      <header className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
-        <div className="min-w-0 space-y-2">
-          <span className="inline-flex items-center rounded-full bg-primary px-3.5 py-1 font-heading text-sm font-bold tracking-wide text-primary-foreground">
-            Exercice {index}
-          </span>
-          <h2 className="font-heading text-[22px] font-bold leading-snug text-slate-950">{sectionHeading(section.title)}</h2>
+      <header className="flex items-center gap-4 border-b border-slate-200 bg-slate-50 px-5 py-4 sm:px-6">
+        <div className="flex size-[68px] shrink-0 flex-col items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+          <span className="text-[10px] font-bold uppercase tracking-[0.18em] opacity-90">Exercice</span>
+          <span className="font-heading text-[34px] font-bold leading-none">{index}</span>
         </div>
-        <span className="mt-0.5 shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
+        <h2 className="min-w-0 flex-1 font-heading text-xl font-bold leading-snug text-slate-950">
+          {sectionHeading(section.title)}
+        </h2>
+        <span className="shrink-0 rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">
           {fmtPoints(totalPoints)}
         </span>
       </header>
