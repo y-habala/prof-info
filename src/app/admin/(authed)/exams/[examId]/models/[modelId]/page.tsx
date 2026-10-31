@@ -26,7 +26,7 @@ export default async function AdminExamModelBuilderPage({
   const [{ data: sections }, { data: questions }, { data: options }] = await Promise.all([
     supabase
       .from("exam_sections")
-      .select("id, title, image_url, order_index")
+      .select("id, title, description, image_url, order_index")
       .eq("exam_model_id", modelId)
       .order("order_index"),
     supabase
@@ -56,6 +56,7 @@ export default async function AdminExamModelBuilderPage({
     sections: (sections ?? []).map((s) => ({
       id: s.id,
       title: s.title,
+      description: s.description,
       imageUrl: s.image_url,
       orderIndex: s.order_index,
       questions: (questions ?? [])

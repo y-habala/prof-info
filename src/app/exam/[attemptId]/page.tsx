@@ -39,7 +39,7 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
   const [{ data: sectionsRaw }, { data: questionsRaw }, { data: optionsRaw }] = await Promise.all([
     admin
       .from("exam_sections")
-      .select("id, title, image_url, order_index")
+      .select("id, title, description, image_url, order_index")
       .eq("exam_model_id", session.modelId)
       .order("order_index"),
     admin
@@ -107,10 +107,11 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
     ...(sectionsRaw ?? []).map((s) => ({
       id: s.id,
       title: s.title,
+      description: s.description,
       imageUrl: s.image_url,
       questions: buildQuestions(s.id),
     })),
-    { id: null, title: null, imageUrl: null, questions: buildQuestions(null) },
+    { id: null, title: null, description: null, imageUrl: null, questions: buildQuestions(null) },
   ].filter((s) => s.questions.length > 0);
 
   return (

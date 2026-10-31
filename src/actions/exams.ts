@@ -179,7 +179,7 @@ export async function duplicateExamModel(
   // Copy sections (keep an old→new id map)
   const { data: sections } = await supabase
     .from("exam_sections")
-    .select("id, title, image_url, order_index")
+    .select("id, title, description, image_url, order_index")
     .eq("exam_model_id", src.id)
     .order("order_index");
 
@@ -188,6 +188,7 @@ export async function duplicateExamModel(
     const sectionInserts = sections.map((s) => ({
       exam_model_id: newModel.id,
       title: s.title,
+      description: s.description,
       image_url: s.image_url,
       order_index: s.order_index,
     }));
@@ -272,12 +273,14 @@ export async function upsertExamSection(
   const parsed = examSectionFormSchema.safeParse({
     title: formData.get("title"),
     imageUrl: formData.get("imageUrl") ?? "",
+    description: formData.get("description") ?? "",
   });
   if (!parsed.success) return { error: parsed.error.issues[0]?.message ?? "Données invalides." };
 
   const supabase = await createClient();
   const payload = {
     title: parsed.data.title,
+    description: parsed.data.description || null,
     image_url: parsed.data.imageUrl || null,
   };
   if (id) {

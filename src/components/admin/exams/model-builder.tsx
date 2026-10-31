@@ -31,6 +31,7 @@ export type QuestionData = {
 export type SectionData = {
   id: string;
   title: string;
+  description: string | null;
   imageUrl: string | null;
   orderIndex: number;
   questions: QuestionData[];
@@ -213,7 +214,7 @@ function SectionBlock({
             mode="edit"
             modelId={modelId}
             examId={examId}
-            initialValues={{ id: section.id, title: section.title, imageUrl: section.imageUrl }}
+            initialValues={{ id: section.id, title: section.title, description: section.description, imageUrl: section.imageUrl }}
             trigger={
               <Button size="sm" variant="outline" className="gap-1.5">
                 <Pencil className="size-3.5" />
@@ -237,6 +238,11 @@ function SectionBlock({
       </div>
       {open ? (
         <>
+          {section.description ? (
+            <p className="whitespace-pre-line border-b border-border bg-muted/20 px-5 py-3 text-sm text-muted-foreground">
+              {section.description}
+            </p>
+          ) : null}
           {section.imageUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={section.imageUrl} alt="" className="max-h-80 w-full object-contain border-b border-border p-3" />

@@ -49,6 +49,7 @@ export const examModelFormSchema = z.object({
 export const examSectionFormSchema = z.object({
   title: z.string().trim().min(1, "Le titre est requis.").max(200),
   imageUrl: z.string().trim().url("URL invalide.").optional().or(z.literal("")),
+  description: z.string().trim().max(2000).optional().or(z.literal("")),
 });
 
 export const examQuestionFormSchema = z.object({

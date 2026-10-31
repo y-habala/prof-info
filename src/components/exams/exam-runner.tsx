@@ -22,6 +22,7 @@ type Question = {
 export type SectionGroup = {
   id: string | null;
   title: string | null;
+  description: string | null;
   imageUrl: string | null;
   questions: Question[];
 };
@@ -364,6 +365,9 @@ function SectionCard({
         <h2 className="font-heading text-[17px] font-semibold leading-snug text-slate-800">
           {sectionHeading(section.title)}
         </h2>
+        {section.description ? (
+          <p className="whitespace-pre-line text-sm leading-relaxed text-slate-600">{section.description}</p>
+        ) : null}
       </header>
 
       {section.imageUrl ? (

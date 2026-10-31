@@ -12,7 +12,7 @@ type Props = {
   mode: "create" | "edit";
   modelId: string;
   examId: string;
-  initialValues?: { id: string; title: string; imageUrl: string | null };
+  initialValues?: { id: string; title: string; description: string | null; imageUrl: string | null };
 };
 
 export function SectionDialog({ trigger, mode, modelId, examId, initialValues }: Props) {
@@ -50,6 +50,18 @@ export function SectionDialog({ trigger, mode, modelId, examId, initialValues }:
           <div className="space-y-2">
             <Label htmlFor="title">Titre</Label>
             <Input id="title" name="title" placeholder="ex. Exercice 1 — Vrai / Faux" defaultValue={initialValues?.title} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="description">Consigne de l&apos;exercice (optionnel)</Label>
+            <textarea
+              id="description"
+              name="description"
+              rows={3}
+              maxLength={2000}
+              placeholder="ex. Relie chaque raccourci à sa fonction."
+              defaultValue={initialValues?.description ?? ""}
+              className="w-full rounded-lg border border-input bg-transparent px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+            />
           </div>
           <div className="space-y-2">
             <Label htmlFor="imageUrl">Image (URL, optionnel)</Label>
