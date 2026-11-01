@@ -104,7 +104,9 @@ export async function POST(
     if (isInteractive(q.question_type)) {
       const graded = gradeInteractive(q.question_type, qOptions, submitted?.text);
       answerText = graded.answerText;
-      pointsEarned = Math.round(points * graded.fraction * 100) / 100;
+      // Partial credit snaps to quarter points (0,25 / 0,5 / 0,75…), like a
+      // teacher marking by hand — 2 rows out of 3 on 1 pt gives 0,75, not 0,67.
+      pointsEarned = Math.round(points * graded.fraction * 4) / 4;
       isCorrect = graded.fraction === 1;
     } else if (q.question_type === "qcm_single" || q.question_type === "true_false" || q.question_type === "matching") {
       const chosen = submitted?.optionIds?.[0] ?? "";

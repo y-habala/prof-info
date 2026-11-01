@@ -1,6 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
-import { Plus, Pencil, Trash2, ChevronDown, FolderOpen, FileText, Check, ArrowUp, ArrowDown } from "lucide-react";
+import { Plus, Pencil, Trash2, ChevronDown, FolderOpen, FileText, Check, ArrowUp, ArrowDown, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -96,8 +96,33 @@ export function ModelBuilder({ data }: { data: ModelData }) {
     });
   }
 
+  // The student's mark is score / total × 20, so a total other than 20
+  // turns whole-point answers into odd marks (e.g. 19,5 / 23 → 16,96).
+  const modelTotal =
+    sections.reduce((s, sec) => s + sec.questions.reduce((t, q) => t + Number(q.points), 0), 0) +
+    data.unsectionedQuestions.reduce((t, q) => t + Number(q.points), 0);
+  const totalOk = Math.abs(modelTotal - 20) < 1e-9;
+
   return (
     <div className="space-y-6">
+      <div
+        className={cn(
+          "flex flex-wrap items-center gap-2 rounded-xl border px-4 py-3 text-sm",
+          totalOk ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-amber-300 bg-amber-50 text-amber-900"
+        )}
+      >
+        {totalOk ? <Check className="size-4" /> : <AlertTriangle className="size-4" />}
+        <span>
+          Total du modèle : <strong>{String(modelTotal).replace(".", ",")} / 20</strong>
+        </span>
+        {!totalOk ? (
+          <span className="text-xs">
+            — la note de l&apos;élève sera ramenée sur 20 (note × 20 / {String(modelTotal).replace(".", ",")}), ce qui
+            donne des notes comme 16,96. Ajuste les points pour obtenir exactement 20.
+          </span>
+        ) : null}
+      </div>
+
       {/* Sections */}
       {sections.map((section, i) => (
         <SectionBlock
