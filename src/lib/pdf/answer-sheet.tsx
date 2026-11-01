@@ -42,7 +42,7 @@ function PenCross({ size = 10 }: { size?: number }) {
 function PenCircle() {
   return (
     <View style={{ position: "absolute", top: 0, left: 0 }}>
-    <Svg width={118} height={52} viewBox="0 0 118 52">
+    <Svg width={72} height={34} viewBox="0 0 118 52">
       <Path
         d="M 70 4 C 30 1 4 10 5 27 C 6 44 40 50 70 48 C 100 46 116 36 113 22 C 110 9 86 3 58 6"
         stroke={PEN}
@@ -70,66 +70,55 @@ function PenUnderline({ width }: { width: number }) {
 }
 
 const styles = StyleSheet.create({
-  page: { paddingVertical: 24, paddingHorizontal: 26, fontSize: 8, fontFamily: "Lato", color: INK },
+  page: { paddingVertical: 20, paddingHorizontal: 22, fontSize: 7.5, fontFamily: "Lato", color: INK },
 
-  header: { marginBottom: 12 },
-  titleRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7, paddingHorizontal: 8 },
-  titleSide: { width: 120 },
-  title: {
-    flex: 1,
-    fontFamily: "Lato",
-    fontWeight: 900,
-    fontSize: 19,
-    color: NAVY,
-    textAlign: "center",
-    letterSpacing: 0.3,
-  },
+  header: { marginBottom: 4 },
 
-  markBox: { width: 120, alignItems: "center" },
-  markCircle: { width: 118, height: 52, alignItems: "center", justifyContent: "center" },
+  markCircle: { width: 72, height: 34, alignItems: "center", justifyContent: "center" },
   markRow: { flexDirection: "row", alignItems: "flex-end" },
-  markVal: { fontFamily: "Caveat", fontWeight: 700, fontSize: 30, color: PEN },
-  markMax: { fontFamily: "Caveat", fontWeight: 700, fontSize: 15, color: PEN, marginLeft: 1, marginBottom: 4 },
-  appreciation: { fontFamily: "Caveat", fontWeight: 700, fontSize: 14, color: PEN, transform: "rotate(-5deg)", marginTop: -2 },
+  markVal: { fontFamily: "Caveat", fontWeight: 700, fontSize: 20, color: PEN },
+  markMax: { fontFamily: "Caveat", fontWeight: 700, fontSize: 10, color: PEN, marginLeft: 1, marginBottom: 3 },
+  appreciation: { fontFamily: "Caveat", fontWeight: 700, fontSize: 11, color: PEN, transform: "rotate(-5deg)" },
 
-  section: { marginTop: 8 },
+  section: { marginTop: 5 },
   sectionHead: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: TINT,
     borderLeftWidth: 3,
     borderLeftColor: NAVY,
-    paddingVertical: 4,
-    paddingLeft: 7,
-    paddingRight: 8,
-    marginBottom: 5,
+    paddingVertical: 2,
+    paddingLeft: 6,
+    paddingRight: 6,
+    marginBottom: 3,
   },
-  sectionTitle: { flex: 1, fontFamily: "Lato", fontWeight: 700, fontSize: 9.5, color: NAVY },
-  sectionMark: { fontFamily: "Caveat", fontWeight: 700, fontSize: 14, color: PEN, marginLeft: 8 },
+  sectionTitle: { flex: 1, fontFamily: "Lato", fontWeight: 700, fontSize: 8.5, color: NAVY },
+  sectionMark: { fontFamily: "Caveat", fontWeight: 700, fontSize: 12, color: PEN, marginLeft: 8 },
 
-  columnsRow: { flexDirection: "row", gap: 14 },
+  columnsRow: { flexDirection: "row", gap: 12 },
   column: { flex: 1 },
 
   question: {
     flexDirection: "row",
-    marginBottom: 4,
-    paddingBottom: 4,
+    marginBottom: 2,
+    paddingBottom: 2,
     borderBottomWidth: 0.5,
     borderBottomColor: RULE,
     borderBottomStyle: "dotted",
   },
   qBody: { flex: 1 },
-  qText: { fontWeight: 700, fontSize: 8, color: INK },
+  qText: { fontWeight: 700, fontSize: 7.5, color: INK },
   qNum: { color: NAVY, fontWeight: 900 },
-  qPts: { fontWeight: 400, fontSize: 6.5, color: INK_MUTED },
-  answerRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
-  answerLabel: { fontSize: 7, color: INK_MUTED, marginRight: 3 },
-  answer: { fontSize: 8, color: "#374151", marginRight: 4, flexShrink: 1 },
-  correctionRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 1 },
-  correction: { fontFamily: "Caveat", fontWeight: 700, fontSize: 12, color: PEN },
+  qPts: { fontWeight: 400, fontSize: 6, color: INK_MUTED },
+  // Answer, pen mark and correction share one line to keep 20+ questions on a page.
+  answerRow: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", marginTop: 1 },
+  answerLabel: { fontSize: 6.5, color: INK_MUTED, marginRight: 3 },
+  answer: { fontSize: 7.5, color: "#374151", marginRight: 3 },
+  correctionRow: { flexDirection: "row", alignItems: "center", gap: 2, marginLeft: 6 },
+  correction: { fontFamily: "Caveat", fontWeight: 700, fontSize: 11, color: PEN },
 
-  qMark: { width: 26, alignItems: "flex-end", justifyContent: "flex-start" },
-  qMarkText: { fontFamily: "Caveat", fontWeight: 700, fontSize: 15, color: PEN },
+  qMark: { width: 18, alignItems: "flex-end", justifyContent: "flex-start" },
+  qMarkText: { fontFamily: "Caveat", fontWeight: 700, fontSize: 13, color: PEN },
 });
 
 export type AnswerSheetQuestion = {
@@ -184,14 +173,14 @@ function QuestionBlock({ q, index }: { q: AnswerSheetQuestion; index: number }) 
         <View style={styles.answerRow}>
           <Text style={styles.answerLabel}>Réponse :</Text>
           <Text style={styles.answer}>{q.answerText || "—"}</Text>
-          {q.isCorrect ? <PenCheck /> : <PenCross />}
+          {q.isCorrect ? <PenCheck size={9} /> : <PenCross size={8} />}
+          {!q.isCorrect && q.correctAnswerTexts.length > 0 ? (
+            <View style={styles.correctionRow}>
+              <PenArrow />
+              <Text style={styles.correction}>{q.correctAnswerTexts.join(", ")}</Text>
+            </View>
+          ) : null}
         </View>
-        {!q.isCorrect && q.correctAnswerTexts.length > 0 ? (
-          <View style={styles.correctionRow}>
-            <PenArrow />
-            <Text style={styles.correction}>{q.correctAnswerTexts.join(", ")}</Text>
-          </View>
-        ) : null}
       </View>
       <View style={styles.qMark}>
         <Text style={styles.qMarkText}>{fmt(q.pointsEarned)}</Text>
@@ -246,6 +235,20 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
             logo={data.logo}
             academieAr={data.settings.academieAr}
             directionAr={data.settings.directionAr}
+            title={`${data.examTitle} - ${data.modelLabel.toUpperCase()}`}
+            aside={
+              <View style={{ alignItems: "center" }}>
+                <View style={styles.markCircle}>
+                  <PenCircle />
+                  <View style={styles.markRow}>
+                    <Text style={styles.markVal}>{fmt(score20)}</Text>
+                    <Text style={styles.markMax}>/20</Text>
+                  </View>
+                </View>
+                <Text style={styles.appreciation}>{getAppreciation(score20)}</Text>
+                <PenUnderline width={50} />
+              </View>
+            }
             left={[
               { label: "Etablissement", value: `${data.settings.institution}.` },
               { label: "Matière", value: `${SUBJECT}.` },
@@ -257,25 +260,7 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
               { label: "Classe", value: data.studentClass },
               { label: "N°", value: data.studentNumber },
             ]}
-          >
-            <View style={styles.titleRow}>
-              <View style={styles.titleSide} />
-              <Text style={styles.title}>
-                {data.examTitle} - {data.modelLabel.toUpperCase()}
-              </Text>
-              <View style={styles.markBox}>
-                <View style={styles.markCircle}>
-                  <PenCircle />
-                  <View style={styles.markRow}>
-                    <Text style={styles.markVal}>{fmt(score20)}</Text>
-                    <Text style={styles.markMax}>/20</Text>
-                  </View>
-                </View>
-                <Text style={styles.appreciation}>{getAppreciation(score20)}</Text>
-                <PenUnderline width={70} />
-              </View>
-            </View>
-          </OfficialHeader>
+          />
         </View>
 
         {data.sections.map((section, sIndex) => (

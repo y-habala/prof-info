@@ -38,6 +38,14 @@ const s = StyleSheet.create({
   fieldValue: { fontFamily: "Lato", fontWeight: 700, fontSize: 9, marginLeft: 5, flexShrink: 1 },
 
   bottom: { borderTopWidth: 0.8, borderTopColor: RULE },
+
+  // Compact variant (exam sheets): title under the logo, mark in its own column.
+  leftC: { width: "30%" },
+  centerC: { width: "34%" },
+  rightC: { width: "23%" },
+  aside: { width: "13%", alignItems: "center", justifyContent: "center", paddingHorizontal: 2 },
+  title: { fontFamily: "Lato", fontWeight: 900, fontSize: 10.5, color: NAVY, textAlign: "center", marginTop: 4 },
+  infoLineC: { fontSize: 7.5 },
 });
 
 // Official layout shared by exam sheets and class reports:
@@ -48,6 +56,8 @@ export function OfficialHeader({
   logo,
   academieAr,
   directionAr,
+  title,
+  aside,
   children,
 }: {
   left: HeaderField[];
@@ -55,6 +65,10 @@ export function OfficialHeader({
   logo: PdfLogo;
   academieAr: string;
   directionAr: string;
+  /** Printed under the logo (compact layout). */
+  title?: string;
+  /** Extra right-hand column, e.g. the mark (compact layout). */
+  aside?: React.ReactNode;
   children?: React.ReactNode;
 }) {
   return (
@@ -62,18 +76,18 @@ export function OfficialHeader({
       <View style={s.accentBar} />
       <View style={s.accentGold} />
       <View style={s.top}>
-        <View style={[s.cell, s.left]}>
+        <View style={[s.cell, s.left, aside ? s.leftC : {}]}>
           {left.map((f) => (
             <View key={f.label} style={s.infoRow}>
               <View style={s.infoDot} />
-              <Text style={s.infoLine}>
+              <Text style={[s.infoLine, aside ? s.infoLineC : {}]}>
                 {f.label} : <Text style={s.infoValue}>{f.value ?? "—"}</Text>
               </Text>
             </View>
           ))}
         </View>
 
-        <View style={[s.cell, s.center]}>
+        <View style={[s.cell, s.center, aside ? s.centerC : {}]}>
           {logo ? (
             // eslint-disable-next-line jsx-a11y/alt-text -- react-pdf Image has no alt
             <Image style={s.logo} src={logo} />
@@ -81,9 +95,10 @@ export function OfficialHeader({
           {academieAr || directionAr ? <View style={s.centerRule} /> : null}
           {academieAr ? <Text style={s.arLine}>{academieAr}</Text> : null}
           {directionAr ? <Text style={s.arLineSmall}>{directionAr}</Text> : null}
+          {title ? <Text style={s.title}>{title}</Text> : null}
         </View>
 
-        <View style={[s.cell, s.right]}>
+        <View style={[s.cell, s.right, aside ? s.rightC : {}]}>
           {right.map((f) => (
             <View key={f.label} style={s.fieldLine}>
               <Text style={s.fieldLabel}>{f.label} :</Text>
@@ -91,6 +106,7 @@ export function OfficialHeader({
             </View>
           ))}
         </View>
+        {aside ? <View style={s.aside}>{aside}</View> : null}
       </View>
       {children ? <View style={s.bottom}>{children}</View> : null}
     </View>
