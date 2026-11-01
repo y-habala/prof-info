@@ -79,7 +79,7 @@ export function QuestionDialog({ trigger, mode, modelId, examId, sectionId, init
             </div>
             <div className="space-y-2">
               <Label htmlFor="points">Points</Label>
-              <Input id="points" name="points" type="number" step="0.5" min="0.5" defaultValue={initialValues?.points ?? 1} required />
+              <Input id="points" name="points" type="number" step="0.25" min="0.25" defaultValue={initialValues?.points ?? 1} required />
             </div>
           </div>
           {mode === "create" ? (

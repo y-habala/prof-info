@@ -55,7 +55,11 @@ export const examSectionFormSchema = z.object({
 export const examQuestionFormSchema = z.object({
   questionText: z.string().trim().min(1, "La question est requise.").max(5000),
   questionType: z.enum(EXAM_QUESTION_TYPES),
-  points: z.coerce.number().positive().default(1),
+  points: z.coerce
+    .number()
+    .positive()
+    .refine((n) => Number.isInteger(n * 4), "Les points vont par quarts (0,25 ; 0,5 ; 0,75 ; 1…).")
+    .default(1),
 });
 
 // Student-facing: entering an exam code + their identity.
