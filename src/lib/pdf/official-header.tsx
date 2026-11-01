@@ -45,7 +45,9 @@ const s = StyleSheet.create({
   rightC: { width: "23%" },
   aside: { width: "13%", alignItems: "center", justifyContent: "center", paddingHorizontal: 2 },
   title: { fontFamily: "Lato", fontWeight: 900, fontSize: 10.5, color: NAVY, textAlign: "center", marginTop: 4 },
-  infoLineC: { fontSize: 7.5 },
+  fieldLineC: { marginBottom: 3.5 },
+  fieldLabelC: { fontFamily: "Lato", fontWeight: 900, fontSize: 8, color: NAVY },
+  fieldValueC: { fontFamily: "Lato", fontWeight: 700, fontSize: 8, color: "#1f2937", marginLeft: 4, flexShrink: 1 },
 });
 
 // Official layout shared by exam sheets and class reports:
@@ -77,14 +79,22 @@ export function OfficialHeader({
       <View style={s.accentGold} />
       <View style={s.top}>
         <View style={[s.cell, s.left, aside ? s.leftC : {}]}>
-          {left.map((f) => (
-            <View key={f.label} style={s.infoRow}>
-              <View style={s.infoDot} />
-              <Text style={[s.infoLine, aside ? s.infoLineC : {}]}>
-                {f.label} : <Text style={s.infoValue}>{f.value ?? "—"}</Text>
-              </Text>
-            </View>
-          ))}
+          {left.map((f) =>
+            aside ? (
+              // Compact layout: same label/value + dashed rule as the student fields.
+              <View key={f.label} style={[s.fieldLine, s.fieldLineC]}>
+                <Text style={s.fieldLabelC}>{f.label} :</Text>
+                <Text style={s.fieldValueC}>{f.value ?? "—"}</Text>
+              </View>
+            ) : (
+              <View key={f.label} style={s.infoRow}>
+                <View style={s.infoDot} />
+                <Text style={s.infoLine}>
+                  {f.label} : <Text style={s.infoValue}>{f.value ?? "—"}</Text>
+                </Text>
+              </View>
+            )
+          )}
         </View>
 
         <View style={[s.cell, s.center, aside ? s.centerC : {}]}>
