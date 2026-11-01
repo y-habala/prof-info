@@ -120,8 +120,9 @@ export default async function ControleContinuPage({ searchParams }: { searchPara
   if (selected && validControl) {
     rows = (bySheet.get(selected.id) ?? [])
       .sort((a, b) => a.row_number - b.row_number)
-      .map((st) => ({
+      .map((st, i) => ({
         id: st.id,
+        number: i + 1,
         studentCode: st.student_code,
         fullName: st.full_name,
         note: st[`note${control}` as "note1"] == null ? "" : String(Number(st[`note${control}` as "note1"])),

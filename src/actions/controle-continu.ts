@@ -180,7 +180,7 @@ export async function gradesFromExam(sheetId: string, examId: string): Promise<E
 
   const [{ data: sheet }, { data: students }, { data: models }] = await Promise.all([
     supabase.from("cc_sheets").select("class_name").eq("id", sheetId).maybeSingle(),
-    supabase.from("cc_students").select("id, full_name").eq("sheet_id", sheetId),
+    supabase.from("cc_students").select("id, full_name, row_number").eq("sheet_id", sheetId),
     supabase.from("exam_models").select("id").eq("exam_id", examId),
   ]);
   if (!sheet) return { error: "Classe introuvable." };
@@ -189,14 +189,24 @@ export async function gradesFromExam(sheetId: string, examId: string): Promise<E
 
   const { data: attempts } = await supabase
     .from("exam_attempts")
-    .select("student_name, student_first_name, student_class, score, max_score, submitted_at")
+    .select("student_name, student_first_name, student_class, student_number, score, max_score, submitted_at")
     .in("exam_model_id", modelIds)
     .not("submitted_at", "is", null);
+
+  // The student's number is their place in the Massar class list (the "#"
+  // column), so it identifies them inside the class; the name is only a
+  // fallback for copies without a usable number.
+  const ordered = [...(students ?? [])].sort((a, b) => a.row_number - b.row_number);
+  const byNumber = (n: string | null) => {
+    const i = Number((n ?? "").trim());
+    return Number.isInteger(i) && i >= 1 && i <= ordered.length ? ordered[i - 1].id : null;
+  };
 
   // One attempt per student: the most recently submitted.
   const latest = new Map<string, NonNullable<typeof attempts>[number]>();
   for (const a of (attempts ?? []).filter((a) => classKey(a.student_class) === classKey(sheet.class_name))) {
-    const key = nameKey(`${a.student_name} ${a.student_first_name}`);
+    const num = byNumber(a.student_number);
+    const key = num ? `#${num}` : nameKey(`${a.student_name} ${a.student_first_name}`);
     const prev = latest.get(key);
     if (!prev || (a.submitted_at ?? "") > (prev.submitted_at ?? "")) latest.set(key, a);
   }
@@ -208,14 +218,15 @@ export async function gradesFromExam(sheetId: string, examId: string): Promise<E
 
   for (const a of latest.values()) {
     const label = `${a.student_name} ${a.student_first_name}`.trim();
-    const studentId = matchName(label, roster, used);
+    const numbered = byNumber(a.student_number);
+    const studentId = numbered && !used.has(numbered) ? numbered : numbered ? null : matchName(label, roster, used);
     const max = Number(a.max_score ?? 0);
     if (studentId && max > 0) {
       used.add(studentId);
       const note = Math.round(Math.min(20, (Number(a.score ?? 0) / max) * 20) * 100) / 100;
       matches.push({ studentId, note: String(note) });
     } else {
-      unmatched.push(label);
+      unmatched.push(a.student_number ? `${label} (N° ${a.student_number})` : label);
     }
   }
 

@@ -7,7 +7,8 @@ import { saveCcGrades, gradesFromExam } from "@/actions/controle-continu";
 import { ABSENCE_VALUES } from "@/lib/massar/cc-constants";
 import { cn } from "@/lib/utils";
 
-export type GradeRow = { id: string; studentCode: string; fullName: string; note: string; absence: string };
+// `number` is the place in the full Massar class list — the N° students type in the exam.
+export type GradeRow = { id: string; number: number; studentCode: string; fullName: string; note: string; absence: string };
 export type ExamOption = { id: string; title: string; levelName: string | null };
 
 function invalid(note: string) {
@@ -125,7 +126,7 @@ export function CcGradeTable({
               </p>
               {fillReport.unmatched.length > 0 ? (
                 <p className="mt-1 text-amber-700">
-                  Copies non rattachées à un élève (nom différent de Massar) : {fillReport.unmatched.join(", ")}
+                  Copies non rattachées à un élève (numéro absent de la liste Massar, ou déjà pris) : {fillReport.unmatched.join(", ")}
                 </p>
               ) : null}
             </div>
@@ -164,7 +165,7 @@ export function CcGradeTable({
           <tbody>
             {values.map((r, i) => (
               <tr key={r.id} className={cn("border-t border-border", filledIds.has(r.id) && "bg-success/10")}>
-                <td className="px-4 py-2 text-xs text-muted-foreground">{i + 1}</td>
+                <td className="px-4 py-2 text-xs text-muted-foreground">{r.number}</td>
                 <td className="px-4 py-2 font-mono text-xs">{r.studentCode}</td>
                 <td className="px-4 py-2 font-medium">{r.fullName}</td>
                 <td className="px-4 py-1.5">
