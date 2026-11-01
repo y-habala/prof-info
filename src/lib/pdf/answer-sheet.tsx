@@ -1,7 +1,7 @@
 import { Document, Page, View, Text, StyleSheet, Svg, Path } from "@react-pdf/renderer";
 import "./fonts";
 import { scoreOutOf20, getAppreciation } from "@/lib/grading";
-import { NAVY, TINT } from "./theme";
+import { NAVY, INK_MUTED, TINT, RULE } from "./theme";
 import { OfficialHeader } from "./official-header";
 import { schoolYearOf, type PdfLogo } from "./logo";
 
@@ -15,82 +15,121 @@ function levelLabel(name: string | null): string {
   return n === "1" ? "1ère année collégiale" : `${n}ème année collégiale`;
 }
 
-const TEACHER_RED = "#D32F2F";
-const TEACHER_GREEN = "#2E7D32";
+// Everything the "teacher" writes is in one red pen, in Caveat, so the
+// correction reads as hand-marked on top of the printed copy.
+const PEN = "#d1202f";
+const INK = "#1f2937";
 
-// Helvetica/Kalam have no ✓/✗ glyphs — draw as tiny SVG strokes instead.
-function CheckIcon({ color = TEACHER_GREEN, size = 7 }: { color?: string; size?: number }) {
+const fmt = (n: number) => String(Math.round(n * 100) / 100).replace(".", ",");
+
+// Pen strokes drawn as curves (Caveat has no ✓/✗ glyphs, and straight
+// lines look printed).
+function PenCheck({ size = 11 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 10 10">
-      <Path d="M 1 5 L 4 8.5 L 9 1" stroke={color} strokeWidth={1.8} fill="none" />
+    <Svg width={size} height={size} viewBox="0 0 14 14">
+      <Path d="M 1.5 7.5 Q 3.5 9 5.5 12.5 Q 8.5 5 13 1.2" stroke={PEN} strokeWidth={1.7} fill="none" strokeLinecap="round" strokeLinejoin="round" />
     </Svg>
   );
 }
-function CrossIcon({ color = TEACHER_RED, size = 7 }: { color?: string; size?: number }) {
+function PenCross({ size = 10 }: { size?: number }) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 10 10">
-      <Path d="M 1 1 L 9 9 M 9 1 L 1 9" stroke={color} strokeWidth={1.8} fill="none" />
+    <Svg width={size} height={size} viewBox="0 0 14 14">
+      <Path d="M 2 2.5 Q 7 7.5 12.5 12.5 M 12 1.5 Q 6.5 7 1.8 12.8" stroke={PEN} strokeWidth={1.7} fill="none" strokeLinecap="round" />
+    </Svg>
+  );
+}
+// Loose, slightly open double loop around the final mark.
+function PenCircle() {
+  return (
+    <View style={{ position: "absolute", top: 0, left: 0 }}>
+    <Svg width={118} height={52} viewBox="0 0 118 52">
+      <Path
+        d="M 70 4 C 30 1 4 10 5 27 C 6 44 40 50 70 48 C 100 46 116 36 113 22 C 110 9 86 3 58 6"
+        stroke={PEN}
+        strokeWidth={1.4}
+        fill="none"
+        strokeLinecap="round"
+      />
+    </Svg>
+    </View>
+  );
+}
+function PenArrow() {
+  return (
+    <Svg width={12} height={8} viewBox="0 0 12 8">
+      <Path d="M 1 4.5 Q 6 3.5 10.5 4 M 7.5 1.2 L 10.8 4 L 7.3 6.8" stroke={PEN} strokeWidth={1.2} fill="none" strokeLinecap="round" strokeLinejoin="round" />
+    </Svg>
+  );
+}
+function PenUnderline({ width }: { width: number }) {
+  return (
+    <Svg width={width} height={6} viewBox={`0 0 ${width} 6`}>
+      <Path d={`M 2 3.5 Q ${width / 2} 1 ${width - 2} 3`} stroke={PEN} strokeWidth={1.2} fill="none" strokeLinecap="round" />
     </Svg>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { paddingVertical: 24, paddingHorizontal: 26, fontSize: 7.5, fontFamily: "Helvetica" },
+  page: { paddingVertical: 24, paddingHorizontal: 26, fontSize: 8, fontFamily: "Lato", color: INK },
 
-  header: { marginBottom: 10 },
-  titleRow: { flexDirection: "row", alignItems: "center", paddingVertical: 6, paddingHorizontal: 8 },
-  titleSide: { width: 105 },
+  header: { marginBottom: 12 },
+  titleRow: { flexDirection: "row", alignItems: "center", paddingVertical: 7, paddingHorizontal: 8 },
+  titleSide: { width: 120 },
   title: {
     flex: 1,
-    fontFamily: "Cairo",
-    fontWeight: 700,
-    fontSize: 20,
+    fontFamily: "Lato",
+    fontWeight: 900,
+    fontSize: 19,
     color: NAVY,
     textAlign: "center",
+    letterSpacing: 0.3,
   },
 
-  stampWrapper: { width: 105, alignItems: "center" },
-  stamp: {
-    borderWidth: 1.5,
-    borderColor: TEACHER_RED,
-    borderRadius: 10,
-    paddingVertical: 2,
-    paddingHorizontal: 8,
+  markBox: { width: 120, alignItems: "center" },
+  markCircle: { width: 118, height: 52, alignItems: "center", justifyContent: "center" },
+  markRow: { flexDirection: "row", alignItems: "flex-end" },
+  markVal: { fontFamily: "Caveat", fontWeight: 700, fontSize: 30, color: PEN },
+  markMax: { fontFamily: "Caveat", fontWeight: 700, fontSize: 15, color: PEN, marginLeft: 1, marginBottom: 4 },
+  appreciation: { fontFamily: "Caveat", fontWeight: 700, fontSize: 14, color: PEN, transform: "rotate(-5deg)", marginTop: -2 },
+
+  section: { marginTop: 8 },
+  sectionHead: {
+    flexDirection: "row",
     alignItems: "center",
-    transform: "rotate(-4deg)",
-  },
-  scoreRow: { flexDirection: "row", alignItems: "baseline" },
-  scoreVal: { fontFamily: "Kalam", fontSize: 15, fontWeight: 700, color: TEACHER_RED },
-  scoreMax: { fontSize: 6, color: "#000", marginLeft: 2 },
-  appreciation: {
-    fontFamily: "PatrickHand",
-    fontSize: 8,
-    color: TEACHER_RED,
-    marginTop: 1,
-    transform: "rotate(-4deg)",
-  },
-
-  sectionHeader: {
-    fontFamily: "Cairo",
-    fontWeight: 700,
-    fontSize: 9,
-    color: NAVY,
     backgroundColor: TINT,
-    paddingVertical: 2,
-    paddingHorizontal: 6,
-    marginTop: 5,
-    marginBottom: 3,
+    borderLeftWidth: 3,
+    borderLeftColor: NAVY,
+    paddingVertical: 4,
+    paddingLeft: 7,
+    paddingRight: 8,
+    marginBottom: 5,
   },
-  columnsRow: { flexDirection: "row", gap: 10 },
+  sectionTitle: { flex: 1, fontFamily: "Lato", fontWeight: 700, fontSize: 9.5, color: NAVY },
+  sectionMark: { fontFamily: "Caveat", fontWeight: 700, fontSize: 14, color: PEN, marginLeft: 8 },
+
+  columnsRow: { flexDirection: "row", gap: 14 },
   column: { flex: 1 },
-  question: { marginBottom: 3, paddingBottom: 3, borderBottomWidth: 0.5, borderBottomColor: "#eeeeee" },
-  questionText: { fontWeight: 700, fontSize: 7.5 },
-  pointsBadge: { fontSize: 6, color: "#555" },
-  resultRow: { flexDirection: "row", alignItems: "center", gap: 3, flexWrap: "wrap" },
-  resultText: { fontSize: 7 },
-  correctText: { color: TEACHER_GREEN },
-  incorrectText: { color: TEACHER_RED },
-  note: { fontFamily: "PatrickHand", color: TEACHER_RED, fontSize: 7.5, marginTop: 0.5 },
+
+  question: {
+    flexDirection: "row",
+    marginBottom: 4,
+    paddingBottom: 4,
+    borderBottomWidth: 0.5,
+    borderBottomColor: RULE,
+    borderBottomStyle: "dotted",
+  },
+  qBody: { flex: 1 },
+  qText: { fontWeight: 700, fontSize: 8, color: INK },
+  qNum: { color: NAVY, fontWeight: 900 },
+  qPts: { fontWeight: 400, fontSize: 6.5, color: INK_MUTED },
+  answerRow: { flexDirection: "row", alignItems: "center", marginTop: 2 },
+  answerLabel: { fontSize: 7, color: INK_MUTED, marginRight: 3 },
+  answer: { fontSize: 8, color: "#374151", marginRight: 4, flexShrink: 1 },
+  correctionRow: { flexDirection: "row", alignItems: "center", gap: 3, marginTop: 1 },
+  correction: { fontFamily: "Caveat", fontWeight: 700, fontSize: 12, color: PEN },
+
+  qMark: { width: 26, alignItems: "flex-end", justifyContent: "flex-start" },
+  qMarkText: { fontFamily: "Caveat", fontWeight: 700, fontSize: 15, color: PEN },
 });
 
 export type AnswerSheetQuestion = {
@@ -137,18 +176,26 @@ export type AnswerSheetData = {
 function QuestionBlock({ q, index }: { q: AnswerSheetQuestion; index: number }) {
   return (
     <View style={styles.question} wrap={false}>
-      <Text style={styles.questionText}>
-        Q{index + 1}. {q.questionText} <Text style={styles.pointsBadge}>({q.points} pt)</Text>
-      </Text>
-      <View style={styles.resultRow}>
-        {q.isCorrect ? <CheckIcon /> : <CrossIcon />}
-        <Text style={[styles.resultText, q.isCorrect ? styles.correctText : styles.incorrectText]}>
-          {q.answerText || "(vide)"} — {q.pointsEarned}/{q.points} pt
+      <View style={styles.qBody}>
+        <Text style={styles.qText}>
+          <Text style={styles.qNum}>{index + 1}. </Text>
+          {q.questionText} <Text style={styles.qPts}>({fmt(q.points)} pt)</Text>
         </Text>
+        <View style={styles.answerRow}>
+          <Text style={styles.answerLabel}>Réponse :</Text>
+          <Text style={styles.answer}>{q.answerText || "—"}</Text>
+          {q.isCorrect ? <PenCheck /> : <PenCross />}
+        </View>
+        {!q.isCorrect && q.correctAnswerTexts.length > 0 ? (
+          <View style={styles.correctionRow}>
+            <PenArrow />
+            <Text style={styles.correction}>{q.correctAnswerTexts.join(", ")}</Text>
+          </View>
+        ) : null}
       </View>
-      {!q.isCorrect && q.correctAnswerTexts.length > 0 ? (
-        <Text style={styles.note}>Réponse : {q.correctAnswerTexts.join(", ")}</Text>
-      ) : null}
+      <View style={styles.qMark}>
+        <Text style={styles.qMarkText}>{fmt(q.pointsEarned)}</Text>
+      </View>
     </View>
   );
 }
@@ -160,23 +207,28 @@ function SectionBlock({ section }: { section: AnswerSheetSection }) {
   const half = Math.ceil(section.questions.length / 2);
   const left = section.questions.slice(0, half);
   const right = section.questions.slice(half);
+  const earned = section.questions.reduce((s, q) => s + q.pointsEarned, 0);
+  const total = section.questions.reduce((s, q) => s + q.points, 0);
 
   return (
-    <View>
-      {section.title ? <Text style={styles.sectionHeader}>{section.title}</Text> : null}
+    <View style={styles.section}>
+      <View style={styles.sectionHead} wrap={false}>
+        <Text style={styles.sectionTitle}>{section.title ?? "Questions"}</Text>
+        <Text style={styles.sectionMark}>
+          {fmt(earned)} / {fmt(total)}
+        </Text>
+      </View>
       <View style={styles.columnsRow}>
         <View style={styles.column}>
           {left.map((q, i) => (
             <QuestionBlock key={i} q={q} index={i} />
           ))}
         </View>
-        {right.length > 0 ? (
-          <View style={styles.column}>
-            {right.map((q, i) => (
-              <QuestionBlock key={i} q={q} index={half + i} />
-            ))}
-          </View>
-        ) : null}
+        <View style={styles.column}>
+          {right.map((q, i) => (
+            <QuestionBlock key={i} q={q} index={half + i} />
+          ))}
+        </View>
       </View>
     </View>
   );
@@ -211,14 +263,16 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
               <Text style={styles.title}>
                 {data.examTitle} - {data.modelLabel.toUpperCase()}
               </Text>
-              <View style={styles.stampWrapper}>
-                <View style={styles.stamp}>
-                  <View style={styles.scoreRow}>
-                    <Text style={styles.scoreVal}>{score20.toFixed(2)}</Text>
-                    <Text style={styles.scoreMax}>sur 20</Text>
+              <View style={styles.markBox}>
+                <View style={styles.markCircle}>
+                  <PenCircle />
+                  <View style={styles.markRow}>
+                    <Text style={styles.markVal}>{fmt(score20)}</Text>
+                    <Text style={styles.markMax}>/20</Text>
                   </View>
                 </View>
                 <Text style={styles.appreciation}>{getAppreciation(score20)}</Text>
+                <PenUnderline width={70} />
               </View>
             </View>
           </OfficialHeader>

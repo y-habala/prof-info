@@ -17,8 +17,8 @@ const s = StyleSheet.create({
 
   infoRow: { flexDirection: "row", alignItems: "center", marginBottom: 3 },
   infoDot: { width: 3.5, height: 3.5, borderRadius: 1.75, backgroundColor: GOLD, marginRight: 4 },
-  infoLine: { fontFamily: "Times-Italic", fontSize: 8.5, color: INK_MUTED },
-  infoValue: { fontFamily: "Times-BoldItalic", color: NAVY },
+  infoLine: { fontFamily: "Lato", fontSize: 8.5, color: INK_MUTED },
+  infoValue: { fontFamily: "Lato", fontWeight: 700, color: NAVY },
 
   logo: { maxHeight: 40, maxWidth: "100%", objectFit: "contain" },
   centerRule: { width: 70, height: 1, backgroundColor: GOLD, marginVertical: 3 },
@@ -34,8 +34,8 @@ const s = StyleSheet.create({
     borderBottomColor: RULE,
     borderBottomStyle: "dashed",
   },
-  fieldLabel: { fontFamily: "Times-BoldItalic", fontSize: 10.5, color: NAVY },
-  fieldValue: { fontFamily: "Helvetica-Bold", fontSize: 8.5, marginLeft: 5, flexShrink: 1 },
+  fieldLabel: { fontFamily: "Lato", fontWeight: 900, fontSize: 10, color: NAVY },
+  fieldValue: { fontFamily: "Lato", fontWeight: 700, fontSize: 9, marginLeft: 5, flexShrink: 1 },
 
   bottom: { borderTopWidth: 0.8, borderTopColor: RULE },
 });

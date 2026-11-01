@@ -16,6 +16,22 @@ Font.register({
   family: "Kalam",
   fonts: [{ src: path.join(FONT_DIR, "Kalam-Bold.ttf"), fontWeight: 700 }],
 });
+// Lato for printed text; Caveat for the teacher's red-pen corrections.
+Font.register({
+  family: "Lato",
+  fonts: [
+    { src: path.join(FONT_DIR, "Lato-Regular.ttf") },
+    { src: path.join(FONT_DIR, "Lato-Bold.ttf"), fontWeight: 700 },
+    { src: path.join(FONT_DIR, "Lato-Black.ttf"), fontWeight: 900 },
+  ],
+});
+Font.register({
+  family: "Caveat",
+  fonts: [
+    { src: path.join(FONT_DIR, "Caveat-Regular.ttf") },
+    { src: path.join(FONT_DIR, "Caveat-Bold.ttf"), fontWeight: 700 },
+  ],
+});
 Font.register({
   family: "PatrickHand",
   fonts: [{ src: path.join(FONT_DIR, "PatrickHand-Regular.ttf") }],
