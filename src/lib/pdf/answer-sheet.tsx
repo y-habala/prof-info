@@ -92,8 +92,8 @@ const styles = StyleSheet.create({
     paddingRight: 6,
     marginBottom: 3,
   },
-  sectionTitle: { flex: 1, fontFamily: "Lato", fontWeight: 700, fontSize: 8.5, color: NAVY },
-  sectionMark: { fontFamily: "Caveat", fontWeight: 700, fontSize: 12, color: PEN, marginLeft: 8 },
+  sectionTitle: { flex: 1, fontFamily: "Lato", fontWeight: 700, fontSize: 10.5, color: NAVY },
+  sectionMark: { fontFamily: "Caveat", fontWeight: 700, fontSize: 14, color: PEN, marginLeft: 8 },
 
   columnsRow: { flexDirection: "row", gap: 12 },
   column: { flex: 1 },
