@@ -127,6 +127,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
       academieAr: settings.academie_ar,
       directionAr: settings.direction_ar,
       teacherName: settings.teacher_name,
+      schoolYear: settings.school_year,
+      levelLabels: settings.level_labels,
     },
   };
 

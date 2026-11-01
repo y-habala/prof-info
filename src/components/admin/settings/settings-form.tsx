@@ -75,6 +75,30 @@ export function SettingsForm({ initial, levels }: { initial: SettingsBundle; lev
             </div>
           </div>
 
+          <div className="border-t border-border pt-4">
+            <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+              En-tête des feuilles d&apos;examen
+            </h2>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="school_year">Année scolaire</Label>
+                <Input id="school_year" name="school_year" defaultValue={initial.school_year} placeholder="2026/2027" />
+                <p className="text-xs text-muted-foreground">Laisse vide pour la calculer automatiquement à partir de la date.</p>
+              </div>
+              {levels.map((level) => (
+                <div key={level.id} className="space-y-2">
+                  <Label htmlFor={`level_label_${level.name}`}>Niveau affiché pour {level.name}</Label>
+                  <Input
+                    id={`level_label_${level.name}`}
+                    name={`level_label_${level.name}`}
+                    defaultValue={initial.level_labels[level.name] ?? ""}
+                    placeholder="3ème année collégiale"
+                  />
+                </div>
+              ))}
+            </div>
+          </div>
+
           {levels.length > 0 && (
             <>
               <div className="border-t border-border pt-4">

@@ -127,6 +127,10 @@ export type AnswerSheetData = {
     academieAr: string;
     directionAr: string;
     teacherName: string;
+    /** "" = derive from the submission date. */
+    schoolYear: string;
+    /** Per-level override of the printed level label. */
+    levelLabels: Record<string, string>;
   };
 };
 
@@ -193,8 +197,8 @@ export function AnswerSheetDocument({ data }: { data: AnswerSheetData }) {
             left={[
               { label: "Etablissement", value: `${data.settings.institution}.` },
               { label: "Matière", value: `${SUBJECT}.` },
-              { label: "Niveau", value: `${levelLabel(data.levelName)}.` },
-              { label: "Année scolaire", value: schoolYearOf(new Date(data.submittedAt)) },
+              { label: "Niveau", value: `${(data.levelName && data.settings.levelLabels[data.levelName]) || levelLabel(data.levelName)}.` },
+              { label: "Année scolaire", value: data.settings.schoolYear || schoolYearOf(new Date(data.submittedAt)) },
             ]}
             right={[
               { label: "Nom", value: fullName },

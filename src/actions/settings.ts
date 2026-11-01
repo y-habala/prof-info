@@ -13,6 +13,7 @@ const FIXED_KEYS = [
   "direction",
   "academie_ar",
   "direction_ar",
+  "school_year",
 ] as const;
 
 export async function saveSettings(_prev: FormState, formData: FormData): Promise<FormState> {
@@ -31,6 +32,14 @@ export async function saveSettings(_prev: FormState, formData: FormData): Promis
       if (levelName && !isNaN(n) && n >= 0) classCounts[levelName] = n;
     }
   }
+  const levelLabels: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("level_label_")) {
+      const label = String(value).trim();
+      if (label) levelLabels[key.slice("level_label_".length)] = label;
+    }
+  }
+  upserts.push({ key: "level_labels", value: JSON.stringify(levelLabels) });
   upserts.push({ key: "class_counts", value: JSON.stringify(classCounts) });
 
   const { error } = await supabase.from("settings").upsert(upserts, { onConflict: "key" });
