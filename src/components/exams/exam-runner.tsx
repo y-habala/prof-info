@@ -8,7 +8,7 @@ import { ExamTimer } from "./exam-timer";
 import { ExamReloadWarning } from "./exam-reload-warning";
 import type { ExamQuestionType } from "@/schemas/exams";
 import { isInteractive, type InteractivePayload } from "@/lib/exam-interactive";
-import { BoxesInput, OrderingInput, TableInput, interactiveAnswered } from "./interactive-inputs";
+import { BoxesInput, ClozeInput, OrderingInput, TableInput, interactiveAnswered } from "./interactive-inputs";
 
 type Question = {
   id: string;
@@ -263,7 +263,14 @@ function BlockQuestion({
     <div data-q={q.id} data-done={done} className={cn("space-y-3 py-3.5", flash)}>
       <p className="flex gap-3 text-[15px] font-semibold leading-relaxed text-slate-950">
         <Num n={n} done={done} />
-        <span>{q.text}</span>
+        {q.interactive && q.type === "cloze" ? (
+          // The sentence itself carries the dropdowns.
+          <span className="font-medium">
+            <ClozeInput text={q.text} payload={q.interactive} value={text} disabled={disabled} onChange={onSetText} />
+          </span>
+        ) : (
+          <span>{q.text}</span>
+        )}
       </p>
       <div className="sm:pl-9">
         {q.interactive && q.type === "boxes" ? (

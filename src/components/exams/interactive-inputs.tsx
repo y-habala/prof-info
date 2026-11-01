@@ -326,6 +326,62 @@ export function TableInput({ payload, value, disabled, onChange }: Props) {
   );
 }
 
+/* ── Cloze: pick each missing word from the list, inside the sentence ── */
+export function ClozeInput({
+  text,
+  payload,
+  value,
+  disabled,
+  onChange,
+}: Props & { text: string }) {
+  const raw = parse<Record<string, string>>(value, {});
+  const words = payload.categories ?? [];
+  const parts = text.split(/\{\{(\d+)\}\}/);
+
+  function pick(blank: string, word: string) {
+    const next: Record<string, string> = {};
+    for (const it of payload.items) {
+      const w = it.id === blank ? word : raw[it.id];
+      if (w) next[it.id] = w;
+    }
+    onChange(JSON.stringify(next));
+  }
+
+  return (
+    <span className="leading-[2.6]">
+      {parts.map((part, i) => {
+        // Odd indexes are the blank numbers captured by the split.
+        if (i % 2 === 0) return <span key={i}>{part}</span>;
+        const chosen = raw[part] ?? "";
+        return (
+          <select
+            key={i}
+            disabled={disabled}
+            value={chosen}
+            onChange={(e) => pick(part, e.target.value)}
+            aria-label={`Trou ${Number(part) + 1}`}
+            className={cn(
+              "mx-1 inline-block h-9 max-w-full rounded-lg border-2 bg-white px-2 align-middle text-[15px] transition-colors",
+              chosen
+                ? "border-primary bg-primary/5 font-bold text-primary"
+                : "border-dashed border-slate-400 font-medium text-slate-500"
+            )}
+          >
+            <option value="" className="font-normal text-slate-500">
+              …………
+            </option>
+            {words.map((w) => (
+              <option key={w} value={w} className="font-bold text-slate-900">
+                {w}
+              </option>
+            ))}
+          </select>
+        );
+      })}
+    </span>
+  );
+}
+
 /** Whether the student has given at least part of an answer. */
 export function interactiveAnswered(type: string, value: string | undefined): boolean {
   if (!value) return false;

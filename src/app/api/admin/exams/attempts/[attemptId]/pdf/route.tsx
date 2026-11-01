@@ -4,7 +4,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { AnswerSheetDocument, type AnswerSheetData, type AnswerSheetSection } from "@/lib/pdf/answer-sheet";
 import { getSettings } from "@/lib/settings";
 import { loadPdfLogo } from "@/lib/pdf/logo";
-import { correctAnswerText, isInteractive } from "@/lib/exam-interactive";
+import { clozeDisplayText, correctAnswerText, isInteractive } from "@/lib/exam-interactive";
 
 export const runtime = "nodejs";
 
@@ -72,7 +72,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
     const opts = (optionsRaw ?? [])
       .filter((o) => o.question_id === q.id)
       .map((o) => ({ id: o.id, text: o.option_text, orderIndex: o.order_index }));
-    correctByQuestion.set(q.id, [correctAnswerText(q.question_type, opts)]);
+    correctByQuestion.set(q.id, [correctAnswerText(q.question_type, opts, q.question_text)]);
   }
   for (const o of optionsRaw ?? []) {
     if (interactiveIds.has(o.question_id)) continue;
@@ -89,7 +89,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
       .map((q) => {
         const a = answerByQuestion.get(q.id);
         return {
-          questionText: q.question_text,
+          questionText: q.question_type === "cloze" ? clozeDisplayText(q.question_text) : q.question_text,
           points: Number(q.points),
           isCorrect: !!a?.is_correct,
           pointsEarned: Number(a?.points_earned ?? 0),

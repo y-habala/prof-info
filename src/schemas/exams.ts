@@ -9,6 +9,7 @@ export const EXAM_QUESTION_TYPES = [
   "ordering",
   "table",
   "boxes",
+  "cloze",
 ] as const;
 export type ExamQuestionType = (typeof EXAM_QUESTION_TYPES)[number];
 
@@ -21,6 +22,7 @@ export const EXAM_QUESTION_TYPE_LABELS: Record<ExamQuestionType, string> = {
   ordering: "Remettre dans l'ordre",
   table: "Tableau (cocher la bonne case)",
   boxes: "Classer dans des boîtes",
+  cloze: "Compléter avec une liste de mots",
 };
 
 // Types offered when creating a question. "ordering" stays valid for the

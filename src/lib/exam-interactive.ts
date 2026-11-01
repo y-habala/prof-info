@@ -10,8 +10,11 @@ import { shuffleSeeded } from "@/lib/shuffle";
 // A box name may carry a description after BOX_NOTE_SEP ("PAN :: une
 // personne"). "ordering" is no longer offered for new questions but still
 // renders and grades for the ones that exist.
+//   cloze:    the statement holds the sentence with the right words in
+//             brackets ("… ensemble de [données] qui possède un [sens].");
+//             the options are the word list ("données", "sens", …).
 
-export const INTERACTIVE_TYPES = ["ordering", "table", "boxes"] as const;
+export const INTERACTIVE_TYPES = ["ordering", "table", "boxes", "cloze"] as const;
 export type InteractiveType = (typeof INTERACTIVE_TYPES)[number];
 export const isInteractive = (t: string): t is InteractiveType =>
   (INTERACTIVE_TYPES as readonly string[]).includes(t);
@@ -35,6 +38,33 @@ export function splitBox(name: string): { title: string; note: string } {
 }
 
 export type StoredOption = { id: string; text: string; orderIndex: number };
+
+// ---- cloze (sentence with blanks) -----------------------------------------
+
+const BLANK_RE = /\[([^\]]+)\]/g;
+
+/** Right word of each blank, in reading order. */
+export const clozeAnswers = (template: string) => [...template.matchAll(BLANK_RE)].map((m) => m[1].trim());
+
+/** Sentence sent to the student: each blank becomes a {{n}} marker. */
+export function clozeStudentText(template: string): string {
+  let i = 0;
+  return template.replace(BLANK_RE, () => `{{${i++}}}`);
+}
+
+/** Sentence printed on the answer sheet, blanks shown as dots. */
+export const clozeDisplayText = (template: string) => template.replace(BLANK_RE, "……");
+
+const sameWord = (a: string, b: string) =>
+  a.localeCompare(b, "fr", { sensitivity: "base" }) === 0;
+
+/** Word list: the teacher's list (answers added if missing), else the answers shuffled. */
+function clozeWords(template: string, options: StoredOption[], seed: string): string[] {
+  const listed = byOrder(options).map((o) => o.text.trim()).filter(Boolean);
+  const words = [...listed];
+  for (const a of clozeAnswers(template)) if (!words.some((w) => sameWord(w, a))) words.push(a);
+  return words.length === listed.length ? words : shuffleSeeded(words, `${seed}:words`);
+}
 
 /** What the student's browser receives: never which column / box is right. */
 export type InteractivePayload = {
@@ -69,8 +99,20 @@ export function parseTable(options: StoredOption[]): { columns: string[]; rows: 
   return { columns, rows };
 }
 
-export function buildInteractivePayload(type: InteractiveType, options: StoredOption[], seed: string): InteractivePayload {
+export function buildInteractivePayload(
+  type: InteractiveType,
+  options: StoredOption[],
+  seed: string,
+  questionText = ""
+): InteractivePayload {
   const ordered = byOrder(options);
+  if (type === "cloze") {
+    // One item per blank (no text: the right word never leaves the server).
+    return {
+      items: clozeAnswers(questionText).map((_, i) => ({ id: String(i), text: "" })),
+      categories: clozeWords(questionText, options, seed),
+    };
+  }
   if (type === "ordering") {
     let items = shuffleSeeded(ordered, `${seed}:order`);
     // Never hand out the list already in the right order.
@@ -103,8 +145,17 @@ const label = (type: InteractiveType, column: string) => (type === "boxes" ? spl
 export function gradeInteractive(
   type: InteractiveType,
   options: StoredOption[],
-  rawAnswer: string | undefined
+  rawAnswer: string | undefined,
+  questionText = ""
 ): { fraction: number; answerText: string } {
+  if (type === "cloze") {
+    const answers = clozeAnswers(questionText);
+    if (answers.length === 0) return { fraction: 0, answerText: "" };
+    const map = asObject(parseJson(rawAnswer));
+    const chosen = answers.map((_, i) => (typeof map[String(i)] === "string" ? String(map[String(i)]) : ""));
+    const good = answers.filter((a, i) => chosen[i] && sameWord(chosen[i], a)).length;
+    return { fraction: good / answers.length, answerText: chosen.map((c) => c || "?").join(" ; ") };
+  }
   const ordered = byOrder(options);
   if (ordered.length === 0) return { fraction: 0, answerText: "" };
   const answer = parseJson(rawAnswer);
@@ -134,7 +185,8 @@ export function gradeInteractive(
 }
 
 /** Readable correct answer, for the corrected answer sheet. */
-export function correctAnswerText(type: InteractiveType, options: StoredOption[]): string {
+export function correctAnswerText(type: InteractiveType, options: StoredOption[], questionText = ""): string {
+  if (type === "cloze") return clozeAnswers(questionText).join(" ; ");
   if (type === "ordering") return byOrder(options).map((o) => o.text.trim()).join(" > ");
   return parseTable(options)
     .rows.map((r) => `${r.text} → ${r.correct.map((c) => label(type, c)).join(" + ")}`)

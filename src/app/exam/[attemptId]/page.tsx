@@ -5,7 +5,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { shuffleSeeded } from "@/lib/shuffle";
 import { ExamRunner, type SectionGroup } from "@/components/exams/exam-runner";
 import type { ExamQuestionType } from "@/schemas/exams";
-import { buildInteractivePayload, isInteractive } from "@/lib/exam-interactive";
+import { buildInteractivePayload, clozeStudentText, isInteractive } from "@/lib/exam-interactive";
 
 export default async function ExamTakePage({ params }: { params: Promise<{ attemptId: string }> }) {
   const { attemptId } = await params;
@@ -78,11 +78,13 @@ export default async function ExamTakePage({ params }: { params: Promise<{ attem
         if (isInteractive(type)) {
           return {
             id: q.id,
-            text: q.question_text,
+            // The cloze statement holds the answers in brackets: only the
+            // blank markers go to the browser.
+            text: type === "cloze" ? clozeStudentText(q.question_text) : q.question_text,
             type,
             points: Number(q.points),
             options: [],
-            interactive: buildInteractivePayload(type, opts, `${attemptId}:${q.id}`),
+            interactive: buildInteractivePayload(type, opts, `${attemptId}:${q.id}`, q.question_text),
           };
         }
         // QCM choices are shuffled per student so "the answer is b" can't be

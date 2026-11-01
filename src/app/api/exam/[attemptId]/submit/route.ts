@@ -66,7 +66,7 @@ export async function POST(
   // Fetch the authoritative questions + options for THIS model
   const { data: questions } = await admin
     .from("exam_questions")
-    .select("id, question_type, points")
+    .select("id, question_type, points, question_text")
     .eq("exam_model_id", session.modelId);
   const { data: options } = await admin
     .from("exam_options")
@@ -102,7 +102,7 @@ export async function POST(
     let answerText = "";
 
     if (isInteractive(q.question_type)) {
-      const graded = gradeInteractive(q.question_type, qOptions, submitted?.text);
+      const graded = gradeInteractive(q.question_type, qOptions, submitted?.text, q.question_text);
       answerText = graded.answerText;
       // Partial credit snaps to quarter points (0,25 / 0,5 / 0,75…), like a
       // teacher marking by hand — 2 rows out of 3 on 1 pt gives 0,75, not 0,67.
