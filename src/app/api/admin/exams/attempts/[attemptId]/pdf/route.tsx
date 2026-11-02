@@ -133,10 +133,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ atte
   };
 
   const buffer = await renderToBuffer(<AnswerSheetDocument data={data} />);
+  // Number first so the downloaded files sort in class-list order.
   const parts = [
+    attempt.student_number,
     data.studentFirstName,
     data.studentName,
-    attempt.student_number,
     data.studentClass,
   ].filter((p): p is string => !!p && p.trim().length > 0);
   const filename = `${parts.map((p) => p.trim().replace(/\s+/g, "-")).join("_")}.pdf`;
