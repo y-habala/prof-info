@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, FileArchive } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
@@ -79,12 +79,20 @@ export default async function AdminExamResultsPage({
             <h1 className="text-2xl font-bold tracking-tight">{exam.title}</h1>
             {levelName ? <p className="mt-1 text-sm text-muted-foreground">Niveau : {levelName}</p> : null}
           </div>
-          <Button asChild variant="outline" className="gap-2">
-            <a href={`/api/admin/exams/${exam.id}/export`}>
-              <Download className="size-4" />
-              Exporter tout (Excel)
-            </a>
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="outline" className="gap-2">
+              <a href={`/api/admin/exams/${exam.id}/sheets`}>
+                <FileArchive className="size-4" />
+                Toutes les copies (PDF)
+              </a>
+            </Button>
+            <Button asChild variant="outline" className="gap-2">
+              <a href={`/api/admin/exams/${exam.id}/export`}>
+                <Download className="size-4" />
+                Exporter tout (Excel)
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -110,6 +118,12 @@ export default async function AdminExamResultsPage({
                 <a href={`/api/admin/exams/${exam.id}/export?class=${encodeURIComponent(classFilter)}`}>
                   <Download className="size-4" />
                   Excel {classFilter}
+                </a>
+              </Button>
+              <Button asChild variant="outline" className="gap-2">
+                <a href={`/api/admin/exams/${exam.id}/sheets?class=${encodeURIComponent(classFilter)}`}>
+                  <FileArchive className="size-4" />
+                  Copies {classFilter} (PDF)
                 </a>
               </Button>
             </>
