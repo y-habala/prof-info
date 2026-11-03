@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { clientIp, recordFailure, tooManyFailures } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ levelName: null });
   }
 
+  // Same wrong-code budget as /api/exam/verify, so this lookup can't be
+  // used to try every code.
+  const failKey = `exam-code:${clientIp(request)}`;
+  if (tooManyFailures(failKey)) return NextResponse.json({ levelName: null });
+
   const admin = createAdminClient();
   const { data: model } = await admin
     .from("exam_models")
@@ -24,5 +30,6 @@ export async function POST(request: Request) {
     (model?.exams as unknown as { levels: { name: string } | null } | null)
       ?.levels?.name ?? null;
 
+  if (!model) recordFailure(failKey);
   return NextResponse.json({ levelName });
 }

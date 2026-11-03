@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { signAccessSession, ACCESS_SESSION_COOKIE } from "@/lib/auth/access-session";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { clientIp, recordFailure, tooManyFailures } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -14,11 +14,11 @@ const GENERIC_ERROR = "Code invalide ou expiré.";
 export async function POST(request: Request) {
   const ip = clientIp(request);
 
-  // 20 attempts per 10min per IP — generous enough for a shared classroom
-  // (one IP for the whole room), tight enough that brute-forcing all 10 000
-  // combos through the public API is not practical.
-  const limited = rateLimit(`access:${ip}`, { max: 20, windowSeconds: 600 });
-  if (!limited.ok) {
+  // Only wrong codes count: a whole classroom shares one IP, and correct
+  // entries must never lock it out. 30 wrong guesses per 10 min keeps
+  // brute-forcing the 10 000 codes impractical.
+  const failKey = `access:${ip}`;
+  if (tooManyFailures(failKey)) {
     return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
   }
 
@@ -34,6 +34,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!row || !row.is_active) {
+    recordFailure(failKey);
     // Deliberate small delay — not timing-constant, just enough to blunt
     // naive timing probes.
     await new Promise((r) => setTimeout(r, 150));

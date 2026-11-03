@@ -29,6 +29,24 @@ export function rateLimit(
   return { ok: true };
 }
 
+// Failure-only limiting for code entry: a whole classroom shares one IP, so
+// correct codes must never count — only wrong guesses do. Check first, and
+// record only when the code turned out to be wrong.
+const FAILS = { max: 30, windowSeconds: 600 };
+
+export function tooManyFailures(key: string): boolean {
+  const windowStart = Date.now() - FAILS.windowSeconds * 1000;
+  const hits = (buckets.get(key) ?? []).filter((h) => h.timestamp > windowStart);
+  buckets.set(key, hits);
+  return hits.length >= FAILS.max;
+}
+
+export function recordFailure(key: string): void {
+  const hits = buckets.get(key) ?? [];
+  hits.push({ timestamp: Date.now() });
+  buckets.set(key, hits);
+}
+
 // Convenience for API routes — reads x-forwarded-for first, then a fallback.
 export function clientIp(req: Request): string {
   const xff = req.headers.get("x-forwarded-for");

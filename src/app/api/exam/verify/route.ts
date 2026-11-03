@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { examVerifySchema } from "@/schemas/exams";
 import { signExamSession, EXAM_SESSION_COOKIE } from "@/lib/auth/exam-session";
-import { rateLimit, clientIp } from "@/lib/rate-limit";
+import { clientIp, recordFailure, tooManyFailures } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -14,8 +14,10 @@ const EXAM_GRACE_SECONDS = 5 * 60;
 export async function POST(request: Request) {
   const ip = clientIp(request);
 
-  const limited = rateLimit(`exam-verify:${ip}`, { max: 15, windowSeconds: 600 });
-  if (!limited.ok) {
+  // Only wrong codes count (shared with /api/exam/level): a whole class
+  // starting the exam from the school's single IP must never be blocked.
+  const failKey = `exam-code:${ip}`;
+  if (tooManyFailures(failKey)) {
     return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
   }
 
@@ -32,6 +34,7 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (!model) {
+    recordFailure(failKey);
     await new Promise((r) => setTimeout(r, 150));
     return NextResponse.json({ error: GENERIC_ERROR }, { status: 401 });
   }
