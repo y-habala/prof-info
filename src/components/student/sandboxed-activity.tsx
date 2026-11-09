@@ -6,6 +6,15 @@ const RESIZE_SCRIPT = `<script>(function(){
   function send(){window.parent.postMessage({type:'iframe-resize',height:document.documentElement.scrollHeight},'*');}
   if(typeof ResizeObserver!=='undefined'){new ResizeObserver(send).observe(document.documentElement);}
   window.addEventListener('load',send);send();
+  // Links to files/pages (e.g. "Télécharger le cours (PDF)") open in a new
+  // tab: inside the sandboxed frame they would load nowhere useful.
+  document.addEventListener('click',function(e){
+    var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
+    if(!a)return;var h=a.getAttribute('href')||'';
+    if(h.charAt(0)==='#'||/^javascript:/i.test(h))return;
+    if(!a.target||a.target==='_self')a.target='_blank';
+    a.rel='noopener';
+  },true);
 })();</script>`;
 
 // Build a safe srcDoc:
@@ -70,7 +79,9 @@ export function SandboxedActivity({ html }: { html: string }) {
     <div ref={containerRef} style={{ position: "relative" }}>
       <iframe
         ref={iframeRef}
-        sandbox="allow-scripts"
+        // No allow-same-origin: the activity still cannot touch the site.
+        // Downloads and new tabs are allowed so its file links work.
+        sandbox="allow-scripts allow-downloads allow-popups allow-popups-to-escape-sandbox"
         srcDoc={srcDoc}
         style={{
           height: isFullscreen ? "100vh" : height,
