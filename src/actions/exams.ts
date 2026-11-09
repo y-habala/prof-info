@@ -195,13 +195,9 @@ export async function duplicateExamModel(
     const { data: insertedSections } = await supabase
       .from("exam_sections")
       .insert(sectionInserts)
-      .select("id, title, order_index");
-    insertedSections?.forEach((ins) => {
-      const match = sections.find(
-        (s) => s.title === ins.title && s.order_index === ins.order_index
-      );
-      if (match) sectionMap.set(match.id, ins.id);
-    });
+      .select("id");
+    // Rows come back in insert order; titles may repeat, so match by position.
+    insertedSections?.forEach((ins, i) => sectionMap.set(sections[i].id, ins.id));
   }
 
   // Copy questions
@@ -224,13 +220,9 @@ export async function duplicateExamModel(
     const { data: insertedQ } = await supabase
       .from("exam_questions")
       .insert(questionInserts)
-      .select("id, question_text, order_index");
-    insertedQ?.forEach((ins) => {
-      const match = questions.find(
-        (q) => q.question_text === ins.question_text && q.order_index === ins.order_index
-      );
-      if (match) questionMap.set(match.id, ins.id);
-    });
+      .select("id");
+    // Same text + index can exist in two sections: match by position.
+    insertedQ?.forEach((ins, i) => questionMap.set(questions[i].id, ins.id));
   }
 
   // Copy options

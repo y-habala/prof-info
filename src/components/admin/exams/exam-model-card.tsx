@@ -5,8 +5,8 @@ import { ArrowRight, Pencil, Trash2, Copy, FileText, Layers } from "lucide-react
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ExamModelDialog } from "./exam-model-dialog";
-import { deleteExamModel, duplicateExamModel } from "@/actions/exams";
-import { useRouter } from "next/navigation";
+import { DuplicateModelDialog } from "./duplicate-model-dialog";
+import { deleteExamModel } from "@/actions/exams";
 
 type Model = {
   id: string;
@@ -30,28 +30,17 @@ function accentFor(label: string): { bg: string; text: string } {
   return palette[c < 0 ? 0 : c];
 }
 
-export function ExamModelCard({ examId, model }: { examId: string; model: Model }) {
+export function ExamModelCard({
+  examId,
+  model,
+  existingLabels,
+}: {
+  examId: string;
+  model: Model;
+  existingLabels: string[];
+}) {
   const [isPending, startTransition] = useTransition();
-  const router = useRouter();
   const accent = accentFor(model.label.toUpperCase());
-
-  async function handleDuplicate() {
-    const newLabel = prompt("Libellé du nouveau modèle (ex. B)")?.trim();
-    if (!newLabel) return;
-    const newCode = prompt("Code secret du nouveau modèle (4 chiffres)")?.trim();
-    if (!newCode || !/^\d{4}$/.test(newCode)) {
-      alert("Le code doit contenir 4 chiffres.");
-      return;
-    }
-    startTransition(async () => {
-      const result = await duplicateExamModel(model.id, examId, newLabel, newCode);
-      if (result && "error" in result && result.error) {
-        alert(result.error);
-      } else if (result && "newModelId" in result) {
-        router.push(`/admin/exams/${examId}/models/${result.newModelId}`);
-      }
-    });
-  }
 
   return (
     <Card className="relative overflow-hidden p-5">
@@ -97,16 +86,18 @@ export function ExamModelCard({ examId, model }: { examId: string; model: Model 
               </Button>
             }
           />
-          <Button
-            size="sm"
-            variant="outline"
-            className="gap-1.5"
-            disabled={isPending}
-            onClick={handleDuplicate}
-            title="Dupliquer ce modèle vers un nouveau"
-          >
-            <Copy className="size-3.5" />
-          </Button>
+          <DuplicateModelDialog
+            examId={examId}
+            modelId={model.id}
+            modelLabel={model.label}
+            existingLabels={existingLabels}
+            trigger={
+              <Button size="sm" variant="outline" className="gap-1.5" title="Dupliquer ce modèle (ex. A → B)">
+                <Copy className="size-3.5" />
+                Dupliquer
+              </Button>
+            }
+          />
           <Button
             size="sm"
             variant="outline"

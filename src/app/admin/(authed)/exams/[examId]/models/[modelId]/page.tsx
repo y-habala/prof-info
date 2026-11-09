@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Copy } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { ModelBuilder, type ModelData } from "@/components/admin/exams/model-builder";
+import { DuplicateModelDialog } from "@/components/admin/exams/duplicate-model-dialog";
+import { Button } from "@/components/ui/button";
 
 export default async function AdminExamModelBuilderPage({
   params,
@@ -12,13 +14,14 @@ export default async function AdminExamModelBuilderPage({
   const { examId, modelId } = await params;
   const supabase = await createClient();
 
-  const [{ data: model }, { data: exam }] = await Promise.all([
+  const [{ data: model }, { data: exam }, { data: siblings }] = await Promise.all([
     supabase
       .from("exam_models")
       .select("id, label, secret_code, exam_id")
       .eq("id", modelId)
       .maybeSingle(),
     supabase.from("exams").select("id, title").eq("id", examId).maybeSingle(),
+    supabase.from("exam_models").select("label").eq("exam_id", examId),
   ]);
 
   if (!model || !exam || model.exam_id !== examId) notFound();
@@ -106,6 +109,18 @@ export default async function AdminExamModelBuilderPage({
             </div>
             <p className="mt-1 text-sm text-muted-foreground">{exam.title}</p>
           </div>
+          <DuplicateModelDialog
+            examId={examId}
+            modelId={model.id}
+            modelLabel={model.label}
+            existingLabels={(siblings ?? []).map((s) => s.label)}
+            trigger={
+              <Button variant="outline" className="gap-2">
+                <Copy className="size-4" />
+                Dupliquer ce modèle
+              </Button>
+            }
+          />
         </div>
       </div>
 

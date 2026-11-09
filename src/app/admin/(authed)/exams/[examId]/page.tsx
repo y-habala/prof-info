@@ -73,6 +73,7 @@ export default async function AdminExamModelsPage({ params }: { params: Promise<
             <ExamModelCard
               key={m.id}
               examId={examId}
+              existingLabels={models.map((x) => x.label)}
               model={{
                 id: m.id,
                 label: m.label,
