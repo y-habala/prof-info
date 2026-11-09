@@ -12,6 +12,11 @@ const RESIZE_SCRIPT = `<script>(function(){
     var a=e.target&&e.target.closest?e.target.closest('a[href]'):null;
     if(!a)return;var h=a.getAttribute('href')||'';
     if(h.charAt(0)==='#'||/^javascript:/i.test(h))return;
+    // Files stored on the platform (Supabase Storage) are served as a
+    // download rather than shown in the browser viewer.
+    if(h.indexOf('/storage/v1/object/public/')>-1&&!/[?&]download(=|&|$)/.test(h)){
+      a.setAttribute('href',h+(h.indexOf('?')>-1?'&':'?')+'download=');
+    }
     if(!a.target||a.target==='_self')a.target='_blank';
     a.rel='noopener';
   },true);
